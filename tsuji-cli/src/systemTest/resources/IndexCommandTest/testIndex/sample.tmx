@@ -1,0 +1,13 @@
+<tmx version="1.4">
+  <header creationtool="tsuji" creationtoolversion="1.0.0" segtype="sentence" o-tmf="UTF-8" adminlang="en" srclang="en" datatype="PlainText" />
+  <body>
+    <tu>
+      <tuv lang="en"><seg>This is a pen.</seg></tuv>
+      <tuv lang="ja_JP"><seg>これはペンです。</seg></tuv>
+    </tu>
+    <tu>
+      <tuv lang="en"><seg>Hello world.</seg></tuv>
+      <tuv lang="ja_JP"><seg>こんにちは、世界。</seg></tuv>
+    </tu>
+  </body>
+</tmx>

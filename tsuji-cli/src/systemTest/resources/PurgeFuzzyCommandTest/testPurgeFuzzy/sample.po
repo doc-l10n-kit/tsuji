@@ -1,0 +1,11 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ja_JP\n"
+
+#, fuzzy
+msgid "Fuzzy message"
+msgstr "不確かな翻訳"
+
+msgid "Confirmed message"
+msgstr "確定した翻訳"

@@ -1,0 +1,4 @@
+
+.OpenShift
+:no-duration-note: true
+include::sample.adoc[]

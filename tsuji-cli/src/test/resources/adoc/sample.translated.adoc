@@ -1,0 +1,86 @@
+////
+This guide is maintained in the main Quarkus repository
+and pull requests should be submitted there:
+https://github.com/quarkusio/quarkus/tree/main/docs/src/main/asciidoc
+////
+= サンプルガイド
+:categories: guide sample
+:summary: Sample guide for tsuji
+:numbered:
+:sectnums:
+:sectnumlevels: 4
+
+これはサンプルテキストです。
+
+これは2段落目です。
+
+NOTE: これはメモセクションです。
+
+== ヘッダー・レベル2
+
+これはヘッダーレベル2の次のセクションです。
+
+=== ヘッダー・レベル3
+
+これは改行のあるセクションです。
+2行目
+3行目
+
+.リスト・タイトル
+* リスト・レベル1
+** リスト・レベル2-1
+** リスト・レベル2-2
+*** リスト・レベル3
+
+> ブロック引用されたテキスト
+>
+> ブロック引用されたテキストの2番目のブロック
+
+==== ヘッダー・レベル4
+
+.タイトル付のソースコード
+[source%nowrap,java]
+----
+@Path("/hello")
+public class HelloWorldResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello(String foo) {
+        return "Hello world"; <1>
+    }
+}
+----
+<1> ソースコードに対する脚注
+
+TIP: これはTipsです。
+
+IMPORTANT: これは重要なノートです。
+
+=== 単語の定義
+
+単語::
+これは単語の説明です。
+
+=== テーブル
+
+[cols="<1m,^1,<3",options="header"]
+|===
+| ヘッダー1
+| ヘッダー2
+| ヘッダー3
+
+| セル1
+| ✓
+| ノート1
+
+| セル2
+| ✗
+| ノート2
+| セル3
+| ✓
+| ノート3
+|===
+
+これはテーブルの次の文章です
+

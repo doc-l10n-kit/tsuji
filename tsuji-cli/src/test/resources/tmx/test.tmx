@@ -1,0 +1,13 @@
+<tmx version="1.4">
+  <header creationtool="Translate Toolkit" creationtoolversion="3.8.4" segtype="sentence" o-tmf="UTF-8" adminlang="en" srclang="en" datatype="PlainText" />
+  <body>
+    <tu>
+      <tuv xml:lang="en">
+        <seg>This is a pen.</seg>
+      </tuv>
+      <tuv xml:lang="ja_JP">
+        <seg>これはペンです。</seg>
+      </tuv>
+    </tu>
+  </body>
+</tmx>

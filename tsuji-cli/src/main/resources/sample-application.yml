@@ -1,0 +1,5 @@
+tsuji:
+  translator:
+    language:
+      source: en        # default source language
+      destination: ja   # default destination language

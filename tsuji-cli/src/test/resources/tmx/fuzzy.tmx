@@ -1,0 +1,13 @@
+<tmx version="1.4">
+  <header creationtool="Translate Toolkit" creationtoolversion="3.9.2" segtype="sentence" o-tmf="UTF-8" adminlang="en" srclang="en" datatype="PlainText" />
+  <body>
+    <tu>
+      <tuv xml:lang="en">
+        <seg>Sample Guide</seg>
+      </tuv>
+      <tuv xml:lang="ja_JP">
+        <seg>サンプルガイド</seg>
+      </tuv>
+    </tu>
+  </body>
+</tmx>

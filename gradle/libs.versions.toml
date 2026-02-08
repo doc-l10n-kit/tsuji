@@ -1,0 +1,50 @@
+[versions]
+quarkus = "3.31.2"
+kotlin = "2.3.0"
+jgettext = "0.15.1"
+asciidoctorj = "3.0.1"
+jsoup = "1.22.1"
+assertj = "3.27.6"
+slf4j = "2.0.16"
+junit = "5.11.4"
+mockito-kotlin = "5.4.0"
+jackson = "2.18.2"
+jackson3 = "3.0.0"
+jackson-annotations = "2.21"
+langchain4j-community = "1.9.1-beta17"
+quarkus-langchain4j-bom-version = "3.31.1"
+
+[libraries]
+quarkus-bom = { group = "io.quarkus", name = "quarkus-bom", version.ref = "quarkus" }
+quarkus-langchain4j-bom = { group = "io.quarkus.platform", name = "quarkus-langchain4j-bom", version.ref = "quarkus-langchain4j-bom-version" }
+quarkus-langchain4j-ai-gemini = { group = "io.quarkiverse.langchain4j", name = "quarkus-langchain4j-ai-gemini" }
+langchain4j-community-lucene = { group = "dev.langchain4j", name = "langchain4j-community-lucene", version.ref = "langchain4j-community" }
+langchain4j-embeddings-all-minilm-l6-v2-q = { group = "dev.langchain4j", name = "langchain4j-embeddings-all-minilm-l6-v2-q" }
+
+jgettext = { group = "org.fedorahosted.tennera", name = "jgettext", version.ref = "jgettext" }
+asciidoctorj = { group = "org.asciidoctor", name = "asciidoctorj", version.ref = "asciidoctorj" }
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
+jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
+
+jackson3-dataformat-xml = { group = "tools.jackson.dataformat", name = "jackson-dataformat-xml", version.ref = "jackson3" }
+jackson3-module-kotlin = { group = "tools.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson3" }
+jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson-annotations" }
+
+slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+
+# Quarkus Extensions (Managed by BOM, but defined here for alias usage if needed, though usually just 'implementation("io.quarkus:...")' is fine with BOM. 
+# However, mapping them allows consistent usage.)
+quarkus-picocli = { group = "io.quarkus", name = "quarkus-picocli" }
+quarkus-kotlin = { group = "io.quarkus", name = "quarkus-kotlin" }
+quarkus-config-yaml = { group = "io.quarkus", name = "quarkus-config-yaml" }
+quarkus-arc = { group = "io.quarkus", name = "quarkus-arc" }
+quarkus-junit5 = { group = "io.quarkus", name = "quarkus-junit5" }
+quarkus-junit5-mockito = { group = "io.quarkus", name = "quarkus-junit5-mockito" }
+mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockito-kotlin" }
+
+[plugins]
+quarkus = { id = "io.quarkus", version.ref = "quarkus" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }

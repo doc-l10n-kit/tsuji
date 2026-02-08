@@ -1,0 +1,4 @@
+= Sample Post
+:categories: news
+
+This is a sample blog post.

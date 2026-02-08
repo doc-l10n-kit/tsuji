@@ -1,0 +1,13 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ja_JP\n"
+
+msgid ""
+"This is a long message that is intentionally wrapped into multiple lines "
+"within the PO file to test the normalization process which should "
+"unwrap it."
+msgstr ""
+"これは、正規化プロセスをテストするためにPOファイル内で意図的に複数行に"
+"折り返された長いメッセージです。正規化によって1行にまとめられるはず"
+"です。"

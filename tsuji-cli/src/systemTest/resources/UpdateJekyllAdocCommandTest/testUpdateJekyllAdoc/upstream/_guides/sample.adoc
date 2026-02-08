@@ -1,0 +1,8 @@
+= Sample Guide
+:categories: getting-started
+
+This is a sample guide for testing UpdateJekyllAdocCommand.
+
+== Introduction
+
+Quarkus is Supersonic Subatomic Java.

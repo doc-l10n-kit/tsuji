@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.0.0). If empty, version from gradle.properties will be used (removing -SNAPSHOT).'
+        required: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: 'gradle'
+
+    - name: Determine Version
+      id: get_version
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          VERSION="${{ inputs.version }}"
+        else
+          # Extract version from gradle.properties
+          PROP_VERSION=$(grep "^tsujiVersion=" gradle.properties | cut -d'=' -f2)
+          VERSION=${PROP_VERSION//-SNAPSHOT/}
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "TAG_NAME=v$VERSION" >> $GITHUB_ENV
+        echo "Release version: $VERSION"
+
+    - name: Check if Tag Exists
+      run: |
+        if git ls-remote --exit-code --tags origin "${{ env.TAG_NAME }}" >/dev/null 2>&1; then
+          echo "Error: Tag ${{ env.TAG_NAME }} already exists on remote."
+          exit 1
+        fi
+
+    - name: Update gradle.properties
+      if: "${{ inputs.version != '' }}"
+      run: |
+        sed -i "s/^tsujiVersion=.*/tsujiVersion=${{ env.VERSION }}/" gradle.properties
+
+    - name: Switch to release and Update docs
+      run: ./gradlew switchToRelease updateVersionsInDocuments
+
+    - name: Commit and Push Release
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add gradle.properties README.md
+        git commit -m "Release ${{ env.VERSION }}"
+        git push origin HEAD:main
+
+    - name: Build with Gradle
+      run: ./gradlew build --no-daemon
+
+    - name: Create and Push Tag
+      run: |
+        git tag "${{ env.TAG_NAME }}"
+        git push origin "${{ env.TAG_NAME }}"
+
+    - name: Create Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create ${{ env.TAG_NAME }} \
+          --title "Release ${{ env.VERSION }}" \
+          --generate-notes \
+          tsuji-cli/build/tsuji.jar
+
+    - name: Prepare for next development cycle
+      run: |
+        ./gradlew bumpPatchVersion switchToSnapshot
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add gradle.properties
+        git commit -m "Prepare for next development cycle"
+        git push origin HEAD:main

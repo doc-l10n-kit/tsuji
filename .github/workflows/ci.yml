@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    # everyday 10AM (UTC)
+    - cron: '0 10 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK ${{ matrix.java-version }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java-version }}
+        distribution: 'temurin'
+      
+    - name: Build with Gradle
+      run: ./gradlew build --no-daemon

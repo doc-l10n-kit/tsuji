@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tmx version="1.4">
+  <header creationtool="tsuji" creationtoolversion="1.0" segtype="sentence" o-tmf="ATM" adminlang="en" srclang="en" datatype="PlainText"/>
+  <body>
+    <tu>
+      <tuv xml:lang="en">
+        <seg>Hello</seg>
+      </tuv>
+      <tuv xml:lang="ja">
+        <seg>こんにちは</seg>
+      </tuv>
+      <tuv xml:lang="fr">
+        <seg>Bonjour</seg>
+      </tuv>
+    </tu>
+  </body>
+</tmx>
