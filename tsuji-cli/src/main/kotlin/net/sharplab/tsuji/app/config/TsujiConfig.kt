@@ -46,6 +46,10 @@ interface TsujiConfig {
         @get:WithDefault("docs")
         val destinationDir: String
 
+        @get:WithName("stats-dir")
+        @get:WithDefault("l10n/stats")
+        val statsDir: String
+
         @get:WithName("additional-configs")
         val additionalConfigs: Optional<List<String>>
 

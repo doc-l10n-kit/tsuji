@@ -8,4 +8,9 @@ interface JekyllAppService {
     fun serve(translate: Boolean = true, additionalConfigs: List<String>? = null)
 
     fun updateOverrideFilesStats(overrideDir: Path, upstreamDir: Path, output: Path)
+
+    /**
+     * Updates all Jekyll related statistics (PO translation stats and override stats).
+     */
+    fun updateJekyllStats()
 }

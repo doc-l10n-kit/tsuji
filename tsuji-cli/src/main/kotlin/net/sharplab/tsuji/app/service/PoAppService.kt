@@ -10,5 +10,5 @@ interface PoAppService {
     fun apply(masterFile: Path, poFile: Path, localizedFile: Path, format: String)
     fun extractJekyllAdoc(poBaseDir: Path? = null, sourceDir: Path? = null, overrideDir: Path? = null)
     fun applyPoToDirectory(workDir: Path, poBaseDir: Path)
-    fun updatePoStats(poDir: Path, output: Path)
+    fun updatePoStats(poDirs: List<Path>, output: Path)
 }

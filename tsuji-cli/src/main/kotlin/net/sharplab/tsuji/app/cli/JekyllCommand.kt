@@ -5,7 +5,7 @@ import jakarta.enterprise.context.Dependent
 import net.sharplab.tsuji.app.cli.jekyll.JekyllBuildCommand
 import net.sharplab.tsuji.app.cli.jekyll.JekyllExtractCommand
 import net.sharplab.tsuji.app.cli.jekyll.JekyllServeCommand
-import net.sharplab.tsuji.app.cli.jekyll.UpdateOverrideStatsCommand
+import net.sharplab.tsuji.app.cli.jekyll.JekyllUpdateStatsCommand
 import picocli.CommandLine
 
 @Dependent
@@ -18,7 +18,7 @@ import picocli.CommandLine
         JekyllBuildCommand::class,
         JekyllExtractCommand::class,
         JekyllServeCommand::class,
-        UpdateOverrideStatsCommand::class
+        JekyllUpdateStatsCommand::class
     ]
 )
 class JekyllCommand

@@ -104,6 +104,46 @@ class JekyllAppServiceImpl(
         logger.info("Override stats written to: $output")
     }
 
+    override fun updateJekyllStats() {
+        val poBaseDir = Paths.get(tsujiConfig.po.baseDir)
+        val statsDir = Paths.get(tsujiConfig.jekyll.statsDir)
+        statsDir.createDirectories()
+
+        // 1. Latest Guides
+        val guidesDir = poBaseDir.resolve("_guides")
+        if (guidesDir.exists()) {
+            poAppService.updatePoStats(listOf(guidesDir), statsDir.resolve("latest-guides-translation.csv"))
+        }
+
+        // 2. Versions
+        val versionsDir = poBaseDir.resolve("_versions")
+        if (versionsDir.exists()) {
+            versionsDir.listDirectoryEntries().filter { it.isDirectory() }.forEach { versionDir ->
+                val versionName = versionDir.name
+                poAppService.updatePoStats(listOf(versionDir), statsDir.resolve("${versionName}-guides-translation.csv"))
+            }
+        }
+
+        // 3. Posts
+        val postsDir = poBaseDir.resolve("_posts")
+        if (postsDir.exists()) {
+            poAppService.updatePoStats(listOf(postsDir), statsDir.resolve("posts-translation.csv"))
+        }
+
+        // 4. Misc (Includes & Data combined)
+        val miscDirs = listOf("_includes", "_data").map { poBaseDir.resolve(it) }.filter { it.exists() }
+        if (miscDirs.isNotEmpty()) {
+            poAppService.updatePoStats(miscDirs, statsDir.resolve("misc-translation.csv"))
+        }
+
+        // 5. Overrides
+        updateOverrideFilesStats(
+            Paths.get(tsujiConfig.jekyll.overrideDir),
+            Paths.get(tsujiConfig.jekyll.sourceDir),
+            statsDir.resolve("override.csv")
+        )
+    }
+
     private fun getGitTimestamp(path: Path, workDir: Path): GitTimestamp {
         return try {
             val epoch = externalProcessDriver.executeAndGetOutput(

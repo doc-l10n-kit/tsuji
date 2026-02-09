@@ -12,8 +12,8 @@ import java.nio.file.Path
 @CommandLine.Command(name = "update-stats", description = ["Updates PO translation statistics"])
 class UpdatePoStatsCommand(private val poAppService: PoAppService) : BaseCommand() {
 
-    @CommandLine.Option(names = ["--po", "-p"], description = ["The PO directory to analyze"], required = true)
-    lateinit var po: Path
+    @CommandLine.Option(names = ["--po", "-p"], description = ["The PO directories to analyze"], required = true)
+    lateinit var po: List<Path>
 
     @CommandLine.Option(names = ["--output", "-o"], description = ["The output CSV file path"], required = true)
     lateinit var output: Path

@@ -142,30 +142,34 @@ class PoAppServiceImpl(
         }
     }
 
-    override fun updatePoStats(poDir: Path, output: Path) {
-        logger.info("Updating PO stats for directory: $poDir")
+    override fun updatePoStats(poDirs: List<Path>, output: Path) {
+        logger.info("Updating PO stats for directories: $poDirs")
         val results = mutableListOf<PoStatResult>()
 
-        if (!poDir.exists()) {
-            logger.warn("PO directory does not exist: $poDir")
-            return
-        }
+        poDirs.forEach { poDir ->
+            if (!poDir.exists()) {
+                logger.warn("PO directory does not exist: $poDir")
+                return@forEach
+            }
 
-        poDir.walk().filter { it.extension == "po" }.forEach { path ->
-            val po = poDriver.load(path)
-            val stats = poService.calculateStats(po)
+            Files.walk(poDir).use { stream ->
+                stream.filter { it.extension == "po" }.forEach { path ->
+                    val po = poDriver.load(path)
+                    val stats = poService.calculateStats(po)
 
-            if (stats.totalMessages > 0) {
-                results.add(
-                    PoStatResult(
-                        filename = poDir.relativize(path).toString(),
-                        fuzzyMessages = stats.fuzzyMessages,
-                        totalMessages = stats.totalMessages,
-                        fuzzyWords = stats.fuzzyWords,
-                        totalWords = stats.totalWords,
-                        achievement = "${stats.achievement}%"
-                    )
-                )
+                    if (stats.totalMessages > 0) {
+                        results.add(
+                            PoStatResult(
+                                filename = poDir.relativize(path).toString(),
+                                fuzzyMessages = stats.fuzzyMessages,
+                                totalMessages = stats.totalMessages,
+                                fuzzyWords = stats.fuzzyWords,
+                                totalWords = stats.totalWords,
+                                achievement = "${stats.achievement}%"
+                            )
+                        )
+                    }
+                }
             }
         }
 
