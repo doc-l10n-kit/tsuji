@@ -52,6 +52,12 @@ interface TsujiConfig {
 
         @get:WithName("additional-configs")
         val additionalConfigs: Optional<List<String>>
+
+        @get:WithName("cname")
+        val cname: Optional<String>
+
+        @get:WithName("surge-domain-suffix")
+        val surgeDomainSuffix: Optional<String>
     }
 
     @get:WithName("language")
