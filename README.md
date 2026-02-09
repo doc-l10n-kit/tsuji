@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/doc-l10n-kit/tsuji/actions/workflows/ci.yml/badge.svg)](https://github.com/doc-l10n-kit/tsuji/actions/workflows/ci.yml)
 
-Version: 0.5.0-SNAPSHOT
+Version: 0.5.1-SNAPSHOT
 
 **tsuji** is a localization toolkit designed to assist in translating technical documentation, specifically for quarkus.io. By leveraging the **LangChain4j** framework, it enables high-quality, consistent translations through LLMs with Retrieval-Augmented Generation (RAG) directly integrated into the gettext PO file workflow.
 
