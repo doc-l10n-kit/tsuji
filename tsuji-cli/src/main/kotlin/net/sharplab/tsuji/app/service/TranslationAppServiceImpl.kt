@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import jakarta.enterprise.context.Dependent
 import java.nio.file.Files
+import java.nio.file.Paths
 import kotlin.io.path.*
 
 import jakarta.enterprise.context.control.ActivateRequestContext
@@ -21,8 +22,9 @@ class TranslationAppServiceImpl(
     private val logger = LoggerFactory.getLogger(TranslationAppServiceImpl::class.java)
 
     @ActivateRequestContext
-    override fun machineTranslatePoFiles(filePaths: List<Path>, source: String?, target: String?, isAsciidoctor: Boolean, useRag: Boolean) {
-        filePaths.forEach { filePath ->
+    override fun machineTranslatePoFiles(filePaths: List<Path>?, source: String?, target: String?, isAsciidoctor: Boolean, useRag: Boolean) {
+        val resolvedPaths = filePaths ?: listOf(Paths.get(tsujiConfig.po.baseDir))
+        resolvedPaths.forEach { filePath ->
             translateRecursive(filePath, source, target, isAsciidoctor, useRag)
         }
     }
@@ -38,8 +40,8 @@ class TranslationAppServiceImpl(
             return
         }
 
-        val resolvedSourceLang = source ?: tsujiConfig.translator.language.source
-        val resolvedTargetLang = target ?: tsujiConfig.translator.language.destination
+        val resolvedSourceLang = source ?: tsujiConfig.language.from
+        val resolvedTargetLang = target ?: tsujiConfig.language.to
 
         logger.info("Start translation: %s (%s -> %s)".format(filePath.absolutePathString(), resolvedSourceLang, resolvedTargetLang))
         val poFile = poDriver.load(filePath)

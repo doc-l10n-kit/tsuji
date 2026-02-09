@@ -17,7 +17,7 @@ interface TsujiConfig {
 
     interface Rag {
         @get:WithName("index-path")
-        @get:WithDefault("index")
+        @get:WithDefault("l10n/rag/index")
         val indexPath: String
     }
 
@@ -52,27 +52,19 @@ interface TsujiConfig {
 
         @get:WithName("additional-configs")
         val additionalConfigs: Optional<List<String>>
-
-        @get:WithName("language")
-        val language: Optional<String>
     }
 
-    @get:WithName("translator")
-    val translator: Translator
+    @get:WithName("language")
+    val language: Language
 
-    interface Translator {
-        @get:WithName("language")
-        val language: Language
+    interface Language {
+        @get:WithName("from")
+        @get:WithDefault("en")
+        val from: String
 
-        interface Language {
-            @get:WithName("source")
-            @get:WithDefault("en")
-            val source: String
-
-            @get:WithName("destination")
-            @get:WithDefault("ja")
-            val destination: String
-        }
+        @get:WithName("to")
+        @get:WithDefault("ja")
+        val to: String
     }
 
     @get:WithName("git")

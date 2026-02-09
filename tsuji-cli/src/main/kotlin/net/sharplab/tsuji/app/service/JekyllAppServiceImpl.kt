@@ -23,7 +23,7 @@ class JekyllAppServiceImpl(
     override fun build(translate: Boolean, additionalConfigs: List<String>?) {
         val resolvedPoBaseDir = Paths.get(tsujiConfig.po.baseDir)
         val resolvedDestinationDir = Paths.get(tsujiConfig.jekyll.destinationDir)
-        val resolvedLanguage = tsujiConfig.jekyll.language.orElse(tsujiConfig.translator.language.destination)
+        val resolvedLanguage = tsujiConfig.language.to
         val baseConfigs = tsujiConfig.jekyll.additionalConfigs.orElse(emptyList())
         val resolvedConfigs = if (additionalConfigs != null) baseConfigs + additionalConfigs else baseConfigs
 
@@ -43,7 +43,7 @@ class JekyllAppServiceImpl(
     override fun serve(translate: Boolean, additionalConfigs: List<String>?) {
         val resolvedPoBaseDir = Paths.get(tsujiConfig.po.baseDir)
         val resolvedDestinationDir = Paths.get(tsujiConfig.jekyll.destinationDir)
-        val resolvedLanguage = tsujiConfig.jekyll.language.orElse(tsujiConfig.translator.language.destination)
+        val resolvedLanguage = tsujiConfig.language.to
         val baseConfigs = tsujiConfig.jekyll.additionalConfigs.orElse(emptyList())
         val resolvedConfigs = if (additionalConfigs != null) baseConfigs + additionalConfigs else baseConfigs
 

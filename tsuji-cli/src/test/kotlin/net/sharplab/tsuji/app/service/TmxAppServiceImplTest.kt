@@ -1,5 +1,7 @@
 package net.sharplab.tsuji.app.service
 
+import net.sharplab.tsuji.app.config.TsujiConfig
+import net.sharplab.tsuji.core.driver.gettext.GettextDriver
 import net.sharplab.tsuji.core.driver.po.PoDriver
 import net.sharplab.tsuji.core.driver.tmx.TmxDriver
 import net.sharplab.tsuji.core.model.po.Po
@@ -20,12 +22,16 @@ class TmxAppServiceImplTest {
     private val poDriver: PoDriver = mock()
     private val tmxDriver: TmxDriver = mock()
     private val tmxService: TmxService = mock()
+    private val gettextDriver: GettextDriver = mock()
+    private val tsujiConfig: TsujiConfig = mock()
 
     private val target = TmxAppServiceImpl(
         poTranslatorService,
         poDriver,
         tmxDriver,
-        tmxService
+        tmxService,
+        gettextDriver,
+        tsujiConfig
     )
 
     @Test

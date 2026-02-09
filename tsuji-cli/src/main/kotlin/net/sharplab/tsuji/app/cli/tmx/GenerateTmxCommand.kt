@@ -13,8 +13,8 @@ import java.nio.file.Path
 @CommandLine.Command(name = "generate", mixinStandardHelpOptions = true, description = ["Generates TMX from PO files"])
 class GenerateTmxCommand(private val tmxAppService: TmxAppService) : BaseCommand() {
 
-    @CommandLine.Option(names = ["--po", "-p"], description = ["The directory containing PO files"], required = true)
-    lateinit var po: Path
+    @CommandLine.Option(names = ["--po", "-p"], description = ["The directory containing PO files"])
+    var po: Path? = null
 
     @CommandLine.Option(names = ["--tmx", "-t"], description = ["The output TMX file path"], required = true)
     lateinit var tmx: Path

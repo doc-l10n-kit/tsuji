@@ -12,8 +12,8 @@ import java.nio.file.Path
 @CommandLine.Command(name = "machine-translate")
 class MachineTranslateCommand(private val translationAppService: TranslationAppService) : BaseCommand() {
 
-    @CommandLine.Option(names = ["--po", "-p"], description = ["file or directory path"], required = true)
-    private lateinit var po: List<Path>
+    @CommandLine.Option(names = ["--po", "-p"], description = ["file or directory path"])
+    private var po: List<Path>? = null
 
     @CommandLine.Option(order = 2, names = ["--source"], description = ["source language"])
     private var source: String? = null

@@ -142,11 +142,14 @@ class PoAppServiceImpl(
         }
     }
 
-    override fun updatePoStats(poDirs: List<Path>, output: Path) {
-        logger.info("Updating PO stats for directories: $poDirs")
+    override fun updatePoStats(poDirs: List<Path>?, output: Path?) {
+        val resolvedPoDirs = poDirs ?: listOf(Paths.get(tsujiConfig.po.baseDir))
+        val resolvedOutput = output ?: Paths.get(tsujiConfig.jekyll.statsDir).resolve("translation.csv")
+
+        logger.info("Updating PO stats for directories: $resolvedPoDirs")
         val results = mutableListOf<PoStatResult>()
 
-        poDirs.forEach { poDir ->
+        resolvedPoDirs.forEach { poDir ->
             if (!poDir.exists()) {
                 logger.warn("PO directory does not exist: $poDir")
                 return@forEach
@@ -160,7 +163,7 @@ class PoAppServiceImpl(
                     if (stats.totalMessages > 0) {
                         results.add(
                             PoStatResult(
-                                filename = poDir.relativize(path).toString(),
+                                filename = if (resolvedPoDirs.size > 1) "$poDir/${poDir.relativize(path)}" else poDir.relativize(path).toString(),
                                 fuzzyMessages = stats.fuzzyMessages,
                                 totalMessages = stats.totalMessages,
                                 fuzzyWords = stats.fuzzyWords,
@@ -175,14 +178,14 @@ class PoAppServiceImpl(
 
         results.sortWith(compareByDescending<PoStatResult> { it.fuzzyWords }.thenBy { it.filename })
 
-        output.parent?.createDirectories()
-        output.bufferedWriter().use { writer ->
+        resolvedOutput.parent?.createDirectories()
+        resolvedOutput.bufferedWriter().use { writer ->
             writer.write("Filename, Fuzzy Messages, Total Messages, Fuzzy Words, Total Words, Achievement\n")
             results.forEach { stat ->
                 writer.write("${stat.filename}, ${stat.fuzzyMessages}, ${stat.totalMessages}, ${stat.fuzzyWords}, ${stat.totalWords}, ${stat.achievement}\n")
             }
         }
-        logger.info("PO stats written to: $output")
+        logger.info("PO stats written to: $resolvedOutput")
     }
 
     private data class PoStatResult(

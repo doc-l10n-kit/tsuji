@@ -20,14 +20,11 @@ class TranslationAppServiceImplTest {
 
     @BeforeEach
     fun setup() {
-        val language: TsujiConfig.Translator.Language = mock()
-        whenever(language.source).thenReturn("en")
-        whenever(language.destination).thenReturn("ja")
+        val language: TsujiConfig.Language = mock()
+        whenever(language.from).thenReturn("en")
+        whenever(language.to).thenReturn("ja")
 
-        val translator: TsujiConfig.Translator = mock()
-        whenever(translator.language).thenReturn(language)
-
-        whenever(tsujiConfig.translator).thenReturn(translator)
+        whenever(tsujiConfig.language).thenReturn(language)
 
         target = TranslationAppServiceImpl(poTranslatorService, poDriver, tsujiConfig)
     }

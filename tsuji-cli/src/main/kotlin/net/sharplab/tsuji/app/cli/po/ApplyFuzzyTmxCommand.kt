@@ -15,8 +15,8 @@ class ApplyFuzzyTmxCommand(private val tmxAppService: TmxAppService) : BaseComma
     @CommandLine.Option(order = 1, names = ["--tmx", "-t"], description = ["fuzzy tmx"], required = true)
     private lateinit var tmx: Path
 
-    @CommandLine.Option(order = 2, names = ["--po", "-p"], description = ["po"], required = true)
-    private lateinit var po: Path
+    @CommandLine.Option(order = 2, names = ["--po", "-p"], description = ["po"])
+    private var po: Path? = null
 
     @CommandLine.Option(order = 9, names = ["--help", "-h"], description = ["print help"], usageHelp = true)
     private var help = false
