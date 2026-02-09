@@ -40,15 +40,25 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
 
     override fun updatePo(masterFile: Path, poFile: Path, format: String) {
         val command = getExecutable("po4a-updatepo")
+        val args = mutableListOf(
+            command,
+            "--msgmerge-opt", "--no-fuzzy-matching",
+            "--master-charset", "UTF-8",
+            "-f", format
+        )
+        if (format == "text") {
+            args.add("-o")
+            args.add("markdown")
+            args.add("-o")
+            args.add("neverwrap")
+        }
+        args.add("--master")
+        args.add(masterFile.toAbsolutePath().toString())
+        args.add("--po")
+        args.add(poFile.toAbsolutePath().toString())
+
         externalProcessDriver.execute(
-            command = listOf(
-                command,
-                "--msgmerge-opt", "--no-fuzzy-matching",
-                "--master-charset", "UTF-8",
-                "-f", format,
-                "--master", masterFile.toAbsolutePath().toString(),
-                "--po", poFile.toAbsolutePath().toString()
-            ),
+            command = args,
             env = getEnv(),
             timeoutValue = 5,
             timeoutUnit = TimeUnit.MINUTES
@@ -57,17 +67,28 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
 
     override fun translate(masterFile: Path, poFile: Path, localizedFile: Path, format: String) {
         val command = getExecutable("po4a-translate")
+        val args = mutableListOf(
+            command,
+            "--master-charset", "UTF-8",
+            "--localized-charset", "UTF-8",
+            "-f", format,
+            "--keep", "0"
+        )
+        if (format == "text") {
+            args.add("-o")
+            args.add("markdown")
+            args.add("-o")
+            args.add("neverwrap")
+        }
+        args.add("--master")
+        args.add(masterFile.toAbsolutePath().toString())
+        args.add("--localized")
+        args.add(localizedFile.toAbsolutePath().toString())
+        args.add("--po")
+        args.add(poFile.toAbsolutePath().toString())
+
         externalProcessDriver.execute(
-            command = listOf(
-                command,
-                "--master-charset", "UTF-8",
-                "--localized-charset", "UTF-8",
-                "-f", format,
-                "--keep", "0",
-                "--master", masterFile.toAbsolutePath().toString(),
-                "--localized", localizedFile.toAbsolutePath().toString(),
-                "--po", poFile.toAbsolutePath().toString()
-            ),
+            command = args,
             env = getEnv(),
             timeoutValue = 5,
             timeoutUnit = TimeUnit.MINUTES

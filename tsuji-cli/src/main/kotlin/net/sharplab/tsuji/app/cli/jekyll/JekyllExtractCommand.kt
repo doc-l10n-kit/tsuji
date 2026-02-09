@@ -12,6 +12,6 @@ import picocli.CommandLine
 class JekyllExtractCommand(private val poAppService: PoAppService) : BaseCommand() {
 
     override fun execute() {
-        poAppService.extractJekyllAdoc()
+        poAppService.extractJekyll()
     }
 }

@@ -99,20 +99,39 @@ class PoAppServiceImpl(
         po4aDriver.translate(masterFile, poFile, localizedFile, format)
     }
 
-    override fun extractJekyllAdoc(poBaseDir: Path?, sourceDir: Path?, overrideDir: Path?) {
+    override fun extractJekyll(poBaseDir: Path?, sourceDir: Path?, overrideDir: Path?) {
         val resolvedPoBaseDir = poBaseDir ?: Paths.get(tsujiConfig.po.baseDir)
         val resolvedSourceDir = sourceDir ?: Paths.get(tsujiConfig.jekyll.sourceDir)
         val resolvedOverrideDir = overrideDir ?: Paths.get(tsujiConfig.jekyll.overrideDir)
 
         withTempWorkDir { workDir ->
-            logger.info("Extracting AsciiDoc PO files in $resolvedPoBaseDir using Jekyll source in $workDir")
+            logger.info("Extracting Jekyll PO files in $resolvedPoBaseDir using Jekyll source in $workDir")
             jekyllDriver.prepareSource(resolvedSourceDir, workDir)
             jekyllDriver.applyOverrides(resolvedOverrideDir, workDir)
             
             if (!resolvedPoBaseDir.exists()) {
                 resolvedPoBaseDir.createDirectories()
             }
+
+            // 1. Extract AsciiDoc using Jekyll plugin (Existing logic)
+            logger.info("Extracting AsciiDoc PO files using Jekyll plugin")
             jekyllDriver.extractPo(workDir, resolvedPoBaseDir)
+
+            // 2. Extract Markdown and YAML using po4a
+            logger.info("Extracting Markdown and YAML PO files using po4a")
+            workDir.walk().forEach { file ->
+                if (!file.isRegularFile()) return@forEach
+                val relativePath = workDir.relativize(file)
+                val format = po4aDriver.determineFormat(file) ?: return@forEach
+
+                // Skip AsciiDoc here because it's already handled by Jekyll plugin
+                if (format == "asciidoc") return@forEach
+
+                val poFile = resolvedPoBaseDir.resolve("$relativePath.po")
+                logger.info("Updating PO file for $relativePath (format: $format)")
+                update(file, poFile, format)
+            }
+
             normalize(resolvedPoBaseDir)
         }
     }
