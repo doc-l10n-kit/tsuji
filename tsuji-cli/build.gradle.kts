@@ -49,7 +49,6 @@ dependencies {
 
     implementation(libs.quarkus.picocli)
     implementation(libs.quarkus.kotlin)
-    implementation(libs.quarkus.config.yaml)
     implementation(libs.quarkus.arc)
 
     implementation(libs.jgettext)

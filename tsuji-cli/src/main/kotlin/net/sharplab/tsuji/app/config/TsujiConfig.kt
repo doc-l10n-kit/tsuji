@@ -8,6 +8,10 @@ import java.util.Optional
 @ConfigMapping(prefix = "tsuji")
 interface TsujiConfig {
 
+    @get:WithName("version")
+    @get:WithDefault("0.1.0")
+    val version: String
+
     @get:WithName("rag")
     val rag: Rag
 
@@ -64,6 +68,22 @@ interface TsujiConfig {
             @get:WithName("destination")
             @get:WithDefault("ja")
             val destination: String
+        }
+    }
+
+    @get:WithName("git")
+    val git: Git
+
+    interface Git {
+        @get:WithName("user")
+        val user: User
+
+        interface User {
+            @get:WithName("name")
+            val name: Optional<String>
+
+            @get:WithName("email")
+            val email: Optional<String>
         }
     }
 }

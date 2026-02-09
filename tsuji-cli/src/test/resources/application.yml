@@ -1,8 +1,0 @@
-quarkus:
-  log:
-    level: INFO
-    category:
-      "io.quarkus":
-        level: INFO
-      "net.sharplab":
-        level: DEBUG
