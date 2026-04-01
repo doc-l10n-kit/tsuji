@@ -66,6 +66,7 @@ class PoAppServiceImpl(
                 }
             }
             poDriver.save(po, path)
+            gettextDriver.normalize(path)
         }
     }
 

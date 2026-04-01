@@ -1,5 +1,6 @@
 package net.sharplab.tsuji.app.service
 
+import net.sharplab.tsuji.core.driver.gettext.GettextDriver
 import net.sharplab.tsuji.core.driver.po.PoDriver
 import net.sharplab.tsuji.core.service.PoTranslatorService
 import net.sharplab.tsuji.app.config.TsujiConfig
@@ -16,6 +17,7 @@ import jakarta.enterprise.context.control.ActivateRequestContext
 class TranslationAppServiceImpl(
     private val poTranslatorService: PoTranslatorService,
     private val poDriver: PoDriver,
+    private val gettextDriver: GettextDriver,
     private val tsujiConfig: TsujiConfig
 ) : TranslationAppService {
 
@@ -47,6 +49,7 @@ class TranslationAppServiceImpl(
         val poFile = poDriver.load(filePath)
         val translated = poTranslatorService.translate(poFile, resolvedSourceLang, resolvedTargetLang, isAsciidoctor, useRag)
         poDriver.save(translated, filePath)
+        gettextDriver.normalize(filePath)
         logger.info("Finish translation: %s".format(filePath.absolutePathString()))
     }
 }

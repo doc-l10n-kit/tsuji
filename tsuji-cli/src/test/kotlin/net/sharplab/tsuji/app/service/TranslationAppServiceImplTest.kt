@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.app.service
 
 import net.sharplab.tsuji.app.config.TsujiConfig
+import net.sharplab.tsuji.core.driver.gettext.GettextDriver
 import net.sharplab.tsuji.core.driver.po.PoDriver
 import net.sharplab.tsuji.core.driver.po.PoDriverImpl
 import net.sharplab.tsuji.core.service.PoTranslatorService
@@ -16,6 +17,7 @@ class TranslationAppServiceImplTest {
     private lateinit var target: TranslationAppServiceImpl
     private val poTranslatorService: PoTranslatorService = mock()
     private val poDriver: PoDriver = mock()
+    private val gettextDriver: GettextDriver = mock()
     private val tsujiConfig: TsujiConfig = mock()
 
     @BeforeEach
@@ -26,7 +28,7 @@ class TranslationAppServiceImplTest {
 
         whenever(tsujiConfig.language).thenReturn(language)
 
-        target = TranslationAppServiceImpl(poTranslatorService, poDriver, tsujiConfig)
+        target = TranslationAppServiceImpl(poTranslatorService, poDriver, gettextDriver, tsujiConfig)
     }
 
     @Test
@@ -45,5 +47,6 @@ class TranslationAppServiceImplTest {
         verify(poDriver).load(poPath)
         verify(poTranslatorService).translate(dummyPo, "en", "ja", true, true)
         verify(poDriver).save(dummyPo, poPath)
+        verify(gettextDriver).normalize(poPath)
     }
 }
