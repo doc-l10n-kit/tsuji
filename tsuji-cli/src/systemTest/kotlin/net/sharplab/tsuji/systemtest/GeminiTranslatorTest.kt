@@ -1,8 +1,10 @@
 package net.sharplab.tsuji.systemtest
 
+import dev.langchain4j.data.segment.TextSegment
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
+import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.microprofile.config.ConfigProvider
 import org.junit.jupiter.api.Assumptions
@@ -17,6 +19,9 @@ class GeminiTranslatorTest {
 
     @Inject
     lateinit var translator: GeminiTranslator
+
+    @Inject
+    lateinit var vectorStoreDriver: VectorStoreDriver
 
     @BeforeEach
     fun checkApiKey() {
@@ -41,6 +46,11 @@ class GeminiTranslatorTest {
 
     @Test
     fun translate_withRag_shouldWork() {
+        // Add sample data to the vector store so RAG has something to retrieve
+        vectorStoreDriver.addAll(listOf(
+            TextSegment.from("Source: WebAuthn is a standard for secure web authentication. Target: WebAuthn はセキュアなWeb認証のための標準規格です。")
+        ))
+
         val texts = listOf("WebAuthn is a standard for secure web authentication.")
         val result = translator.translate(texts, "en", "ja", useRag = true)
 

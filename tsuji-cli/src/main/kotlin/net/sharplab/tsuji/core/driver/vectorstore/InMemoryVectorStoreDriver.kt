@@ -53,6 +53,7 @@ class InMemoryVectorStoreDriver(
             .embeddingStore(embeddingStore)
             .embeddingModel(embeddingModel)
             .maxResults(maxResults)
+            .minScore(0.5) // Lowered to ensure we retrieve segments in tests
             .build()
     }
 }

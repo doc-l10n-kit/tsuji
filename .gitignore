@@ -28,5 +28,5 @@ nbdist/
 
 
 ### Project Files ###
-application.local.yml
-**/config/application.yml
+**/application.local.properties
+**/config/application.properties

@@ -32,7 +32,7 @@ class JekyllBuildCommandTest {
 
         System.setProperty("tsuji.jekyll.source-dir", upstreamDir.toString())
         System.setProperty("tsuji.jekyll.destination-dir", destinationDir.toString())
-        System.setProperty("tsuji.jekyll.language", "ja")
+        System.setProperty("tsuji.language.to", "ja")
         System.setProperty("tsuji.po.base-dir", poBaseDir.toString())
 
         // When

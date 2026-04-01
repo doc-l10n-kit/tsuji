@@ -2,6 +2,7 @@ package net.sharplab.tsuji.core.driver.translator.gemini
 
 import dev.langchain4j.service.SystemMessage
 import dev.langchain4j.service.UserMessage
+import dev.langchain4j.service.V
 import io.quarkiverse.langchain4j.RegisterAiService
 import net.sharplab.tsuji.app.beans.TsujiRetrievalAugmentorSupplier
 
@@ -9,5 +10,5 @@ import net.sharplab.tsuji.app.beans.TsujiRetrievalAugmentorSupplier
 interface GeminiRAGTranslationService {
 
     @SystemMessage(fromResource = "prompts/translation-rag-system-prompt.txt")
-    fun translate(@UserMessage text: String, srcLang: String, dstLang: String): String
+    fun translate(@UserMessage text: String, @V("srcLang") srcLang: String, @V("dstLang") dstLang: String): String
 }
