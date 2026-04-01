@@ -30,3 +30,4 @@ nbdist/
 ### Project Files ###
 **/application.local.properties
 **/config/application.properties
+log/
