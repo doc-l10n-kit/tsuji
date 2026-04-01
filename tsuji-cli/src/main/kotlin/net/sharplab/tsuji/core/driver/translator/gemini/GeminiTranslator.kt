@@ -3,15 +3,17 @@ package net.sharplab.tsuji.core.driver.translator.gemini
 import net.sharplab.tsuji.core.driver.translator.Translator
 import org.slf4j.LoggerFactory
 import jakarta.enterprise.context.Dependent
+import jakarta.enterprise.inject.Typed
 import net.sharplab.tsuji.app.exception.TsujiAppException
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import java.util.Optional
 
 @Dependent
+@Typed(GeminiTranslator::class)
 class GeminiTranslator(
     private val geminiTranslationService: GeminiTranslationService,
     private val geminiRAGTranslationService: GeminiRAGTranslationService,
-    @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.api-key")
+    @param:ConfigProperty(name = "quarkus.langchain4j.ai.gemini.api-key")
     private val apiKey: Optional<String>
 ) : Translator {
 

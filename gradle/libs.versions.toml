@@ -8,6 +8,7 @@ assertj = "3.27.7"
 slf4j = "2.0.17"
 junit = "6.0.3"
 mockito-kotlin = "6.2.3"
+deepl-java = "1.4.0"
 jackson = "2.21.1"
 jackson3 = "3.0.4"
 jackson-annotations = "2.21"
@@ -24,6 +25,7 @@ langchain4j-embeddings-all-minilm-l6-v2-q = { group = "dev.langchain4j", name = 
 jgettext = { group = "org.fedorahosted.tennera", name = "jgettext", version.ref = "jgettext" }
 asciidoctorj = { group = "org.asciidoctor", name = "asciidoctorj", version.ref = "asciidoctorj" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+deepl-java = { group = "com.deepl.api", name = "deepl-java", version.ref = "deepl-java" }
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
 

@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.jgettext)
     implementation(libs.asciidoctorj)
     implementation(libs.jsoup)
+    implementation(libs.deepl.java)
     implementation(libs.jackson.module.kotlin)
 
     testImplementation(libs.quarkus.junit5)

@@ -73,6 +73,23 @@ interface TsujiConfig {
         val to: String
     }
 
+    @get:WithName("translator")
+    val translator: Translator
+
+    interface Translator {
+        @get:WithName("type")
+        @get:WithDefault("deepl")
+        val type: String
+
+        @get:WithName("deepl")
+        val deepl: DeepL
+
+        interface DeepL {
+            @get:WithName("api-key")
+            val apiKey: Optional<String>
+        }
+    }
+
     @get:WithName("git")
     val git: Git
 

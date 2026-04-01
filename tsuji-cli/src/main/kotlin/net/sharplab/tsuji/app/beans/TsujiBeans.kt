@@ -2,8 +2,6 @@ package net.sharplab.tsuji.app.beans
 
 import dev.langchain4j.model.embedding.EmbeddingModel
 import dev.langchain4j.model.embedding.onnx.allminilml6v2q.AllMiniLmL6V2QuantizedEmbeddingModel
-import dev.langchain4j.rag.DefaultRetrievalAugmentor
-import dev.langchain4j.rag.RetrievalAugmentor
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.context.Dependent
 import jakarta.enterprise.inject.Disposes
@@ -24,6 +22,9 @@ import net.sharplab.tsuji.core.driver.po4a.Po4aDriver
 import net.sharplab.tsuji.core.driver.po4a.Po4aDriverImpl
 import net.sharplab.tsuji.core.driver.tmx.TmxDriver
 import net.sharplab.tsuji.core.driver.tmx.TmxDriverImpl
+import net.sharplab.tsuji.core.driver.translator.Translator
+import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslator
+import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
 import net.sharplab.tsuji.core.driver.vectorstore.InMemoryVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import net.sharplab.tsuji.core.processor.AsciidoctorMessageProcessor
@@ -145,14 +146,31 @@ class TsujiBeans() {
     }
 
     @Produces
+    @ApplicationScoped
     fun vectorStoreDriver(embeddingModel: EmbeddingModel, tsujiConfig: TsujiConfig): VectorStoreDriver {
         return InMemoryVectorStoreDriver(embeddingModel, tsujiConfig.rag.indexPath)
     }
 
     @Produces
-    fun retrievalAugmentor(vectorStoreDriver: VectorStoreDriver): RetrievalAugmentor {
-        return DefaultRetrievalAugmentor.builder()
-            .contentRetriever(vectorStoreDriver.asContentRetriever())
-            .build()
+    @ApplicationScoped
+    fun translator(
+        geminiTranslator: GeminiTranslator,
+        deepLTranslator: DeepLTranslator,
+        tsujiConfig: TsujiConfig
+    ): Translator {
+        return when (tsujiConfig.translator.type.lowercase()) {
+            "deepl" -> {
+                logger.info("Using DeepL Translator")
+                deepLTranslator
+            }
+            "gemini" -> {
+                logger.info("Using Gemini Translator")
+                geminiTranslator
+            }
+            else -> {
+                logger.warn("Unknown translator type: ${tsujiConfig.translator.type}, defaulting to Gemini")
+                geminiTranslator
+            }
+        }
     }
 }
