@@ -58,6 +58,27 @@ interface TsujiConfig {
 
         @get:WithName("surge-domain-suffix")
         val surgeDomainSuffix: Optional<String>
+
+        @get:WithName("extract")
+        val extract: Extract
+
+        interface Extract {
+            @get:WithName("yaml")
+            val yaml: Yaml
+
+            @get:WithName("html")
+            val html: Html
+
+            interface Yaml {
+                @get:WithName("exclude")
+                val exclude: Optional<List<String>>
+            }
+
+            interface Html {
+                @get:WithName("include")
+                val include: Optional<List<String>>
+            }
+        }
     }
 
     @get:WithName("language")

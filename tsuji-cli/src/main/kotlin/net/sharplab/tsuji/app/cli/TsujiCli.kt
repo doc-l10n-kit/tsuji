@@ -2,6 +2,7 @@ package net.sharplab.tsuji.app.cli
 
 import io.quarkus.runtime.QuarkusApplication
 import io.quarkus.runtime.annotations.QuarkusMain
+import net.sharplab.tsuji.app.cli.config.ConfigCommand
 import picocli.CommandLine
 import picocli.CommandLine.IFactory
 import jakarta.inject.Inject
@@ -11,7 +12,8 @@ import jakarta.inject.Inject
     PoCommand::class,
     RagCommand::class,
     TmxCommand::class,
-    JekyllCommand::class
+    JekyllCommand::class,
+    ConfigCommand::class
 ])
 class TsujiCli : QuarkusApplication {
 
