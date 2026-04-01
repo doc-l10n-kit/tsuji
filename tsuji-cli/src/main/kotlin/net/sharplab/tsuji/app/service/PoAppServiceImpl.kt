@@ -122,10 +122,28 @@ class PoAppServiceImpl(
             workDir.walk().forEach { file ->
                 if (!file.isRegularFile()) return@forEach
                 val relativePath = workDir.relativize(file)
+                val relativePathStr = relativePath.toString()
                 val format = po4aDriver.determineFormat(file) ?: return@forEach
 
                 // Skip AsciiDoc here because it's already handled by Jekyll plugin
                 if (format == "asciidoc") return@forEach
+
+                // Apply extract filters
+                if (format == "yaml") {
+                    val excludeList = tsujiConfig.jekyll.extract.yaml.exclude.orElse(emptyList())
+                    if (excludeList.contains(relativePathStr)) {
+                        logger.debug("Skipping excluded YAML file: $relativePathStr")
+                        return@forEach
+                    }
+                }
+
+                if (format == "xhtml") {
+                    val includeList = tsujiConfig.jekyll.extract.html.include.orElse(emptyList())
+                    if (!includeList.contains(relativePathStr)) {
+                        logger.debug("Skipping non-included HTML file: $relativePathStr")
+                        return@forEach
+                    }
+                }
 
                 val poFile = resolvedPoBaseDir.resolve("$relativePath.po")
                 logger.info("Updating PO file for $relativePath (format: $format)")
