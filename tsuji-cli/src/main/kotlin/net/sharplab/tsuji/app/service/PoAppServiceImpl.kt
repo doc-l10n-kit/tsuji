@@ -114,11 +114,7 @@ class PoAppServiceImpl(
                 resolvedPoBaseDir.createDirectories()
             }
 
-            // 1. Extract AsciiDoc using Jekyll plugin (Existing logic)
-            logger.info("Extracting AsciiDoc PO files using Jekyll plugin")
-            jekyllDriver.extractPo(workDir, resolvedPoBaseDir)
-
-            // 2. Extract Markdown and YAML using po4a
+            // 1. Extract Markdown and YAML using po4a (before bundle install creates vendor/bundle)
             logger.info("Extracting Markdown and YAML PO files using po4a")
             workDir.walk().forEach { file ->
                 if (!file.isRegularFile()) return@forEach
@@ -126,7 +122,7 @@ class PoAppServiceImpl(
                 val relativePathStr = relativePath.toString()
                 val format = po4aDriver.determineFormat(file) ?: return@forEach
 
-                // Skip AsciiDoc here because it's already handled by Jekyll plugin
+                // Skip AsciiDoc here because it will be handled by Jekyll plugin
                 if (format == "asciidoc") return@forEach
 
                 // Apply extract filters
@@ -150,6 +146,10 @@ class PoAppServiceImpl(
                 logger.info("Updating PO file for $relativePath (format: $format)")
                 update(file, poFile, format)
             }
+
+            // 2. Extract AsciiDoc using Jekyll plugin (after po4a processing)
+            logger.info("Extracting AsciiDoc PO files using Jekyll plugin")
+            jekyllDriver.extractPo(workDir, resolvedPoBaseDir)
 
             normalize(resolvedPoBaseDir)
         }
