@@ -39,11 +39,13 @@ class PoDriverImplTest {
         val firstMessage = originalPo.messages.first { it.messageId.isNotEmpty() }
         val originalId = firstMessage.messageId
         val testString = "テスト翻訳"
-        firstMessage.messageString = testString
+        val modifiedMessage = firstMessage.copy(messageString = testString)
+        val updatedMessages = originalPo.messages.map { if (it === firstMessage) modifiedMessage else it }
+        val modifiedPo = originalPo.copy(messages = updatedMessages)
         val savePath = tempDir.resolve("test.po")
 
         // When
-        target.save(originalPo, savePath)
+        target.save(modifiedPo, savePath)
 
         // Then
         assertThat(savePath).exists()

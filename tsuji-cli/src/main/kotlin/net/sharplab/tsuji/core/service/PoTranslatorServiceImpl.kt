@@ -27,27 +27,35 @@ class PoTranslatorServiceImpl(
 
     override fun applyTmx(tmx: Tmx, po: Po): Po {
         val translationIndex = TranslationIndex.create(tmx, po.target)
-        val messages = po.messages
-        messages.filter { it.fuzzy || it.messageString.isEmpty() }.forEach {
-            val value = translationIndex[it.messageId]
-            if(value != null){
-                it.messageString = value
-                it.fuzzy = false
+        val updatedMessages = po.messages.map { msg ->
+            if (msg.fuzzy || msg.messageString.isEmpty()) {
+                val value = translationIndex[msg.messageId]
+                if (value != null) {
+                    msg.copy(messageString = value).also { it.fuzzy = false }
+                } else {
+                    msg
+                }
+            } else {
+                msg
             }
         }
-        return Po(po.target, messages)
+        return Po(po.target, updatedMessages, po.header)
     }
 
     override fun applyFuzzyTmx(fuzzyTmx: Tmx, po: Po): Po {
         val translationIndex = TranslationIndex.create(fuzzyTmx, po.target)
-        val messages = po.messages
-        messages.filter { it.fuzzy || it.messageString.isEmpty() }.forEach {
-            val value = translationIndex[it.messageId]
-            if(value != null){
-                it.messageString = value
-                it.fuzzy = true
+        val updatedMessages = po.messages.map { msg ->
+            if (msg.fuzzy || msg.messageString.isEmpty()) {
+                val value = translationIndex[msg.messageId]
+                if (value != null) {
+                    msg.copy(messageString = value).also { it.fuzzy = true }
+                } else {
+                    msg
+                }
+            } else {
+                msg
             }
         }
-        return Po(po.target, messages)
+        return Po(po.target, updatedMessages, po.header)
     }
 }

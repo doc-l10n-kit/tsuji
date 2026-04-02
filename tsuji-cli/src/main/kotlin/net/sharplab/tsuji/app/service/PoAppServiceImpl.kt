@@ -60,13 +60,15 @@ class PoAppServiceImpl(
         paths.forEach { path ->
             logger.debug("Processing: $path")
             val po = poDriver.load(path)
-            po.messages.forEach { msg ->
+            val updatedMessages = po.messages.map { msg ->
                 if (msg.fuzzy) {
-                    msg.messageString = ""
-                    msg.fuzzy = false
+                    msg.copy(messageString = "").also { it.fuzzy = false }
+                } else {
+                    msg
                 }
             }
-            poDriver.save(po, path)
+            val updatedPo = po.copy(messages = updatedMessages)
+            poDriver.save(updatedPo, path)
             poNormalizerService.normalize(path)
         }
     }

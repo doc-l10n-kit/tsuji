@@ -8,7 +8,7 @@ import java.io.File
 class PoMessage(
     val type: MessageType,
     val messageId: String,
-    var messageString: String,
+    val messageString: String,
     val sourceReferences: List<SourceReference>,
     private val _flags: MutableSet<PoFlag> = mutableSetOf(),
     val comments: List<String> = emptyList()
