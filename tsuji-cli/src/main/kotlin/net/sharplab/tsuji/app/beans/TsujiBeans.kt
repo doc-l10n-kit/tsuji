@@ -99,8 +99,8 @@ class TsujiBeans() {
     }
 
     @Produces
-    fun poNormalizerService(asciidoctor: Asciidoctor): PoNormalizerService {
-        return PoNormalizerServiceImpl(asciidoctor)
+    fun poNormalizerService(gettextDriver: GettextDriver): PoNormalizerService {
+        return PoNormalizerServiceImpl(gettextDriver)
     }
 
     @Produces

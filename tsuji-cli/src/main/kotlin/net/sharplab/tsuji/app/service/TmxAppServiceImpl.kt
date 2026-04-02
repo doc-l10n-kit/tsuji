@@ -25,6 +25,7 @@ class TmxAppServiceImpl(
     private val tmxDriver: TmxDriver,
     private val tmxService: TmxService,
     private val gettextDriver: GettextDriver,
+    private val poNormalizerService: net.sharplab.tsuji.core.service.PoNormalizerService,
     private val tsujiConfig: TsujiConfig
 ) : TmxAppService {
 
@@ -39,7 +40,7 @@ class TmxAppServiceImpl(
                 val poFile = poDriver.load(poPath)
                 val translated = poTranslatorService.applyTmx(confirmedTmxFile, poFile)
                 poDriver.save(translated, poPath)
-                gettextDriver.normalize(poPath)
+                poNormalizerService.normalize(poPath)
                 logger.info("Finish applying TMX: ${poPath.absolutePathString()}")
             }
             catch(e: RuntimeException){
@@ -63,7 +64,7 @@ class TmxAppServiceImpl(
             val poFile = poDriver.load(poPath)
             val translated = poTranslatorService.applyFuzzyTmx(fuzzyTmxFile, poFile)
             poDriver.save(translated, poPath)
-            gettextDriver.normalize(poPath)
+            poNormalizerService.normalize(poPath)
             logger.info("Finish applying fuzzy TMX: ${poPath.absolutePathString()}")
         }
 

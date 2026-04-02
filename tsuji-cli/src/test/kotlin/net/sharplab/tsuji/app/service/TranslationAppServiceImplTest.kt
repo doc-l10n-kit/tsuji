@@ -18,6 +18,7 @@ class TranslationAppServiceImplTest {
     private val poTranslatorService: PoTranslatorService = mock()
     private val poDriver: PoDriver = mock()
     private val gettextDriver: GettextDriver = mock()
+    private val poNormalizerService: net.sharplab.tsuji.core.service.PoNormalizerService = mock()
     private val tsujiConfig: TsujiConfig = mock()
 
     @BeforeEach
@@ -28,7 +29,7 @@ class TranslationAppServiceImplTest {
 
         whenever(tsujiConfig.language).thenReturn(language)
 
-        target = TranslationAppServiceImpl(poTranslatorService, poDriver, gettextDriver, tsujiConfig)
+        target = TranslationAppServiceImpl(poTranslatorService, poDriver, gettextDriver, poNormalizerService, tsujiConfig)
     }
 
     @Test
@@ -47,6 +48,6 @@ class TranslationAppServiceImplTest {
         verify(poDriver).load(poPath)
         verify(poTranslatorService).translate(dummyPo, "en", "ja", true, true)
         verify(poDriver).save(dummyPo, poPath)
-        verify(gettextDriver).normalize(poPath)
+        verify(poNormalizerService).normalize(poPath)
     }
 }

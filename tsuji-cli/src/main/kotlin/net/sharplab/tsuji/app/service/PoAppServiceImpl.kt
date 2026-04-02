@@ -20,6 +20,7 @@ class PoAppServiceImpl(
     private val po4aDriver: Po4aDriver,
     private val jekyllDriver: JekyllDriver,
     private val poService: PoService,
+    private val poNormalizerService: net.sharplab.tsuji.core.service.PoNormalizerService,
     private val tsujiConfig: TsujiConfig
 ) : PoAppService {
 
@@ -34,14 +35,14 @@ class PoAppServiceImpl(
             logger.info("Normalizing PO files in directory: $poPath")
             Files.walk(poPath).use { stream ->
                 stream.filter { it.extension == "po" }
-                    .forEach { 
+                    .forEach {
                         logger.debug("Normalizing: $it")
-                        gettextDriver.normalize(it) 
+                        poNormalizerService.normalize(it)
                     }
             }
         } else {
             logger.info("Normalizing PO file: $poPath")
-            gettextDriver.normalize(poPath)
+            poNormalizerService.normalize(poPath)
         }
     }
 
@@ -66,7 +67,7 @@ class PoAppServiceImpl(
                 }
             }
             poDriver.save(po, path)
-            gettextDriver.normalize(path)
+            poNormalizerService.normalize(path)
         }
     }
 
@@ -91,7 +92,7 @@ class PoAppServiceImpl(
         logger.info("Updating PO file $poFile from $masterFile (format: $format)")
         poFile.parent.createDirectories()
         po4aDriver.updatePo(masterFile, poFile, format, Paths.get(".").toAbsolutePath())
-        gettextDriver.normalize(poFile)
+        poNormalizerService.normalize(poFile)
     }
 
     override fun apply(masterFile: Path, poFile: Path, localizedFile: Path, format: String) {
@@ -146,7 +147,7 @@ class PoAppServiceImpl(
                 logger.info("Updating PO file for $relativePath (format: $format)")
                 poFile.parent.createDirectories()
                 po4aDriver.updatePo(file, poFile, format, workDir)
-                gettextDriver.normalize(poFile)
+                poNormalizerService.normalize(poFile)
             }
 
             // 2. Extract AsciiDoc using Jekyll plugin (after po4a processing)

@@ -23,6 +23,7 @@ class TmxAppServiceImplTest {
     private val tmxDriver: TmxDriver = mock()
     private val tmxService: TmxService = mock()
     private val gettextDriver: GettextDriver = mock()
+    private val poNormalizerService: net.sharplab.tsuji.core.service.PoNormalizerService = mock()
     private val tsujiConfig: TsujiConfig = mock()
 
     private val target = TmxAppServiceImpl(
@@ -31,6 +32,7 @@ class TmxAppServiceImplTest {
         tmxDriver,
         tmxService,
         gettextDriver,
+        poNormalizerService,
         tsujiConfig
     )
 

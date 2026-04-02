@@ -18,6 +18,7 @@ class TranslationAppServiceImpl(
     private val poTranslatorService: PoTranslatorService,
     private val poDriver: PoDriver,
     private val gettextDriver: GettextDriver,
+    private val poNormalizerService: net.sharplab.tsuji.core.service.PoNormalizerService,
     private val tsujiConfig: TsujiConfig
 ) : TranslationAppService {
 
@@ -49,7 +50,7 @@ class TranslationAppServiceImpl(
         val poFile = poDriver.load(filePath)
         val translated = poTranslatorService.translate(poFile, resolvedSourceLang, resolvedTargetLang, isAsciidoctor, useRag)
         poDriver.save(translated, filePath)
-        gettextDriver.normalize(filePath)
+        poNormalizerService.normalize(filePath)
         logger.info("Finish translation: %s".format(filePath.absolutePathString()))
     }
 }
