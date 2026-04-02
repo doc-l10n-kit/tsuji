@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.context.Dependent
 import jakarta.enterprise.inject.Disposes
 import jakarta.enterprise.inject.Produces
+import jakarta.enterprise.inject.Typed
 import jakarta.inject.Singleton
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.core.driver.adoc.AsciidocDriver
@@ -25,6 +26,8 @@ import net.sharplab.tsuji.core.driver.tmx.TmxDriverImpl
 import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
+import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
+import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.vectorstore.InMemoryVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
@@ -147,22 +150,23 @@ class TsujiBeans() {
     @Produces
     @ApplicationScoped
     fun translator(
-        geminiTranslator: GeminiTranslator,
-        deepLTranslator: DeepLTranslator,
-        tsujiConfig: TsujiConfig
+        tsujiConfig: TsujiConfig,
+        asciidoctorPreProcessor: AsciidoctorPreProcessor,
+        geminiTranslationService: GeminiTranslationService,
+        geminiRAGTranslationService: GeminiRAGTranslationService
     ): Translator {
         return when (tsujiConfig.translator.type.lowercase()) {
             "deepl" -> {
                 logger.info("Using DeepL Translator")
-                deepLTranslator
+                DeepLTranslator(tsujiConfig, asciidoctorPreProcessor)
             }
             "gemini" -> {
                 logger.info("Using Gemini Translator")
-                geminiTranslator
+                GeminiTranslator(geminiTranslationService, geminiRAGTranslationService, asciidoctorPreProcessor)
             }
             else -> {
                 logger.warn("Unknown translator type: ${tsujiConfig.translator.type}, defaulting to Gemini")
-                geminiTranslator
+                GeminiTranslator(geminiTranslationService, geminiRAGTranslationService, asciidoctorPreProcessor)
             }
         }
     }

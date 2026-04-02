@@ -1,7 +1,5 @@
 package net.sharplab.tsuji.core.driver.translator.deepl
 
-import jakarta.enterprise.context.Dependent
-import jakarta.enterprise.inject.Typed
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.app.exception.TsujiAppException
 import net.sharplab.tsuji.core.driver.translator.Translator
@@ -9,21 +7,24 @@ import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.driver.translator.processor.*
 import org.slf4j.LoggerFactory
 
-@Dependent
-@Typed(DeepLTranslator::class)
 class DeepLTranslator(
     private val tsujiConfig: TsujiConfig,
-    private val asciidoctorPreProcessor: AsciidoctorPreProcessor
+    private val asciidoctorPreProcessor: AsciidoctorPreProcessor,
+    deepLApiForTest: com.deepl.api.Translator? = null
 ) : Translator {
 
     private val logger = LoggerFactory.getLogger(DeepLTranslator::class.java)
 
-    private val deepLApi by lazy {
-        val apiKey = tsujiConfig.translator.deepl.apiKey
+    private val deepLApi: com.deepl.api.Translator by lazy {
+        deepLApiForTest ?: createDeepLApi(tsujiConfig)
+    }
+
+    private fun createDeepLApi(config: TsujiConfig): com.deepl.api.Translator {
+        val apiKey = config.translator.deepl.apiKey
         if (apiKey.isEmpty || apiKey.get().isBlank()) {
             throw TsujiAppException("DeepL API key is not configured. Please set the 'TSUJI_TRANSLATOR_DEEPL_API_KEY' environment variable or configure 'tsuji.translator.deepl.api-key' property.")
         }
-        com.deepl.api.Translator(apiKey.get())
+        return com.deepl.api.Translator(apiKey.get())
     }
 
     // プロセッサーパイプライン（順序が重要）

@@ -4,11 +4,7 @@ import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.driver.translator.processor.*
 import org.slf4j.LoggerFactory
-import jakarta.enterprise.context.Dependent
-import jakarta.enterprise.inject.Typed
 
-@Dependent
-@Typed(GeminiTranslator::class)
 class GeminiTranslator(
     private val geminiTranslationService: GeminiTranslationService,
     private val geminiRAGTranslationService: GeminiRAGTranslationService,
