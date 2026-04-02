@@ -27,7 +27,7 @@ import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
 import net.sharplab.tsuji.core.driver.vectorstore.InMemoryVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
-import net.sharplab.tsuji.core.processor.AsciidoctorPreProcessor
+import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
 import net.sharplab.tsuji.core.service.IndexingService
 import net.sharplab.tsuji.core.service.IndexingServiceImpl
 import net.sharplab.tsuji.core.service.PoNormalizerService

@@ -1,4 +1,4 @@
-package net.sharplab.tsuji.core.processor
+package net.sharplab.tsuji.core.driver.translator.processor
 
 import com.deepl.api.TextResult
 import net.sharplab.tsuji.core.model.po.MessageType

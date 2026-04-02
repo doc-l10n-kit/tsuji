@@ -1,4 +1,4 @@
-package net.sharplab.tsuji.core.processor
+package net.sharplab.tsuji.core.driver.translator.processor
 
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po

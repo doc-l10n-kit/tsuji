@@ -2,7 +2,7 @@ package net.sharplab.tsuji.core.driver.translator.gemini
 
 import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.model.po.Po
-import net.sharplab.tsuji.core.processor.*
+import net.sharplab.tsuji.core.driver.translator.processor.*
 import org.slf4j.LoggerFactory
 import jakarta.enterprise.context.Dependent
 import jakarta.enterprise.inject.Typed

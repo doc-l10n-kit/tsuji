@@ -5,7 +5,7 @@ import net.sharplab.tsuji.app.exception.TsujiAppException
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.processor.AsciidoctorPreProcessor
+import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
 import org.assertj.core.api.Assertions.assertThat
 import org.asciidoctor.Asciidoctor
 import org.junit.jupiter.api.AfterEach

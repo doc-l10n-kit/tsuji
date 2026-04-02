@@ -6,7 +6,7 @@ import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.app.exception.TsujiAppException
 import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.model.po.Po
-import net.sharplab.tsuji.core.processor.*
+import net.sharplab.tsuji.core.driver.translator.processor.*
 import org.slf4j.LoggerFactory
 
 @Dependent
