@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.SessionKey
 import org.asciidoctor.Asciidoctor
 import org.asciidoctor.Options
 import org.jsoup.Jsoup
@@ -8,6 +9,7 @@ import java.nio.file.Files
 
 /**
  * Preprocessing that converts Asciidoctor format messageId to HTML.
+ * Stores the HTML in session data for translation, keeping messageId unchanged.
  */
 class AsciidoctorPreProcessor(
     private val asciidoctor: Asciidoctor
@@ -48,8 +50,8 @@ class AsciidoctorPreProcessor(
                 else -> first.children().html()
             }
 
-            // Return new instance
-            message.copy(messageId = processedHtml)
+            // Store preprocessed HTML in session, keeping messageId unchanged
+            message.setSession(SessionKey.PREPROCESSED_TEXT, processedHtml)
         }
     }
 

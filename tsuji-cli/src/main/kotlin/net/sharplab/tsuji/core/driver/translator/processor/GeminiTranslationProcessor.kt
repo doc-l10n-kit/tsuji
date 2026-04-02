@@ -3,6 +3,7 @@ package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.SessionKey
 import net.sharplab.tsuji.core.util.MessageClassifier
 import org.slf4j.LoggerFactory
 
@@ -38,14 +39,17 @@ class GeminiTranslationProcessor(
                 // Jekyll Front Matter
                 MessageClassifier.isJekyllFrontMatter(msg.messageId) -> {
                     logger.info("Translating Jekyll Front Matter [${index + 1}/${messages.size}]: source=${context.srcLang}, target=${context.dstLang}")
-                    val translated = translateJekyllFrontMatter(msg.messageId, context.srcLang, context.dstLang, context.useRag)
+                    val textToTranslate = msg.getSession(SessionKey.PREPROCESSED_TEXT) ?: msg.messageId
+                    val translated = translateJekyllFrontMatter(textToTranslate, context.srcLang, context.dstLang, context.useRag)
                     msg.copyWithTranslation(messageString = translated, fuzzy = true)
                 }
                 // Normal translation
                 else -> {
-                    logger.info("Translating [${index + 1}/${messages.size}]: source=${context.srcLang}, target=${context.dstLang}, useRag=${context.useRag}, text='${msg.messageId.take(50)}'")
+                    // Use preprocessed text from session if available, otherwise use messageId
+                    val textToTranslate = msg.getSession(SessionKey.PREPROCESSED_TEXT) ?: msg.messageId
+                    logger.info("Translating [${index + 1}/${messages.size}]: source=${context.srcLang}, target=${context.dstLang}, useRag=${context.useRag}, text='${textToTranslate.take(50)}'")
                     // Escape braces to avoid LangChain4j prompt template "Variable not found" error
-                    val escapedText = msg.messageId.replace("{", "{{").replace("}", "}}")
+                    val escapedText = textToTranslate.replace("{", "{{").replace("}", "}}")
                     val translated = if (context.useRag) {
                         geminiRAGTranslationService.translate(escapedText, context.srcLang, context.dstLang)
                     } else {

@@ -89,8 +89,11 @@ internal class DeepLTranslatorPipelineTest {
             .describedAs("AsciidoctorPreProcessor should convert link: syntax to HTML")
             .contains("<a data-doc-l10n-kit-type=\"link\" data-doc-l10n-kit-target=\"https://example.com\">example site</a>")
 
-        // LinkTagMessageProcessorでAsciidoc構文に戻される
+        // LinkTagMessageProcessor converts back to Asciidoc syntax
         assertThat(result.messages).hasSize(1)
+        assertThat(result.messages[0].messageId)
+            .describedAs("messageId should remain unchanged (not converted to HTML)")
+            .isEqualTo("This is a link:https://example.com[example site].")
         assertThat(result.messages[0].messageString).isEqualTo("これは link:https://example.com[サンプルサイト] です。")
         assertThat(result.messages[0].fuzzy).isTrue()
     }

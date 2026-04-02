@@ -3,6 +3,7 @@ package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.SessionKey
 import org.asciidoctor.Asciidoctor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -41,7 +42,8 @@ internal class AsciidoctorPreProcessorTest {
         val result = target.process(listOf(message), context)
 
         assertThat(result).hasSize(1)
-        assertThat(result[0].messageId).isEqualTo("This is an <em>emphasized</em> string.")
+        assertThat(result[0].messageId).isEqualTo("This is an _emphasized_ string.")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo("This is an <em>emphasized</em> string.")
     }
 
     @Test
@@ -53,6 +55,7 @@ internal class AsciidoctorPreProcessorTest {
 
         assertThat(result).hasSize(1)
         assertThat(result[0].messageId).isEqualTo("This is an _emphasized_ string.")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isNull()
     }
 
     @Test
@@ -62,7 +65,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo(
+        assertThat(result[0].messageId).isEqualTo("This is a link:https://github.com/webauthn4j[link], to webauthn4j GitHub org.")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo(
             "This is a <a data-doc-l10n-kit-type=\"link\" data-doc-l10n-kit-target=\"https://github.com/webauthn4j\">link</a>, to webauthn4j GitHub org."
         )
     }
@@ -74,7 +78,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo(
+        assertThat(result[0].messageId).isEqualTo("You may wonder about Reactive Streams (https://www.reactive-streams.org/).")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo(
             "You may wonder about Reactive Streams ( <a data-doc-l10n-kit-type=\"link\" data-doc-l10n-kit-target=\"https://www.reactive-streams.org/\">https://www.reactive-streams.org/</a>)."
         )
     }
@@ -86,7 +91,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo(
+        assertThat(result[0].messageId).isEqualTo("Follow guidance in xref:titles-headings[Titles and headings]")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo(
             "Follow guidance in <a data-doc-l10n-kit-type=\"xref\" data-doc-l10n-kit-target=\"#titles-headings\">Titles and headings</a>"
         )
     }
@@ -98,7 +104,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo(
+        assertThat(result[0].messageId).isEqualTo("xref:test.adoc[Test doc]")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo(
             "<a data-doc-l10n-kit-type=\"xref\" data-doc-l10n-kit-target=\"test.adoc\">Test doc</a>"
         )
     }
@@ -110,7 +117,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo(
+        assertThat(result[0].messageId).isEqualTo("xref:test.adoc#section[Test doc]")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo(
             "<a data-doc-l10n-kit-type=\"xref\" data-doc-l10n-kit-target=\"test.adoc#section\">Test doc</a>"
         )
     }
@@ -122,7 +130,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo(
+        assertThat(result[0].messageId).isEqualTo("<<test-url,test-text>>")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo(
             "<a data-doc-l10n-kit-type=\"xref\" data-doc-l10n-kit-target=\"#test-url\">test-text</a>"
         )
     }
@@ -134,7 +143,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo(
+        assertThat(result[0].messageId).isEqualTo("<<test-url>>")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo(
             "<a data-doc-l10n-kit-type=\"xref\" data-doc-l10n-kit-target=\"#test-url\"></a>"
         )
     }
@@ -146,7 +156,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo(
+        assertThat(result[0].messageId).isEqualTo("image:quarkus-reactive-stack.png[alt=Quarkus is based on a reactive engine, 50%]")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo(
             "<span class=\"image\"><img src=\"quarkus-reactive-stack.png\" alt=\"Quarkus is based on a reactive engine\" width=\"50%\"></span>"
         )
     }
@@ -158,7 +169,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo(
+        assertThat(result[0].messageId).isEqualTo("`https://example.com`")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo(
             "<code> <a data-doc-l10n-kit-type=\"link\" data-doc-l10n-kit-target=\"https://example.com\">https://example.com</a></code>"
         )
     }
@@ -170,7 +182,8 @@ internal class AsciidoctorPreProcessorTest {
 
         val result = target.process(listOf(message), context)
 
-        assertThat(result[0].messageId).isEqualTo("(&gt;_&lt;)")
+        assertThat(result[0].messageId).isEqualTo("(>_<)")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isEqualTo("(&gt;_&lt;)")
     }
 
     @Test
@@ -185,9 +198,12 @@ internal class AsciidoctorPreProcessorTest {
         val result = target.process(messages, context)
 
         assertThat(result).hasSize(3)
-        assertThat(result[0].messageId).contains("<em>emphasized</em>")
-        assertThat(result[1].messageId).contains("<strong>strong</strong>")
-        assertThat(result[2].messageId).contains("<code>code</code>")
+        assertThat(result[0].messageId).isEqualTo("This is _emphasized_.")
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).contains("<em>emphasized</em>")
+        assertThat(result[1].messageId).isEqualTo("This is *strong*.")
+        assertThat(result[1].getSession(SessionKey.PREPROCESSED_TEXT)).contains("<strong>strong</strong>")
+        assertThat(result[2].messageId).isEqualTo("This is `code`.")
+        assertThat(result[2].getSession(SessionKey.PREPROCESSED_TEXT)).contains("<code>code</code>")
     }
 
     @Test
@@ -199,5 +215,6 @@ internal class AsciidoctorPreProcessorTest {
 
         assertThat(result).hasSize(1)
         assertThat(result[0].messageId).isEmpty()
+        assertThat(result[0].getSession(SessionKey.PREPROCESSED_TEXT)).isNull()
     }
 }

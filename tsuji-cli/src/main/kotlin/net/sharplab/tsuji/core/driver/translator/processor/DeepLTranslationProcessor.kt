@@ -5,6 +5,7 @@ import com.deepl.api.Formality
 import com.deepl.api.TextTranslationOptions
 import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslatorException
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.SessionKey
 import net.sharplab.tsuji.core.util.MessageClassifier
 import org.slf4j.LoggerFactory
 
@@ -58,7 +59,9 @@ class DeepLTranslationProcessor(
         // Jekyll Front Matter processing (individual translation)
         jekyllIndices.forEach { index ->
             logger.info("Translating Jekyll Front Matter [${index + 1}/${messages.size}]")
-            val translated = translateJekyllFrontMatter(messages[index].messageId, context.srcLang, context.dstLang, options)
+            val msg = messages[index]
+            val textToTranslate = msg.getSession(SessionKey.PREPROCESSED_TEXT) ?: msg.messageId
+            val translated = translateJekyllFrontMatter(textToTranslate, context.srcLang, context.dstLang, options)
             result[index] = result[index].copyWithTranslation(
                 messageString = translated,
                 fuzzy = true
@@ -67,7 +70,11 @@ class DeepLTranslationProcessor(
 
         // Normal translation (batch processing)
         if (normalIndices.isNotEmpty()) {
-            val normalTexts = normalIndices.map { messages[it].messageId }
+            val normalTexts = normalIndices.map {
+                val msg = messages[it]
+                // Use preprocessed text from session if available, otherwise use messageId
+                msg.getSession(SessionKey.PREPROCESSED_TEXT) ?: msg.messageId
+            }
             val textBatches = splitIntoBatches(normalTexts)
             logger.info("Translating ${normalTexts.size} normal texts in ${textBatches.size} batch(es) (${context.srcLang} -> ${context.dstLang})")
 
