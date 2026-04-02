@@ -1,0 +1,59 @@
+package net.sharplab.tsuji.core.processor
+
+import net.sharplab.tsuji.core.model.po.PoMessage
+import org.asciidoctor.Asciidoctor
+import org.asciidoctor.Options
+import org.jsoup.Jsoup
+import java.nio.file.Files
+
+/**
+ * AsciidoctorフォーマットのmessageIdをHTMLに変換する前処理。
+ */
+class AsciidoctorPreProcessor(
+    private val asciidoctor: Asciidoctor
+) : MessageProcessor, AutoCloseable {
+
+    private val tempDir = Files.createTempDirectory("asciidoc-templates-")
+
+    init {
+        val inputStream = this.javaClass.classLoader.getResourceAsStream("asciidoc-templates/inline_anchor.html.erb")
+        requireNotNull(inputStream) { "Asciidoc template resource not found: asciidoc-templates/inline_anchor.html.erb" }
+        val inlineAnchorTemplateFile = tempDir.toFile().resolve("inline_anchor.html.erb")
+        Files.copy(inputStream, inlineAnchorTemplateFile.toPath())
+    }
+
+    override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
+        // Asciidoctorでなければスキップ
+        if (!context.isAsciidoctor) {
+            return messages
+        }
+
+        // 各メッセージを処理
+        return messages.map { message ->
+            // messageIdが空ならスキップ
+            if (message.messageId.isEmpty()) {
+                return@map message
+            }
+
+            // AsciidoctorをHTMLに変換
+            val options = Options.builder()
+                .templateDirs(tempDir.toFile())
+                .build()
+            val document = asciidoctor.load(message.messageId, options)
+            document.attributes["relfilesuffix"] = ".adoc"
+            val html = document.convert()
+            val doc = Jsoup.parseBodyFragment(html)
+            val processedHtml = when (val first = doc.body().children().first()) {
+                null -> message.messageId
+                else -> first.children().html()
+            }
+
+            // 新しいインスタンスを返す
+            message.copy(messageId = processedHtml)
+        }
+    }
+
+    override fun close() {
+        tempDir.toFile().deleteRecursively()
+    }
+}

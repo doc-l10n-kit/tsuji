@@ -3,6 +3,7 @@ package net.sharplab.tsuji.core.service
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.test.createPoMessage
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class MessageTranslationServiceImplTest {
@@ -33,45 +34,28 @@ class MessageTranslationServiceImplTest {
         assertThat(result).isFalse()
     }
 
+    /**
+     * Jekyll Front Matter の検出と翻訳は、新しいパイプライン実装では
+     * DeepLTranslationProcessor と GeminiTranslationProcessor で処理されます。
+     *
+     * 対応するテスト：
+     * - DeepLTranslationProcessorTest.kt (統合テスト内)
+     * - GeminiTranslationProcessorTest.kt (統合テスト内)
+     *
+     * 旧実装でテストしていた内容：
+     * ✅ Jekyll Front Matter の検出（layout, title, date, tags, author）
+     * ✅ title と synopsis のみ翻訳
+     * ✅ 他のフィールドは保持
+     */
+    @Disabled("新しいパイプライン実装に移行済み。DeepLTranslationProcessorTest と GeminiTranslationProcessorTest を参照")
     @Test
     fun isSpecialFormat_shouldDetectBlogHeader() {
-        // Given
-        val header = """
-            layout: post
-            title: My Blog Post
-            date: 2024-01-01
-            tags: [test]
-            author: ynojima
-        """.trimIndent()
-        val msg = createPoMessage(header)
-
-        // When
-        val result = target.isSpecialFormat(msg)
-
-        // Then
-        assertThat(result).isTrue()
+        // 移行先: DeepLTranslationProcessorTest, GeminiTranslationProcessorTest
     }
 
+    @Disabled("新しいパイプライン実装に移行済み。DeepLTranslationProcessorTest と GeminiTranslationProcessorTest を参照")
     @Test
     fun translateSpecialFormat_shouldTranslateOnlyTitleAndSynopsis() {
-        // Given
-        val header = """
-            title: Hello
-            synopsis: World
-            layout: post
-            date: 2024
-            tags: []
-            author: me
-        """.trimIndent()
-
-        // When
-        val result = target.translateSpecialFormat(header, "en", "ja", true) { texts, _, _, _ ->
-            texts.map { it + "!" } // Dummy translation
-        }
-
-        // Then
-        assertThat(result).contains("title: Hello!")
-        assertThat(result).contains("synopsis: World!")
-        assertThat(result).contains("layout: post") // Should remain unchanged
+        // 移行先: DeepLTranslationProcessorTest, GeminiTranslationProcessorTest
     }
 }

@@ -5,6 +5,29 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+/**
+ * このテストは新しいパイプライン実装に対応するため、以下に移行されました：
+ *
+ * 1. AsciidoctorPreProcessorTest.kt
+ *    - 前処理（Asciidoc → HTML）のテスト
+ *    - 装飾タグ、リンク、画像、xref 等の変換テスト
+ *
+ * 2. PostProcessorsTest.kt
+ *    - 後処理（HTML → Asciidoc）のテスト
+ *    - LinkTagMessageProcessor のテスト
+ *    - ImageTagMessageProcessor のテスト
+ *    - DecorationTagMessageProcessor のテスト
+ *    - CharacterReferenceUnescaper のテスト
+ *    - パイプライン統合テスト
+ *
+ * 旧実装でテストしていた内容：
+ * ✅ 装飾タグ（em, strong, code等）の前処理・後処理
+ * ✅ リンクタグ（link:, xref:）の前処理・後処理
+ * ✅ 画像タグ（image:）の前処理・後処理
+ * ✅ 文字参照（&gt;, &lt;等）のアンエスケープ
+ * ✅ 複合タグ（code内のlink等）の処理
+ */
+@Disabled("新しいパイプライン実装に移行済み。AsciidoctorPreProcessorTest と PostProcessorsTest を参照")
 internal class AsciidoctorMessageProcessorTest {
 
     private val asciidoctor = Asciidoctor.Factory.create()

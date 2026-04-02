@@ -27,7 +27,7 @@ import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
 import net.sharplab.tsuji.core.driver.vectorstore.InMemoryVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
-import net.sharplab.tsuji.core.processor.AsciidoctorMessageProcessor
+import net.sharplab.tsuji.core.processor.AsciidoctorPreProcessor
 import net.sharplab.tsuji.core.service.IndexingService
 import net.sharplab.tsuji.core.service.IndexingServiceImpl
 import net.sharplab.tsuji.core.service.MessageTranslationService
@@ -97,11 +97,11 @@ class TsujiBeans() {
 
     @Produces
     @ApplicationScoped
-    fun asciidoctorMessageProcessor(asciidoctor: Asciidoctor): AsciidoctorMessageProcessor {
-        return AsciidoctorMessageProcessor(asciidoctor)
+    fun asciidoctorPreProcessor(asciidoctor: Asciidoctor): AsciidoctorPreProcessor {
+        return AsciidoctorPreProcessor(asciidoctor)
     }
 
-    fun shutdownAsciidoctorMessageProcessor(@Disposes processor: AsciidoctorMessageProcessor) {
+    fun shutdownAsciidoctorPreProcessor(@Disposes processor: AsciidoctorPreProcessor) {
         processor.close()
     }
 

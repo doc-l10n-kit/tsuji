@@ -1,58 +1,29 @@
 package net.sharplab.tsuji.core.driver.translator.deepl
 
-import net.sharplab.tsuji.app.exception.TsujiAppException
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import java.util.Optional
+import org.junit.jupiter.api.Disabled
 
-class DeepLTranslatorTest {
-
-    @Test
-    fun `translate should return empty list for empty input`() {
-        // Given
-        val target = DeepLTranslator(Optional.of("dummy-key"))
-
-        // When
-        val result = target.translate(emptyList(), "en", "ja", false)
-
-        // Then
-        assertThat(result).isEmpty()
-    }
-
-    @Test
-    fun `translate should throw exception when API key is missing`() {
-        // Given
-        val target = DeepLTranslator(Optional.empty())
-
-        // When & Then
-        val exception = assertThrows<TsujiAppException> {
-            target.translate(listOf("test"), "en", "ja", false)
-        }
-        assertThat(exception.message).contains("DeepL API key is not configured")
-    }
-
-    @Test
-    fun `translate should throw exception when API key is blank`() {
-        // Given
-        val target = DeepLTranslator(Optional.of("   "))
-
-        // When & Then
-        val exception = assertThrows<TsujiAppException> {
-            target.translate(listOf("test"), "en", "ja", false)
-        }
-        assertThat(exception.message).contains("DeepL API key is not configured")
-    }
-
-    @Test
-    fun `translate should throw exception when API key is empty string`() {
-        // Given
-        val target = DeepLTranslator(Optional.of(""))
-
-        // When & Then
-        val exception = assertThrows<TsujiAppException> {
-            target.translate(listOf("test"), "en", "ja", false)
-        }
-        assertThat(exception.message).contains("DeepL API key is not configured")
-    }
-}
+/**
+ * このテストは新しいパイプライン実装に対応するため、以下に移行されました：
+ *
+ * 1. DeepLTranslationProcessorTest.kt
+ *    - メッセージ処理ロジックのテスト（空入力、スキップ、分類等）
+ *    - Jekyll Front Matter の翻訳
+ *    - バッチ処理のロジック
+ *
+ * 2. DeepLTranslatorIntegrationTest.kt
+ *    - APIキーのバリデーション
+ *    - Po全体の翻訳フロー
+ *    - 設定の統合テスト
+ *
+ * 3. PostProcessorsTest.kt (AsciidoctorPreProcessorTest.kt も)
+ *    - Asciidoctor 前処理・後処理のテスト
+ *
+ * 旧実装でテストしていた内容：
+ * ✅ 空の入力 → 空のリストを返す → DeepLTranslatorIntegrationTest
+ * ✅ APIキーなし → 例外をスロー → DeepLTranslatorIntegrationTest
+ * ✅ APIキーが空白 → 例外をスロー → DeepLTranslatorIntegrationTest
+ * ✅ APIキーが空文字列 → 例外をスロー → DeepLTranslatorIntegrationTest
+ * ✅ 空文字列の入力 → 空文字列を返す → DeepLTranslationProcessorTest
+ */
+@Disabled("新しいパイプライン実装に移行済み。上記のテストクラスを参照")
+class DeepLTranslatorTest

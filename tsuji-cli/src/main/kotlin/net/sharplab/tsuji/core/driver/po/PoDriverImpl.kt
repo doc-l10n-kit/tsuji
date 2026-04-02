@@ -2,6 +2,7 @@ package net.sharplab.tsuji.core.driver.po
 
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
+import net.sharplab.tsuji.core.model.po.PoFlag
 import net.sharplab.tsuji.core.model.po.PoMessage
 import org.fedorahosted.tennera.jgettext.Catalog
 import org.fedorahosted.tennera.jgettext.Message
@@ -14,32 +15,38 @@ import java.nio.file.Path
 class PoDriverImpl : PoDriver {
     override fun load(path: Path): Po {
         val catalog = PoParser().parseCatalog(path.toFile())
-        val target = extractLanguage(catalog)
+        val (target, header) = extractHeader(catalog)
         val messages = catalog.map { item -> parseMessage(item) }
-        return Po(target, messages)
+        return Po(target, messages, header)
     }
 
-    private fun extractLanguage(catalog: Catalog): String {
-        return catalog.locateHeader()?.msgstr?.split("\n")
-            ?.associate { line ->
-                line.split(":", limit = 2).let {
-                    it.first().trim() to it.getOrElse(1) { "" }.trim()
+    private fun extractHeader(catalog: Catalog): Pair<String, Map<String, String>> {
+        val headerMap = catalog.locateHeader()?.msgstr?.split("\n")
+            ?.mapNotNull { line ->
+                val parts = line.split(":", limit = 2)
+                if (parts.size == 2) {
+                    parts[0].trim() to parts[1].trim()
+                } else {
+                    null
                 }
             }
-            ?.get("Language")
-            ?: "en_US"
+            ?.toMap() ?: emptyMap()
+
+        val target = headerMap["Language"] ?: "en_US"
+        return target to headerMap
     }
 
     private fun parseMessage(item: Message): PoMessage {
         val (type, comments) = parseComments(item.extractedComments.toList())
         val sourceReferences = parseSourceReferences(item.sourceReferences.toList())
+        val flags = item.formats.map { PoFlag.parse(it) }.toMutableSet()
 
         return PoMessage(
             type = type,
             messageId = item.msgid,
             messageString = item.msgstr,
             sourceReferences = sourceReferences,
-            fuzzy = item.isFuzzy,
+            _flags = flags,
             comments = comments
         )
     }
@@ -74,7 +81,7 @@ class PoDriverImpl : PoDriver {
         val catalog = Catalog()
 
         if (po.messages.all { it.messageId.isNotEmpty() }) {
-            catalog.addMessage(createHeaderMessage(po.target))
+            catalog.addMessage(createHeaderMessage(po.target, po.header))
         }
 
         po.messages.forEach { item ->
@@ -84,16 +91,28 @@ class PoDriverImpl : PoDriver {
         return catalog
     }
 
-    private fun createHeaderMessage(target: String): Message {
+    private fun createHeaderMessage(target: String, existingHeader: Map<String, String>): Message {
         return Message().apply {
             msgid = ""
-            msgstr = """
-                Language: $target
-                MIME-Version: 1.0
-                Content-Type: text/plain; charset=UTF-8
-                Content-Transfer-Encoding: 8bit
-                X-Generator: tsuji
-                """.trimIndent() + "\n"
+
+            // Use existing header if available, otherwise create minimal header
+            val headerMap = if (existingHeader.isNotEmpty()) {
+                existingHeader.toMutableMap().apply {
+                    // Always set Language to current target
+                    put("Language", target)
+                }
+            } else {
+                mutableMapOf(
+                    "Language" to target,
+                    "MIME-Version" to "1.0",
+                    "Content-Type" to "text/plain; charset=UTF-8",
+                    "Content-Transfer-Encoding" to "8bit",
+                    "X-Generator" to "tsuji"
+                )
+            }
+
+            // Build header string
+            msgstr = headerMap.entries.joinToString("\n") { "${it.key}: ${it.value}" } + "\n"
         }
     }
 
@@ -101,7 +120,11 @@ class PoDriverImpl : PoDriver {
         return Message().apply {
             msgid = item.messageId
             msgstr = item.messageString
-            isFuzzy = item.fuzzy
+
+            // Set all flags (including fuzzy, no-wrap, etc.)
+            item.flags.forEach { flag ->
+                formats.add(flag.value)
+            }
 
             if (item.type != MessageType.None) {
                 extractedComments.add(item.type.value)

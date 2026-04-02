@@ -5,5 +5,6 @@ package net.sharplab.tsuji.core.model.po
  */
 data class Po(
     val target: String,
-    val messages: List<PoMessage>
+    val messages: List<PoMessage>,
+    val header: Map<String, String> = emptyMap()
 )
