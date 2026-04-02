@@ -9,6 +9,6 @@ interface Po4aDriver {
      */
     fun determineFormat(path: Path): String?
 
-    fun updatePo(masterFile: Path, poFile: Path, format: String)
-    fun translate(masterFile: Path, poFile: Path, localizedFile: Path, format: String)
+    fun updatePo(masterFile: Path, poFile: Path, format: String, workingDirectory: Path? = null)
+    fun translate(masterFile: Path, poFile: Path, localizedFile: Path, format: String, workingDirectory: Path? = null)
 }

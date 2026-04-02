@@ -144,7 +144,9 @@ class PoAppServiceImpl(
 
                 val poFile = resolvedPoBaseDir.resolve("$relativePath.po")
                 logger.info("Updating PO file for $relativePath (format: $format)")
-                update(file, poFile, format)
+                poFile.parent.createDirectories()
+                po4aDriver.updatePo(file, poFile, format, workDir)
+                gettextDriver.normalize(poFile)
             }
 
             // 2. Extract AsciiDoc using Jekyll plugin (after po4a processing)
