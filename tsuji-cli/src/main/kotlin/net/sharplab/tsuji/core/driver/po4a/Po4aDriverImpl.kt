@@ -53,13 +53,13 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
             args.add("neverwrap")
         }
         args.add("--master")
-        args.add(workingDirectory.relativize(masterFile).toString())
+        args.add(workingDirectory.toAbsolutePath().normalize().relativize(masterFile.toAbsolutePath().normalize()).toString())
         args.add("--po")
-        args.add(workingDirectory.relativize(poFile).toString())
+        args.add(poFile.toAbsolutePath().toString())
 
         externalProcessDriver.execute(
             command = args,
-            directory = workingDirectory,
+            directory = workingDirectory.toAbsolutePath().normalize(),
             env = getEnv(),
             timeoutValue = 5,
             timeoutUnit = TimeUnit.MINUTES
@@ -82,15 +82,15 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
             args.add("neverwrap")
         }
         args.add("--master")
-        args.add(workingDirectory.relativize(masterFile).toString())
+        args.add(workingDirectory.toAbsolutePath().normalize().relativize(masterFile.toAbsolutePath().normalize()).toString())
         args.add("--localized")
-        args.add(workingDirectory.relativize(localizedFile).toString())
+        args.add(workingDirectory.toAbsolutePath().normalize().relativize(localizedFile.toAbsolutePath().normalize()).toString())
         args.add("--po")
-        args.add(workingDirectory.relativize(poFile).toString())
+        args.add(poFile.toAbsolutePath().toString())
 
         externalProcessDriver.execute(
             command = args,
-            directory = workingDirectory,
+            directory = workingDirectory.toAbsolutePath().normalize(),
             env = getEnv(),
             timeoutValue = 5,
             timeoutUnit = TimeUnit.MINUTES
