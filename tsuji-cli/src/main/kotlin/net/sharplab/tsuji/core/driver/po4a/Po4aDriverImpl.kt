@@ -38,7 +38,7 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
         return env
     }
 
-    override fun updatePo(masterFile: Path, poFile: Path, format: String, workingDirectory: Path?) {
+    override fun updatePo(masterFile: Path, poFile: Path, format: String, workingDirectory: Path) {
         val command = getExecutable("po4a-updatepo")
         val args = mutableListOf(
             command,
@@ -53,19 +53,9 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
             args.add("neverwrap")
         }
         args.add("--master")
-        val masterPath = if (workingDirectory != null) {
-            workingDirectory.relativize(masterFile).toString()
-        } else {
-            masterFile.toAbsolutePath().toString()
-        }
-        args.add(masterPath)
+        args.add(workingDirectory.relativize(masterFile).toString())
         args.add("--po")
-        val poPath = if (workingDirectory != null) {
-            workingDirectory.relativize(poFile).toString()
-        } else {
-            poFile.toAbsolutePath().toString()
-        }
-        args.add(poPath)
+        args.add(workingDirectory.relativize(poFile).toString())
 
         externalProcessDriver.execute(
             command = args,
@@ -76,7 +66,7 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
         )
     }
 
-    override fun translate(masterFile: Path, poFile: Path, localizedFile: Path, format: String, workingDirectory: Path?) {
+    override fun translate(masterFile: Path, poFile: Path, localizedFile: Path, format: String, workingDirectory: Path) {
         val command = getExecutable("po4a-translate")
         val args = mutableListOf(
             command,
@@ -92,26 +82,11 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
             args.add("neverwrap")
         }
         args.add("--master")
-        val masterPath = if (workingDirectory != null) {
-            workingDirectory.relativize(masterFile).toString()
-        } else {
-            masterFile.toAbsolutePath().toString()
-        }
-        args.add(masterPath)
+        args.add(workingDirectory.relativize(masterFile).toString())
         args.add("--localized")
-        val localizedPath = if (workingDirectory != null) {
-            workingDirectory.relativize(localizedFile).toString()
-        } else {
-            localizedFile.toAbsolutePath().toString()
-        }
-        args.add(localizedPath)
+        args.add(workingDirectory.relativize(localizedFile).toString())
         args.add("--po")
-        val poPath = if (workingDirectory != null) {
-            workingDirectory.relativize(poFile).toString()
-        } else {
-            poFile.toAbsolutePath().toString()
-        }
-        args.add(poPath)
+        args.add(workingDirectory.relativize(poFile).toString())
 
         externalProcessDriver.execute(
             command = args,

@@ -90,14 +90,14 @@ class PoAppServiceImpl(
     override fun update(masterFile: Path, poFile: Path, format: String) {
         logger.info("Updating PO file $poFile from $masterFile (format: $format)")
         poFile.parent.createDirectories()
-        po4aDriver.updatePo(masterFile, poFile, format)
+        po4aDriver.updatePo(masterFile, poFile, format, Paths.get(".").toAbsolutePath())
         gettextDriver.normalize(poFile)
     }
 
     override fun apply(masterFile: Path, poFile: Path, localizedFile: Path, format: String) {
         logger.info("Applying PO file $poFile to $masterFile -> $localizedFile (format: $format)")
         localizedFile.parent.createDirectories()
-        po4aDriver.translate(masterFile, poFile, localizedFile, format)
+        po4aDriver.translate(masterFile, poFile, localizedFile, format, Paths.get(".").toAbsolutePath())
     }
 
     override fun extractJekyll(poBaseDir: Path?, sourceDir: Path?, overrideDir: Path?) {
@@ -174,7 +174,7 @@ class PoAppServiceImpl(
                 
                 if (format != null) {
                     logger.info("Applying translation to $masterFile using $poFile (format: $format)")
-                    po4aDriver.translate(masterFile, poFile, masterFile, format)
+                    po4aDriver.translate(masterFile, poFile, masterFile, format, workDir)
                 } else {
                     logger.debug("Skipping $masterFile: unsupported format or explicitly ignored")
                 }
