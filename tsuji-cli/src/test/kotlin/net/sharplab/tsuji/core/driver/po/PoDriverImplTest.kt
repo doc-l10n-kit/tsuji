@@ -1,9 +1,13 @@
 package net.sharplab.tsuji.core.driver.po
 
+import net.sharplab.tsuji.core.model.po.MessageType
+import net.sharplab.tsuji.core.model.po.Po
+import net.sharplab.tsuji.core.model.po.PoMessage
 import net.sharplab.tsuji.test.TestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import java.io.File
 import java.nio.file.Path
 
 class PoDriverImplTest {
@@ -48,5 +52,138 @@ class PoDriverImplTest {
         val verifiedMessage = loadedPo.messages.find { it.messageId == originalId }
         assertThat(verifiedMessage).isNotNull
         assertThat(verifiedMessage?.messageString).isEqualTo(testString)
+    }
+
+    @Test
+    fun `should preserve type comments on save and load`(@TempDir tempDir: Path) {
+        // Given
+        val messages = listOf(
+            PoMessage(
+                type = MessageType("type: Hash Value: footer_text"),
+                messageId = "test message",
+                messageString = "test translation",
+                sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
+                fuzzy = false,
+                comments = emptyList()
+            )
+        )
+        val po = Po("ja_JP", messages)
+        val savePath = tempDir.resolve("type-test.po")
+
+        // When
+        target.save(po, savePath)
+        val loadedPo = target.load(savePath)
+
+        // Then - header message + actual message
+        assertThat(loadedPo.messages).hasSize(2)
+        val loadedMessage = loadedPo.messages.find { it.messageId == "test message" }
+        assertThat(loadedMessage).isNotNull
+        assertThat(loadedMessage?.type).isEqualTo(MessageType("type: Hash Value: footer_text"))
+    }
+
+    @Test
+    fun `should preserve non-type extracted comments on save and load`(@TempDir tempDir: Path) {
+        // Given
+        val messages = listOf(
+            PoMessage(
+                type = MessageType.PlainText,
+                messageId = "test message",
+                messageString = "test translation",
+                sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
+                fuzzy = false,
+                comments = listOf("translator comment", "another comment")
+            )
+        )
+        val po = Po("ja_JP", messages)
+        val savePath = tempDir.resolve("comments-test.po")
+
+        // When
+        target.save(po, savePath)
+        val loadedPo = target.load(savePath)
+
+        // Then
+        val loadedMessage = loadedPo.messages.find { it.messageId == "test message" }
+        assertThat(loadedMessage).isNotNull
+        assertThat(loadedMessage?.comments).containsExactlyInAnyOrder("translator comment", "another comment")
+    }
+
+    @Test
+    fun `should preserve both type and non-type comments`(@TempDir tempDir: Path) {
+        // Given
+        val messages = listOf(
+            PoMessage(
+                type = MessageType("type: Custom Type"),
+                messageId = "test message",
+                messageString = "test translation",
+                sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
+                fuzzy = true,
+                comments = listOf("translator note", "context note")
+            )
+        )
+        val po = Po("ja_JP", messages)
+        val savePath = tempDir.resolve("both-comments-test.po")
+
+        // When
+        target.save(po, savePath)
+        val loadedPo = target.load(savePath)
+
+        // Then
+        val loadedMessage = loadedPo.messages.find { it.messageId == "test message" }
+        assertThat(loadedMessage).isNotNull
+        assertThat(loadedMessage?.type).isEqualTo(MessageType("type: Custom Type"))
+        assertThat(loadedMessage?.comments).containsExactlyInAnyOrder("translator note", "context note")
+        assertThat(loadedMessage?.fuzzy).isTrue
+    }
+
+    @Test
+    fun `should handle unknown type comments gracefully`(@TempDir tempDir: Path) {
+        // Given
+        val messages = listOf(
+            PoMessage(
+                type = MessageType("type: Unknown Future Type"),
+                messageId = "test message",
+                messageString = "test translation",
+                sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
+                fuzzy = false,
+                comments = emptyList()
+            )
+        )
+        val po = Po("ja_JP", messages)
+        val savePath = tempDir.resolve("unknown-type-test.po")
+
+        // When
+        target.save(po, savePath)
+        val loadedPo = target.load(savePath)
+
+        // Then
+        val loadedMessage = loadedPo.messages.find { it.messageId == "test message" }
+        assertThat(loadedMessage).isNotNull
+        assertThat(loadedMessage?.type?.value).isEqualTo("type: Unknown Future Type")
+    }
+
+    @Test
+    fun `should preserve MessageType None when no type comment exists`(@TempDir tempDir: Path) {
+        // Given
+        val messages = listOf(
+            PoMessage(
+                type = MessageType.None,
+                messageId = "test message",
+                messageString = "test translation",
+                sourceReferences = emptyList(),
+                fuzzy = false,
+                comments = emptyList()
+            )
+        )
+        val po = Po("ja_JP", messages)
+        val savePath = tempDir.resolve("no-type-test.po")
+
+        // When
+        target.save(po, savePath)
+        val loadedPo = target.load(savePath)
+
+        // Then
+        val loadedMessage = loadedPo.messages.find { it.messageId == "test message" }
+        assertThat(loadedMessage).isNotNull
+        assertThat(loadedMessage?.type).isEqualTo(MessageType.None)
     }
 }

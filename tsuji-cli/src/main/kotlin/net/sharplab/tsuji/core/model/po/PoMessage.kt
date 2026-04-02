@@ -10,7 +10,8 @@ data class PoMessage(
     val messageId: String,
     var messageString: String,
     val sourceReferences: List<SourceReference>,
-    var fuzzy: Boolean
+    var fuzzy: Boolean,
+    val comments: List<String> = emptyList()
 ) {
     data class SourceReference(val file: File, val lineNumber: Int)
 }
