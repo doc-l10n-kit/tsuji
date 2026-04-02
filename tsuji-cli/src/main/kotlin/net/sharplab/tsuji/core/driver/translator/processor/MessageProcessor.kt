@@ -3,19 +3,19 @@ package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.po.PoMessage
 
 /**
- * PoMessageのリストを変換するプロセッサー。
- * Poをコンテキストとして参照しながら、PoMessageのバッチを変換する。
+ * Processor for transforming a list of PoMessages.
+ * Transforms batches of PoMessages while referencing Po as context.
  *
- * バッチ単位で処理することで、個別処理とバッチ処理（翻訳API等）を
- * 統一的に扱える。
+ * By processing in batches, individual processing and batch processing
+ * (such as translation APIs) can be handled uniformly.
  */
 interface MessageProcessor {
     /**
-     * メッセージのリストを処理する。
+     * Processes a list of messages.
      *
-     * @param messages 処理対象のメッセージリスト
-     * @param context 処理に必要なコンテキスト情報
-     * @return 処理後の新しいPoMessageリスト（元のインスタンスは変更しない）
+     * @param messages List of messages to process
+     * @param context Context information needed for processing
+     * @return New list of PoMessages after processing (does not modify original instances)
      */
     fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage>
 }

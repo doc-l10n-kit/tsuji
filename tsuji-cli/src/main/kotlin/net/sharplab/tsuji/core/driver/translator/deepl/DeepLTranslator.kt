@@ -27,14 +27,14 @@ class DeepLTranslator(
         return com.deepl.api.Translator(apiKey.get())
     }
 
-    // プロセッサーパイプライン（順序が重要）
+    // Processor pipeline (order is important)
     private val processors: List<MessageProcessor> by lazy {
         listOf(
-            // 前処理: Asciidoc → HTML
+            // Preprocessing: Asciidoc → HTML
             asciidoctorPreProcessor,
-            // 翻訳
+            // Translation
             DeepLTranslationProcessor(deepLApi),
-            // 後処理: HTML → Asciidoc
+            // Postprocessing: HTML → Asciidoc
             LinkTagMessageProcessor(),
             ImageTagMessageProcessor(),
             DecorationTagMessageProcessor("em", "_", "_"),
@@ -43,7 +43,7 @@ class DeepLTranslator(
             DecorationTagMessageProcessor("superscript", "^", "^"),
             DecorationTagMessageProcessor("subscript", "~", "~"),
             DecorationTagMessageProcessor("code", "`", "`"),
-            CharacterReferenceUnescaper()  // 最後にアンエスケープ
+            CharacterReferenceUnescaper()  // Unescape at the end
         )
     }
 
@@ -65,7 +65,7 @@ class DeepLTranslator(
             useRag = useRag
         )
 
-        // プロセッサーパイプラインを順次実行
+        // Execute processor pipeline sequentially
         val processedMessages = processors.fold(messages) { msgs, processor ->
             processor.process(msgs, context)
         }

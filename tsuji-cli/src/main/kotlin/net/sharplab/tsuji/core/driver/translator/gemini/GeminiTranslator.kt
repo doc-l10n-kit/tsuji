@@ -13,13 +13,13 @@ class GeminiTranslator(
 
     private val logger = LoggerFactory.getLogger(GeminiTranslator::class.java)
 
-    // プロセッサーパイプライン（順序が重要）
+    // Processor pipeline (order is important)
     private val processors = listOf(
-        // 前処理: Asciidoc → HTML
+        // Preprocessing: Asciidoc → HTML
         asciidoctorPreProcessor,
-        // 翻訳
+        // Translation
         GeminiTranslationProcessor(geminiTranslationService, geminiRAGTranslationService),
-        // 後処理: HTML → Asciidoc
+        // Postprocessing: HTML → Asciidoc
         LinkTagMessageProcessor(),
         ImageTagMessageProcessor(),
         DecorationTagMessageProcessor("em", "_", "_"),
@@ -28,7 +28,7 @@ class GeminiTranslator(
         DecorationTagMessageProcessor("superscript", "^", "^"),
         DecorationTagMessageProcessor("subscript", "~", "~"),
         DecorationTagMessageProcessor("code", "`", "`"),
-        CharacterReferenceUnescaper()  // 最後にアンエスケープ
+        CharacterReferenceUnescaper()  // Unescape at the end
     )
 
     override fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po {
@@ -45,7 +45,7 @@ class GeminiTranslator(
             useRag = useRag
         )
 
-        // プロセッサーパイプラインを順次実行
+        // Execute processor pipeline sequentially
         val processedMessages = processors.fold(messages) { msgs, processor ->
             processor.process(msgs, context)
         }

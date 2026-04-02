@@ -7,7 +7,7 @@ import org.jsoup.Jsoup
 import java.nio.file.Files
 
 /**
- * AsciidoctorフォーマットのmessageIdをHTMLに変換する前処理。
+ * Preprocessing that converts Asciidoctor format messageId to HTML.
  */
 class AsciidoctorPreProcessor(
     private val asciidoctor: Asciidoctor
@@ -23,19 +23,19 @@ class AsciidoctorPreProcessor(
     }
 
     override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
-        // Asciidoctorでなければスキップ
+        // Skip if not Asciidoctor
         if (!context.isAsciidoctor) {
             return messages
         }
 
-        // 各メッセージを処理
+        // Process each message
         return messages.map { message ->
-            // messageIdが空ならスキップ
+            // Skip if messageId is empty
             if (message.messageId.isEmpty()) {
                 return@map message
             }
 
-            // AsciidoctorをHTMLに変換
+            // Convert Asciidoctor to HTML
             val options = Options.builder()
                 .templateDirs(tempDir.toFile())
                 .build()
@@ -48,7 +48,7 @@ class AsciidoctorPreProcessor(
                 else -> first.children().html()
             }
 
-            // 新しいインスタンスを返す
+            // Return new instance
             message.copy(messageId = processedHtml)
         }
     }

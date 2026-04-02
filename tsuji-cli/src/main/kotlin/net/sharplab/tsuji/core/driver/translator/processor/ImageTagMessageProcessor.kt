@@ -7,7 +7,7 @@ import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 
 /**
- * HTMLの画像タグをAsciidoctor構文に変換する。
+ * Converts HTML image tags to Asciidoctor syntax.
  */
 class ImageTagMessageProcessor : MessageProcessor {
 

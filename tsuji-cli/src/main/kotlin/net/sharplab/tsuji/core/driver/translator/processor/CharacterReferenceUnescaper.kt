@@ -4,8 +4,8 @@ import net.sharplab.tsuji.core.model.po.PoMessage
 import org.jsoup.Jsoup
 
 /**
- * HTMLの文字参照（&amp;、&lt;等）をアンエスケープし、
- * 最後にHTMLタグを除去してテキストのみを抽出する。
+ * Unescapes HTML character references (&amp;, &lt;, etc.) and
+ * finally removes HTML tags to extract text only.
  */
 class CharacterReferenceUnescaper : MessageProcessor {
 
@@ -19,11 +19,11 @@ class CharacterReferenceUnescaper : MessageProcessor {
                 return@map message
             }
 
-            // 先にHTMLタグを除去してテキストのみを抽出
+            // First remove HTML tags and extract text only
             val doc = Jsoup.parseBodyFragment(message.messageString)
             val textOnly = doc.body().wholeText()
 
-            // その後、文字参照をアンエスケープ
+            // Then unescape character references
             val unescaped = textOnly
                 .replace("&amp;", "&")
                 .replace("&lt;", "<")

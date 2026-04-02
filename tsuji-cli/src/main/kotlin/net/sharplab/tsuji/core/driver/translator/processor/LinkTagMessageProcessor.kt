@@ -7,7 +7,7 @@ import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 
 /**
- * HTMLのリンクタグをAsciidoctor構文に変換する。
+ * Converts HTML link tags to Asciidoctor syntax.
  */
 class LinkTagMessageProcessor : MessageProcessor {
 

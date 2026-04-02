@@ -7,8 +7,8 @@ import net.sharplab.tsuji.core.util.MessageClassifier
 import org.slf4j.LoggerFactory
 
 /**
- * Gemini APIを使った翻訳プロセッサー。
- * 個別メッセージ処理（バッチ処理なし）。
+ * Translation processor using Gemini API.
+ * Processes individual messages (no batch processing).
  */
 class GeminiTranslationProcessor(
     private val geminiTranslationService: GeminiTranslationService,
@@ -20,17 +20,17 @@ class GeminiTranslationProcessor(
     override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
         return messages.mapIndexed { index, msg ->
             when {
-                // ヘッダーメッセージ（空のmessageId）
+                // Header message (empty messageId)
                 msg.messageId.isEmpty() -> {
                     logger.info("Skipping header message [${index + 1}/${messages.size}]")
                     msg
                 }
-                // 既に翻訳済み
+                // Already translated
                 msg.messageString.isNotEmpty() -> {
                     logger.info("Skipping already translated message [${index + 1}/${messages.size}]")
                     msg
                 }
-                // messageIdで埋めるべきメッセージ（翻訳不要）
+                // Message that should be filled with messageId (no translation needed)
                 MessageClassifier.shouldFillWithMessageId(msg) -> {
                     logger.info("Filling with messageId [${index + 1}/${messages.size}]: type=${msg.type.value}")
                     msg.copyWithTranslation(messageString = msg.messageId, fuzzy = false)
@@ -41,10 +41,10 @@ class GeminiTranslationProcessor(
                     val translated = translateJekyllFrontMatter(msg.messageId, context.srcLang, context.dstLang, context.useRag)
                     msg.copyWithTranslation(messageString = translated, fuzzy = true)
                 }
-                // 通常翻訳
+                // Normal translation
                 else -> {
                     logger.info("Translating [${index + 1}/${messages.size}]: source=${context.srcLang}, target=${context.dstLang}, useRag=${context.useRag}, text='${msg.messageId.take(50)}'")
-                    // LangChain4jプロンプトテンプレートの"Variable not found"エラーを避けるため、波括弧をエスケープ
+                    // Escape braces to avoid LangChain4j prompt template "Variable not found" error
                     val escapedText = msg.messageId.replace("{", "{{").replace("}", "}}")
                     val translated = if (context.useRag) {
                         geminiRAGTranslationService.translate(escapedText, context.srcLang, context.dstLang)
@@ -58,10 +58,10 @@ class GeminiTranslationProcessor(
     }
 
     /**
-     * Jekyll Front Matter形式を翻訳する。
-     * titleとsynopsisフィールドのみを翻訳し、他は保持する。
+     * Translates Jekyll Front Matter format.
+     * Only translates title and synopsis fields, preserving others.
      *
-     * 将来的には、プロンプトを使って構造化形式をより柔軟に処理できるように改善可能。
+     * In the future, this could be improved to handle structured formats more flexibly using prompts.
      */
     private fun translateJekyllFrontMatter(message: String, srcLang: String, dstLang: String, useRag: Boolean): String {
         val titleRegex = Regex("""^title:\s*(.*)$""", RegexOption.MULTILINE)
@@ -79,7 +79,7 @@ class GeminiTranslationProcessor(
 
         if (stringsToTranslate.isEmpty()) return message
 
-        // titleとsynopsisを個別に翻訳
+        // Translate title and synopsis individually
         val translated = stringsToTranslate.map { text ->
             val escapedText = text.replace("{", "{{").replace("}", "}}")
             if (useRag) {
@@ -89,7 +89,7 @@ class GeminiTranslationProcessor(
             }
         }
 
-        // 元のメッセージ内で置換
+        // Replace in the original message
         var translatedIndex = 0
         var replaced = message
         if (title.isNotEmpty()) {

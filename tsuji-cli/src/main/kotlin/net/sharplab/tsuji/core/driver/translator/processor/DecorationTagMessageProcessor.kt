@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
 
 /**
- * HTMLの装飾タグ（em、strong等）をAsciidoctor構文に変換する。
+ * Converts HTML decoration tags (em, strong, etc.) to Asciidoctor syntax.
  */
 class DecorationTagMessageProcessor(
     private val tagName: String,

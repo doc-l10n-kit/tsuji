@@ -3,15 +3,15 @@ package net.sharplab.tsuji.core.service
 import java.nio.file.Path
 
 /**
- * POファイルの正規化サービス。
- * POファイルのフォーマットを統一する（obsolete削除、エンコーディング、改行など）。
+ * PO file normalization service.
+ * Standardizes PO file format (remove obsolete entries, encoding, line breaks, etc.).
  */
 interface PoNormalizerService {
 
     /**
-     * POファイルを正規化する。
+     * Normalizes a PO file.
      *
-     * @param path POファイルのパス
+     * @param path Path to the PO file
      */
     fun normalize(path: Path)
 }

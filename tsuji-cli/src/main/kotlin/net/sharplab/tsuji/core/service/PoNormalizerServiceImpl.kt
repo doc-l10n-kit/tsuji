@@ -4,8 +4,8 @@ import net.sharplab.tsuji.core.driver.gettext.GettextDriver
 import java.nio.file.Path
 
 /**
- * PoNormalizerService の実装。
- * GettextDriver を使用してPOファイルを正規化する。
+ * Implementation of PoNormalizerService.
+ * Normalizes PO files using GettextDriver.
  */
 class PoNormalizerServiceImpl(
     private val gettextDriver: GettextDriver

@@ -9,8 +9,8 @@ import net.sharplab.tsuji.core.util.MessageClassifier
 import org.slf4j.LoggerFactory
 
 /**
- * DeepL APIを使った翻訳プロセッサー。
- * バッチ処理により効率的に翻訳する。
+ * Translation processor using DeepL API.
+ * Translates efficiently using batch processing.
  */
 class DeepLTranslationProcessor(
     private val deepLApi: com.deepl.api.Translator
@@ -29,7 +29,7 @@ class DeepLTranslationProcessor(
         options.tagHandling = "xml"
         options.formality = Formality.PreferMore
 
-        // メッセージを分類
+        // Classify messages
         val jekyllIndices = mutableListOf<Int>()
         val normalIndices = mutableListOf<Int>()
         val fillIndices = mutableListOf<Int>()
@@ -47,7 +47,7 @@ class DeepLTranslationProcessor(
 
         val result = messages.toMutableList()
 
-        // Fill処理（翻訳不要）
+        // Fill processing (no translation needed)
         fillIndices.forEach { index ->
             result[index] = result[index].copyWithTranslation(
                 messageString = result[index].messageId,
@@ -55,7 +55,7 @@ class DeepLTranslationProcessor(
             )
         }
 
-        // Jekyll Front Matter処理（個別翻訳）
+        // Jekyll Front Matter processing (individual translation)
         jekyllIndices.forEach { index ->
             logger.info("Translating Jekyll Front Matter [${index + 1}/${messages.size}]")
             val translated = translateJekyllFrontMatter(messages[index].messageId, context.srcLang, context.dstLang, options)
@@ -65,7 +65,7 @@ class DeepLTranslationProcessor(
             )
         }
 
-        // 通常翻訳（バッチ処理）
+        // Normal translation (batch processing)
         if (normalIndices.isNotEmpty()) {
             val normalTexts = normalIndices.map { messages[it].messageId }
             val textBatches = splitIntoBatches(normalTexts)
@@ -93,8 +93,8 @@ class DeepLTranslationProcessor(
     }
 
     /**
-     * Jekyll Front Matter形式を翻訳する。
-     * titleとsynopsisフィールドのみを翻訳し、他は保持する。
+     * Translates Jekyll Front Matter format.
+     * Only translates title and synopsis fields, preserving others.
      */
     private fun translateJekyllFrontMatter(
         message: String,
@@ -117,14 +117,14 @@ class DeepLTranslationProcessor(
 
         if (stringsToTranslate.isEmpty()) return message
 
-        // titleとsynopsisを翻訳
+        // Translate title and synopsis
         val translated = try {
             deepLApi.translateText(stringsToTranslate, srcLang, dstLang, options).map { it.text }
         } catch (e: DeepLException) {
             throw DeepLTranslatorException("DeepL API error occurred", e)
         }
 
-        // 元のメッセージ内で置換
+        // Replace in the original message
         var translatedIndex = 0
         var replaced = message
         if (title.isNotEmpty()) {
@@ -139,13 +139,13 @@ class DeepLTranslationProcessor(
     }
 
     /**
-     * テキストをDeepL APIの制限に従ってバッチに分割する。
+     * Splits texts into batches according to DeepL API limits.
      *
-     * DeepL APIの制限:
-     * - 1リクエストあたり最大50テキスト
-     * - リクエストボディの最大サイズ128 KiB
+     * DeepL API limits:
+     * - Maximum 50 texts per request
+     * - Maximum request body size of 128 KiB
      *
-     * JSONオーバーヘッドのマージンを確保するため、100,000バイト（約97 KiB）を制限として使用。
+     * Uses 100,000 bytes (approx. 97 KiB) as limit to ensure margin for JSON overhead.
      */
     private fun splitIntoBatches(texts: List<String>): List<List<String>> {
         val batches = mutableListOf<List<String>>()
@@ -155,11 +155,11 @@ class DeepLTranslationProcessor(
         texts.forEach { text ->
             val textSizeBytes = text.toByteArray(Charsets.UTF_8).size
 
-            // このテキストを追加すると制限を超えるかチェック
+            // Check if adding this text would exceed limits
             if (currentBatch.size >= MAX_TEXTS_PER_REQUEST ||
                 (currentBatch.isNotEmpty() && currentSizeBytes + textSizeBytes > MAX_TEXT_SIZE_BYTES)
             ) {
-                // 現在のバッチを保存し、新しいバッチを開始
+                // Save current batch and start a new one
                 batches.add(currentBatch)
                 currentBatch = mutableListOf()
                 currentSizeBytes = 0
@@ -169,7 +169,7 @@ class DeepLTranslationProcessor(
             currentSizeBytes += textSizeBytes
         }
 
-        // 最後のバッチを追加
+        // Add the last batch
         if (currentBatch.isNotEmpty()) {
             batches.add(currentBatch)
         }
@@ -178,17 +178,17 @@ class DeepLTranslationProcessor(
     }
 
     companion object {
-        // DeepL APIの制限
+        // DeepL API limits
         private const val MAX_TEXTS_PER_REQUEST = 50
-        // 128 KiBではなく100,000バイト（約97 KiB）を使用してJSONオーバーヘッドのマージンを確保
+        // Use 100,000 bytes (approx. 97 KiB) instead of 128 KiB to ensure margin for JSON overhead
         private const val MAX_TEXT_SIZE_BYTES = 100_000
 
-        // 翻訳しないタグ
+        // Tags to ignore (not translate)
         private val IGNORE_ELEMENT_NAMES = listOf(
             "abbr", "b", "cite", "code", "data", "dfn", "kbd", "rp", "rt", "rtc", "ruby", "samp", "time", "var"
         )
 
-        // 分割しないインライン要素タグ
+        // Inline element tags not to split
         private val INLINE_ELEMENT_NAMES = listOf(
             "a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i", "kbd",
             "mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span", "strong", "sub",
