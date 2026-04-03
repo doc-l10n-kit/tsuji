@@ -1,0 +1,212 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ja_JP\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.2.2\n"
+
+#. type: Title =
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:6
+msgid "Sample Guide"
+msgstr "サンプルガイド"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:13
+msgid "This is a sample text."
+msgstr "これはサンプルテキストです。"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:15
+msgid "This is a second paragraph."
+msgstr "これは2段落目です。"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:17
+msgid "This is a note section."
+msgstr "これはメモセクションです。"
+
+#. type: Title ==
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:19
+msgid "Header level2"
+msgstr "ヘッダー・レベル2"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:21
+msgid "This is a section next to header level2."
+msgstr "これはヘッダーレベル2の次のセクションです。"
+
+#. type: Title ===
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:23
+msgid "Header level3"
+msgstr "ヘッダー・レベル3"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:25
+msgid ""
+"This is a section with line breaks.\n"
+"Second line.\n"
+"Third line."
+msgstr ""
+"これは改行のあるセクションです。\n"
+"2行目\n"
+"3行目"
+
+#. type: Title ===
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:29
+msgid "List Title"
+msgstr "リスト・タイトル"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:30
+msgid "List level1"
+msgstr "リスト・レベル1"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:31
+msgid "List Level2-1"
+msgstr "リスト・レベル2-1"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:32
+msgid "List Level2-2"
+msgstr "リスト・レベル2-2"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:33
+msgid "List Level3"
+msgstr "リスト・レベル3"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:35
+msgid "block quoted text"
+msgstr "ブロック引用されたテキスト"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:37
+msgid "block quoted text second block"
+msgstr "ブロック引用されたテキストの2番目のブロック"
+
+#. type: Title ====
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:39
+msgid "Header Level4"
+msgstr "ヘッダー・レベル4"
+
+#. type: Title ====
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:41
+msgid "Source code with a title"
+msgstr "タイトル付のソースコード"
+
+#. type: Source
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:43
+msgid ""
+"@Path(\"/hello\")\n"
+"public class HelloWorldResource {\n"
+"\n"
+"    @GET\n"
+"    @Produces(MediaType.TEXT_PLAIN)\n"
+"    public String hello(String foo) {\n"
+"        return \"Hello world\"; <1>\n"
+"    }\n"
+"}"
+msgstr ""
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:54
+msgid "A footnote for source code"
+msgstr "ソースコードに対する脚注"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:56
+msgid "This is a tip"
+msgstr "これはTipsです。"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:58
+msgid "This is an important note."
+msgstr "これは重要なノートです。"
+
+#. type: Title ===
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:60
+msgid "Term definition"
+msgstr "単語の定義"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:62
+msgid "Term"
+msgstr "単語"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:63
+msgid "This is a description of a term."
+msgstr "これは単語の説明です。"
+
+#. type: Title ===
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:65
+msgid "Table"
+msgstr "テーブル"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:69
+msgid "Header1"
+msgstr "ヘッダー1"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:70
+msgid "Header2"
+msgstr "ヘッダー2"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:71
+msgid "Header3"
+msgstr "ヘッダー3"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:73
+msgid "Cell1"
+msgstr "セル1"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:81
+msgid "✓"
+msgstr "✓"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:75
+msgid "Note1"
+msgstr "ノート1"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:77
+msgid "Cell2"
+msgstr "セル2"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:78
+msgid "✗"
+msgstr "✗"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:79
+msgid "Note2"
+msgstr "ノート2"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:80
+msgid "Cell3"
+msgstr "セル3"
+
+#. type: Table
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:82
+msgid "Note3"
+msgstr "ノート3"
+
+#. type: Plain Text
+#: C:/Users/ynojima/workspace/tsuji/build/resources/test/adoc/sample.adoc:86
+msgid "This is a sentence next to a table"
+msgstr "これはテーブルの次の文章です"

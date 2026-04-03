@@ -24,8 +24,9 @@ They were not merely translators of language. They served as a **"Gateway of Kno
 
 This is a multi-module Gradle project consisting of:
 
-- **[tsuji-cli](./tsuji-cli)**: The main CLI application for PO file management, statistical analysis, and machine translation powered by LangChain4j.
-- **[tsuji-tmx](./tsuji-tmx)**: A high-performance Kotlin library for handling TMX files, built with Jackson.
+- **tsuji (root)**: The main CLI application for PO file management, statistical analysis, and machine translation powered by LangChain4j.
+- **[tsuji-po](./tsuji-po)**: A Kotlin library for handling PO (Portable Object) files, built with jgettext.
+- **[tsuji-tmx](./tsuji-tmx)**: A Kotlin library for handling TMX (Translation Memory eXchange) files, built with Jackson.
 
 ## Getting Started
 
@@ -48,20 +49,25 @@ This is a multi-module Gradle project consisting of:
 You can run the CLI in development mode using Quarkus:
 
 ```bash
-./gradlew :tsuji-cli:quarkusDev --quarkus-args='<args>'
+./gradlew quarkusDev --quarkus-args='<args>'
+```
+
+Or run the built JAR:
+
+```bash
+java -jar build/tsuji.jar <command> [options]
 ```
 
 ### Running Tests
 
 ```bash
-./gradlew test                  # Run unit tests
-./gradlew :tsuji-cli:systemTest # Run system tests (CLI behavior)
+./gradlew test       # Run all unit tests
+./gradlew systemTest # Run system tests (CLI behavior)
 ```
 
 ## Documentation
 
-- **[Design Document](./tsuji-cli/design-doc.md)**: Detailed overview of the architecture and core components (Japanese).
-- **[CLI Reference](./tsuji-cli/README.md)**: Comprehensive guide on how to use the `tsuji` commands.
+- **[Design Document](./design-doc.md)**: Detailed overview of the architecture and core components (Japanese).
 
 ## License
 

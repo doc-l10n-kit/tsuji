@@ -7,5 +7,5 @@ pluginManagement {
 }
 rootProject.name = "tsuji"
 
-include("tsuji-cli")
 include("tsuji-tmx")
+include("tsuji-po")

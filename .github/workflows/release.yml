@@ -77,7 +77,7 @@ jobs:
         gh release create ${{ env.TAG_NAME }} \
           --title "Release ${{ env.VERSION }}" \
           --generate-notes \
-          tsuji-cli/build/tsuji.jar
+          build/tsuji.jar
 
     - name: Prepare for next development cycle
       run: |
