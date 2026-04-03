@@ -33,12 +33,23 @@ class TmxAppServiceImpl(
 
     override fun applyConfirmedTmx(confirmedTmx: Path, po: Path?) {
         val resolvedPo = po ?: Paths.get(tsujiConfig.po.baseDir)
+
+        // Load TMX once
+        logger.info("Loading TMX file: ${confirmedTmx.absolutePathString()}")
+        val confirmedTmxFile = tmxDriver.load(confirmedTmx)
+
+        // Build translation index once
+        logger.info("Building translation index from TMX")
+        val translationIndex = net.sharplab.tsuji.tmx.index.TranslationIndex.create(
+            confirmedTmxFile,
+            tsujiConfig.language.to
+        )
+
         fun doApplyTmx(poPath: Path){
             try{
                 logger.info("Start applying TMX: ${poPath.absolutePathString()}")
-                val confirmedTmxFile = tmxDriver.load(confirmedTmx)
                 val poFile = poDriver.load(poPath)
-                val translated = poTranslatorService.applyTmx(confirmedTmxFile, poFile)
+                val translated = poTranslatorService.applyTmxWithIndex(translationIndex, poFile, fuzzy = false)
                 poDriver.save(translated, poPath)
                 poNormalizerService.normalize(poPath)
                 logger.info("Finish applying TMX: ${poPath.absolutePathString()}")
@@ -58,11 +69,22 @@ class TmxAppServiceImpl(
 
     override fun applyFuzzyTmx(fuzzyTmx: Path, po: Path?) {
         val resolvedPo = po ?: Paths.get(tsujiConfig.po.baseDir)
+
+        // Load TMX once
+        logger.info("Loading fuzzy TMX file: ${fuzzyTmx.absolutePathString()}")
+        val fuzzyTmxFile = tmxDriver.load(fuzzyTmx)
+
+        // Build translation index once
+        logger.info("Building translation index from fuzzy TMX")
+        val translationIndex = net.sharplab.tsuji.tmx.index.TranslationIndex.create(
+            fuzzyTmxFile,
+            tsujiConfig.language.to
+        )
+
         fun doApplyTmx(poPath: Path){
             logger.info("Start applying fuzzy TMX: ${poPath.absolutePathString()}")
-            val fuzzyTmxFile = tmxDriver.load(fuzzyTmx)
             val poFile = poDriver.load(poPath)
-            val translated = poTranslatorService.applyFuzzyTmx(fuzzyTmxFile, poFile)
+            val translated = poTranslatorService.applyTmxWithIndex(translationIndex, poFile, fuzzy = true)
             poDriver.save(translated, poPath)
             poNormalizerService.normalize(poPath)
             logger.info("Finish applying fuzzy TMX: ${poPath.absolutePathString()}")
@@ -71,6 +93,7 @@ class TmxAppServiceImpl(
         Files.walk(resolvedPo).use { stream ->
             stream.filter { it.extension == "po" }
                 .filter{ !it.isDirectory() }
+                .parallel()
                 .forEach(::doApplyTmx)
         }
     }

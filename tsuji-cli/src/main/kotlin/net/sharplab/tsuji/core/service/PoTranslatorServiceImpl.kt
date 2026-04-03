@@ -27,28 +27,20 @@ class PoTranslatorServiceImpl(
 
     override fun applyTmx(tmx: Tmx, po: Po): Po {
         val translationIndex = TranslationIndex.create(tmx, po.target)
-        val updatedMessages = po.messages.map { msg ->
-            if (msg.fuzzy || msg.messageString.isEmpty()) {
-                val value = translationIndex[msg.messageId]
-                if (value != null) {
-                    msg.copy(messageString = value).also { it.fuzzy = false }
-                } else {
-                    msg
-                }
-            } else {
-                msg
-            }
-        }
-        return Po(po.target, updatedMessages, po.header)
+        return applyTmxWithIndex(translationIndex, po, fuzzy = false)
     }
 
     override fun applyFuzzyTmx(fuzzyTmx: Tmx, po: Po): Po {
         val translationIndex = TranslationIndex.create(fuzzyTmx, po.target)
+        return applyTmxWithIndex(translationIndex, po, fuzzy = true)
+    }
+
+    override fun applyTmxWithIndex(translationIndex: TranslationIndex, po: Po, fuzzy: Boolean): Po {
         val updatedMessages = po.messages.map { msg ->
             if (msg.fuzzy || msg.messageString.isEmpty()) {
                 val value = translationIndex[msg.messageId]
                 if (value != null) {
-                    msg.copy(messageString = value).also { it.fuzzy = true }
+                    msg.copy(messageString = value).also { it.fuzzy = fuzzy }
                 } else {
                     msg
                 }
