@@ -20,7 +20,7 @@ class DecorationTagMessageProcessor(
         }
 
         return messages.map { message ->
-            if (message.messageString.isEmpty()) {
+            if (message.isHeader || message.messageString.isEmpty()) {
                 return@map message
             }
 

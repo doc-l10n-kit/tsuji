@@ -21,8 +21,8 @@ class GeminiTranslationProcessor(
     override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
         return messages.mapIndexed { index, msg ->
             when {
-                // Header message (empty messageId)
-                msg.messageId.isEmpty() -> {
+                // Header message
+                msg.isHeader -> {
                     logger.info("Skipping header message [${index + 1}/${messages.size}]")
                     msg
                 }

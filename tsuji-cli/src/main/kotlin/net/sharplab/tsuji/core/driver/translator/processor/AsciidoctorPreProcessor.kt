@@ -32,8 +32,7 @@ class AsciidoctorPreProcessor(
 
         // Process each message
         return messages.map { message ->
-            // Skip if messageId is empty
-            if (message.messageId.isEmpty()) {
+            if (message.isHeader) {
                 return@map message
             }
 

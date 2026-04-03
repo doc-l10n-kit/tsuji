@@ -20,7 +20,7 @@ internal class ImageTagMessageProcessorTest {
 
     private fun createMessage(messageString: String) = PoMessage(
         type = MessageType.PlainText,
-        messageId = "",
+        messageId = "test",
         messageString = messageString,
         sourceReferences = emptyList()
     )

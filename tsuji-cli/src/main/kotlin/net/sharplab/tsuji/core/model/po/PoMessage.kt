@@ -26,6 +26,12 @@ class PoMessage(
         get() = _flags.toSet()
 
     /**
+     * Returns true if this message is the PO file header (msgid is empty).
+     */
+    val isHeader: Boolean
+        get() = messageId.isEmpty()
+
+    /**
      * Convenience property for fuzzy flag.
      * Getter checks if Fuzzy flag is in flags set.
      * Setter adds or removes Fuzzy flag from flags set.

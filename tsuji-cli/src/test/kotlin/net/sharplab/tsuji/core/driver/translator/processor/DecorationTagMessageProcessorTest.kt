@@ -18,7 +18,7 @@ internal class DecorationTagMessageProcessorTest {
 
     private fun createMessage(messageString: String) = PoMessage(
         type = MessageType.PlainText,
-        messageId = "",
+        messageId = "test",
         messageString = messageString,
         sourceReferences = emptyList()
     )

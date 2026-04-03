@@ -80,8 +80,32 @@ class PoDriverImpl : PoDriver {
     private fun buildCatalog(po: Po): Catalog {
         val catalog = Catalog()
 
-        if (po.messages.all { it.messageId.isNotEmpty() }) {
-            catalog.addMessage(createHeaderMessage(po.target, po.header))
+        // If no header message exists in po.messages, create one from po.header
+        if (po.messages.none { it.isHeader }) {
+            val headerMessage = Message()
+
+            // Use existing header if available, otherwise create minimal header
+            val headerMap = if (po.header.isNotEmpty()) {
+                po.header.toMutableMap().apply {
+                    // Always set Language to current target
+                    put("Language", po.target)
+                }
+            } else {
+                mutableMapOf(
+                    "Language" to po.target,
+                    "MIME-Version" to "1.0",
+                    "Content-Type" to "text/plain; charset=UTF-8",
+                    "Content-Transfer-Encoding" to "8bit",
+                    "X-Generator" to "doc-l10n-kit"
+                )
+            }
+
+            // Build header string
+            val headerValues = headerMap.entries.joinToString("\n") { "${it.key}: ${it.value}" } + "\n"
+
+            headerMessage.msgid = ""
+            headerMessage.msgstr = headerValues
+            catalog.addMessage(headerMessage)
         }
 
         po.messages.forEach { item ->
@@ -89,31 +113,6 @@ class PoDriverImpl : PoDriver {
         }
 
         return catalog
-    }
-
-    private fun createHeaderMessage(target: String, existingHeader: Map<String, String>): Message {
-        return Message().apply {
-            msgid = ""
-
-            // Use existing header if available, otherwise create minimal header
-            val headerMap = if (existingHeader.isNotEmpty()) {
-                existingHeader.toMutableMap().apply {
-                    // Always set Language to current target
-                    put("Language", target)
-                }
-            } else {
-                mutableMapOf(
-                    "Language" to target,
-                    "MIME-Version" to "1.0",
-                    "Content-Type" to "text/plain; charset=UTF-8",
-                    "Content-Transfer-Encoding" to "8bit",
-                    "X-Generator" to "tsuji"
-                )
-            }
-
-            // Build header string
-            msgstr = headerMap.entries.joinToString("\n") { "${it.key}: ${it.value}" } + "\n"
-        }
     }
 
     private fun createMessage(item: PoMessage): Message {
