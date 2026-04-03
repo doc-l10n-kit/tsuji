@@ -60,12 +60,20 @@ class PoDriverImpl : PoDriver {
     private fun parseSourceReferences(refs: List<String>): List<PoMessage.SourceReference> {
         return refs.mapNotNull { ref ->
             val parts = ref.split(':', limit = 2)
-            if (parts.size == 2) {
-                parts[1].toIntOrNull()?.let { lineNumber ->
-                    PoMessage.SourceReference(File(parts[0]), lineNumber)
+            when {
+                // Format: "file:lineNumber"
+                parts.size == 2 && parts[1].toIntOrNull() != null -> {
+                    PoMessage.SourceReference(File(parts[0]), parts[1].toInt())
                 }
-            } else {
-                null
+                // Format: "file" (no line number)
+                parts.size == 1 -> {
+                    PoMessage.SourceReference(File(parts[0]), null)
+                }
+                // Format: "file:nonNumeric" (treat as filename without line number)
+                parts.size == 2 -> {
+                    PoMessage.SourceReference(File(ref), null)
+                }
+                else -> null
             }
         }
     }
@@ -132,7 +140,11 @@ class PoDriverImpl : PoDriver {
                 extractedComments.add(comment)
             }
             item.sourceReferences.forEach { ref ->
-                sourceReferences.add("${ref.file.path}:${ref.lineNumber}")
+                if (ref.lineNumber != null) {
+                    sourceReferences.add("${ref.file.path}:${ref.lineNumber}")
+                } else {
+                    sourceReferences.add(ref.file.path)
+                }
             }
         }
     }

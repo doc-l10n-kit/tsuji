@@ -116,5 +116,5 @@ class PoMessage(
         return "PoMessage(type=$type, messageId='$messageId', messageString='$messageString', sourceReferences=$sourceReferences, flags=$flags, comments=$comments)"
     }
 
-    data class SourceReference(val file: File, val lineNumber: Int)
+    data class SourceReference(val file: File, val lineNumber: Int? = null)
 }
