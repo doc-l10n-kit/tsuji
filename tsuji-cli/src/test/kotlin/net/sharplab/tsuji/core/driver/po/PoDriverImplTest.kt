@@ -4,6 +4,7 @@ import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.model.po.PoFlag
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.type
 import net.sharplab.tsuji.test.TestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -62,12 +63,11 @@ class PoDriverImplTest {
         // Given
         val messages = listOf(
             PoMessage(
-                type = MessageType("type: Hash Value: footer_text"),
                 messageId = "test message",
                 messageString = "test translation",
                 sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
                 _flags = mutableSetOf<PoFlag>(),
-                comments = emptyList()
+                comments = listOf("type: Hash Value: footer_text")
             )
         )
         val po = Po("ja_JP", messages)
@@ -89,12 +89,11 @@ class PoDriverImplTest {
         // Given
         val messages = listOf(
             PoMessage(
-                type = MessageType.PlainText,
                 messageId = "test message",
                 messageString = "test translation",
                 sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
                 _flags = mutableSetOf<PoFlag>(),
-                comments = listOf("translator comment", "another comment")
+                comments = listOf("type: Plain text", "translator comment", "another comment")
             )
         )
         val po = Po("ja_JP", messages)
@@ -107,7 +106,7 @@ class PoDriverImplTest {
         // Then
         val loadedMessage = loadedPo.messages.find { it.messageId == "test message" }
         assertThat(loadedMessage).isNotNull
-        assertThat(loadedMessage?.comments).containsExactlyInAnyOrder("translator comment", "another comment")
+        assertThat(loadedMessage?.comments).containsExactlyInAnyOrder("type: Plain text", "translator comment", "another comment")
     }
 
     @Test
@@ -115,12 +114,11 @@ class PoDriverImplTest {
         // Given
         val messages = listOf(
             PoMessage(
-                type = MessageType("type: Custom Type"),
                 messageId = "test message",
                 messageString = "test translation",
                 sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
                 _flags = mutableSetOf(PoFlag.Fuzzy),
-                comments = listOf("translator note", "context note")
+                comments = listOf("translator note", "type: Custom Type", "context note")
             )
         )
         val po = Po("ja_JP", messages)
@@ -134,7 +132,7 @@ class PoDriverImplTest {
         val loadedMessage = loadedPo.messages.find { it.messageId == "test message" }
         assertThat(loadedMessage).isNotNull
         assertThat(loadedMessage?.type).isEqualTo(MessageType("type: Custom Type"))
-        assertThat(loadedMessage?.comments).containsExactlyInAnyOrder("translator note", "context note")
+        assertThat(loadedMessage?.comments).containsExactlyInAnyOrder("translator note", "type: Custom Type", "context note")
         assertThat(loadedMessage?.fuzzy).isTrue
     }
 
@@ -143,12 +141,11 @@ class PoDriverImplTest {
         // Given
         val messages = listOf(
             PoMessage(
-                type = MessageType("type: Unknown Future Type"),
                 messageId = "test message",
                 messageString = "test translation",
                 sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
                 _flags = mutableSetOf<PoFlag>(),
-                comments = emptyList()
+                comments = listOf("type: Unknown Future Type")
             )
         )
         val po = Po("ja_JP", messages)
@@ -169,7 +166,6 @@ class PoDriverImplTest {
         // Given
         val messages = listOf(
             PoMessage(
-                type = MessageType.None,
                 messageId = "test message",
                 messageString = "test translation",
                 sourceReferences = emptyList(),
@@ -195,12 +191,11 @@ class PoDriverImplTest {
         // Given
         val messages = listOf(
             PoMessage(
-                type = MessageType.PlainText,
                 messageId = "test message",
                 messageString = "test translation",
                 sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
                 _flags = mutableSetOf(PoFlag.NoWrap),
-                comments = emptyList()
+                comments = listOf("type: Plain text")
             )
         )
         val po = Po("ja_JP", messages)
@@ -221,12 +216,11 @@ class PoDriverImplTest {
         // Given
         val messages = listOf(
             PoMessage(
-                type = MessageType.PlainText,
                 messageId = "test message",
                 messageString = "test translation",
                 sourceReferences = listOf(PoMessage.SourceReference(File("test.yaml"), 1)),
                 _flags = mutableSetOf(PoFlag.Fuzzy, PoFlag.NoWrap),
-                comments = emptyList()
+                comments = listOf("type: Plain text")
             )
         )
         val po = Po("ja_JP", messages)
@@ -254,12 +248,11 @@ class PoDriverImplTest {
         )
         val messages = listOf(
             PoMessage(
-                type = MessageType.PlainText,
                 messageId = "test",
                 messageString = "translation",
                 sourceReferences = emptyList(),
                 _flags = mutableSetOf<PoFlag>(),
-                comments = emptyList()
+                comments = listOf("type: Plain text")
             )
         )
         val po = Po("ja_JP", messages, header)

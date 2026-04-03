@@ -58,10 +58,10 @@ internal class DeepLTranslatorPipelineTest {
         messageString: String = "",
         type: MessageType = MessageType.PlainText
     ) = PoMessage(
-        type = type,
         messageId = messageId,
         messageString = messageString,
-        sourceReferences = emptyList()
+        sourceReferences = emptyList(),
+        comments = if (type != MessageType.None) listOf(type.value) else emptyList()
     )
 
     @Test

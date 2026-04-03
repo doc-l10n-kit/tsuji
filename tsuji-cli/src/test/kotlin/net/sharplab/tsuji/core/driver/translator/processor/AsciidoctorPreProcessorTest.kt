@@ -30,7 +30,7 @@ internal class AsciidoctorPreProcessorTest {
 
     private fun createMessage(messageId: String): TranslationMessage {
         val poMessage = PoMessage(
-            type = MessageType.PlainText,
+            
             messageId = messageId,
             messageString = "",
             sourceReferences = emptyList()
@@ -214,7 +214,7 @@ internal class AsciidoctorPreProcessorTest {
     fun `process should skip empty messageId`() {
         // Empty messageId should not have NEEDS_TRANSLATION flag
         val poMessage = PoMessage(
-            type = MessageType.PlainText,
+            
             messageId = "",
             messageString = "",
             sourceReferences = emptyList()

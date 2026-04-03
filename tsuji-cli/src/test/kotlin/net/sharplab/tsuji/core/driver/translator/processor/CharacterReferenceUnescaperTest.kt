@@ -22,7 +22,7 @@ internal class CharacterReferenceUnescaperTest {
 
     private fun createMessage(text: String): TranslationMessage {
         val poMessage = PoMessage(
-            type = MessageType.PlainText,
+            
             messageId = "test",
             messageString = "",
             sourceReferences = emptyList()

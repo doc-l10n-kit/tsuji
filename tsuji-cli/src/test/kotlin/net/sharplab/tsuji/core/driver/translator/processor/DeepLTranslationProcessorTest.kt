@@ -36,10 +36,10 @@ internal class DeepLTranslationProcessorTest {
         type: MessageType = MessageType.PlainText
     ): TranslationMessage {
         val poMessage = PoMessage(
-            type = type,
             messageId = messageId,
             messageString = messageString,
-            sourceReferences = emptyList()
+            sourceReferences = emptyList(),
+            comments = if (type != MessageType.None) listOf(type.value) else emptyList()
         )
         return TranslationMessage(
             original = poMessage,

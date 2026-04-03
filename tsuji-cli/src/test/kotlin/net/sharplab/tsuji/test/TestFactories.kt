@@ -11,5 +11,6 @@ fun createPoMessage(
     type: MessageType = MessageType.PlainText
 ): PoMessage {
     val flags = if (fuzzy) mutableSetOf(PoFlag.Fuzzy) else mutableSetOf()
-    return PoMessage(type, id, string, emptyList(), flags)
+    val comments = if (type != MessageType.None) listOf(type.value) else emptyList()
+    return PoMessage(id, string, emptyList(), flags, comments)
 }

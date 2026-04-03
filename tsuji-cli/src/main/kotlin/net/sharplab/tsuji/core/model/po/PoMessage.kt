@@ -6,7 +6,6 @@ import java.io.File
  * Domain model representing a message in a PO file.
  */
 class PoMessage(
-    val type: MessageType,
     val messageId: String,
     val messageString: String,
     val sourceReferences: List<SourceReference>,
@@ -44,21 +43,19 @@ class PoMessage(
      * Creates a copy of this PoMessage.
      */
     fun copy(
-        type: MessageType = this.type,
         messageId: String = this.messageId,
         messageString: String = this.messageString,
         sourceReferences: List<SourceReference> = this.sourceReferences,
         flags: MutableSet<PoFlag> = this._flags.toMutableSet(),
         comments: List<String> = this.comments
     ): PoMessage {
-        return PoMessage(type, messageId, messageString, sourceReferences, flags, comments)
+        return PoMessage(messageId, messageString, sourceReferences, flags, comments)
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is PoMessage) return false
 
-        if (type != other.type) return false
         if (messageId != other.messageId) return false
         if (messageString != other.messageString) return false
         if (sourceReferences != other.sourceReferences) return false
@@ -69,8 +66,7 @@ class PoMessage(
     }
 
     override fun hashCode(): Int {
-        var result = type.hashCode()
-        result = 31 * result + messageId.hashCode()
+        var result = messageId.hashCode()
         result = 31 * result + messageString.hashCode()
         result = 31 * result + sourceReferences.hashCode()
         result = 31 * result + _flags.hashCode()

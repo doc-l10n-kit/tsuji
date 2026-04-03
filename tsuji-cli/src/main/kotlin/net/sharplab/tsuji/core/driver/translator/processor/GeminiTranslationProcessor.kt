@@ -3,6 +3,7 @@ import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
+import net.sharplab.tsuji.core.model.po.type
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.core.util.MessageClassifier
 import org.slf4j.LoggerFactory

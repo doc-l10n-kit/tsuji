@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.core.util
 
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.type
 
 /**
  * Utility for classifying PO messages.

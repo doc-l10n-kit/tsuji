@@ -40,24 +40,17 @@ class PoDriverImpl : PoDriver {
     }
 
     private fun parseMessage(item: Message): PoMessage {
-        val (type, comments) = parseComments(item.extractedComments.toList())
+        val comments = item.extractedComments.toList()
         val sourceReferences = parseSourceReferences(item.sourceReferences.toList())
         val flags = item.formats.map { PoFlag.parse(it) }.toMutableSet()
 
         return PoMessage(
-            type = type,
             messageId = item.msgid,
             messageString = item.msgstr,
             sourceReferences = sourceReferences,
             _flags = flags,
             comments = comments
         )
-    }
-
-    private fun parseComments(extractedComments: List<String>): Pair<MessageType, List<String>> {
-        val type = extractedComments.firstNotNullOfOrNull { MessageType.tryParse(it) } ?: MessageType.None
-        val otherComments = extractedComments.filter { MessageType.tryParse(it) == null }
-        return type to otherComments
     }
 
     private fun parseSourceReferences(refs: List<String>): List<PoMessage.SourceReference> {
@@ -136,9 +129,7 @@ class PoDriverImpl : PoDriver {
                 formats.add(flag.value)
             }
 
-            if (item.type != MessageType.None) {
-                extractedComments.add(item.type.value)
-            }
+            // Output comments in original order (type comment is included in comments list)
             item.comments.forEach { comment ->
                 extractedComments.add(comment)
             }
