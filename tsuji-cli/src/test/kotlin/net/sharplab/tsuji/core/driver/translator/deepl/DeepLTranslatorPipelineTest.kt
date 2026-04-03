@@ -76,7 +76,7 @@ internal class DeepLTranslatorPipelineTest {
         // Mock翻訳API: HTMLタグをそのまま保持して日本語に翻訳
         whenever(mockDeepLApi.translateText(textsCaptor.capture(), eq("en"), eq("ja"), any()))
             .thenReturn(listOf(
-                TextResult("これは<a data-doc-l10n-kit-type=\"link\" data-doc-l10n-kit-target=\"https://example.com\">サンプルサイト</a>です。", "en")
+                TextResult("これは<a data-doc-l10n-kit-type=\"link\" data-doc-l10n-kit-target=\"https://example.com\">サンプルサイト</a>です。", "en", 0, null)
             ))
 
         // When: パイプライン実行
@@ -107,7 +107,7 @@ internal class DeepLTranslatorPipelineTest {
         // Mock翻訳API: HTMLタグをそのまま保持
         whenever(mockDeepLApi.translateText(any<List<String>>(), eq("en"), eq("ja"), any()))
             .thenReturn(listOf(
-                TextResult("<span class=\"image\"><img src=\"diagram.png\" alt=\"図\"></span>を参照してください", "en")
+                TextResult("<span class=\"image\"><img src=\"diagram.png\" alt=\"図\"></span>を参照してください", "en", 0, null)
             ))
 
         // When
@@ -126,7 +126,7 @@ internal class DeepLTranslatorPipelineTest {
         // Mock翻訳API: HTML形式で返す
         whenever(mockDeepLApi.translateText(any<List<String>>(), eq("en"), eq("ja"), any()))
             .thenReturn(listOf(
-                TextResult("これは <strong>太字</strong> と <em>斜体</em> テキストです。", "en")
+                TextResult("これは <strong>太字</strong> と <em>斜体</em> テキストです。", "en", 0, null)
             ))
 
         // When
@@ -145,7 +145,7 @@ internal class DeepLTranslatorPipelineTest {
         // Mock翻訳API
         whenever(mockDeepLApi.translateText(any<List<String>>(), eq("en"), eq("ja"), any()))
             .thenReturn(listOf(
-                TextResult("今すぐ <strong><a data-doc-l10n-kit-type=\"link\" data-doc-l10n-kit-target=\"https://example.com\">このリンク</a></strong> をクリックしてください。", "en")
+                TextResult("今すぐ <strong><a data-doc-l10n-kit-type=\"link\" data-doc-l10n-kit-target=\"https://example.com\">このリンク</a></strong> をクリックしてください。", "en", 0, null)
             ))
 
         // When
@@ -164,7 +164,7 @@ internal class DeepLTranslatorPipelineTest {
         // Mock翻訳API: HTMLエンティティ付きで返す
         whenever(mockDeepLApi.translateText(any<List<String>>(), eq("en"), eq("ja"), any()))
             .thenReturn(listOf(
-                TextResult("<code>&lt;tag&gt;</code> と <code>&amp;amp;</code> 記号を使います。", "en")
+                TextResult("<code>&lt;tag&gt;</code> と <code>&amp;amp;</code> 記号を使います。", "en", 0, null)
             ))
 
         // When
@@ -183,7 +183,7 @@ internal class DeepLTranslatorPipelineTest {
         // Mock翻訳API: プレーンテキストとして翻訳
         whenever(mockDeepLApi.translateText(any<List<String>>(), eq("en"), eq("ja"), any()))
             .thenReturn(listOf(
-                TextResult("これは*太字*テキストです。", "en")
+                TextResult("これは*太字*テキストです。", "en", 0, null)
             ))
 
         // When: isAsciidoctor = false
@@ -206,9 +206,9 @@ internal class DeepLTranslatorPipelineTest {
         // Mock翻訳API: バッチで翻訳
         whenever(mockDeepLApi.translateText(any<List<String>>(), eq("en"), eq("ja"), any()))
             .thenReturn(listOf(
-                TextResult("最初の <strong>メッセージ</strong> 。", "en"),
-                TextResult("2番目の <em>メッセージ</em> 。", "en"),
-                TextResult("3番目のメッセージ。", "en")
+                TextResult("最初の <strong>メッセージ</strong> 。", "en", 0, null),
+                TextResult("2番目の <em>メッセージ</em> 。", "en", 0, null),
+                TextResult("3番目のメッセージ。", "en", 0, null)
             ))
 
         // When
