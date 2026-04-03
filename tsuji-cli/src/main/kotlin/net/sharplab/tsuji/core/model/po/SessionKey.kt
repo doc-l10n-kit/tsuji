@@ -10,5 +10,10 @@ data class SessionKey<T>(val name: String) {
          * Preprocessed text (HTML) for Asciidoctor translation.
          */
         val PREPROCESSED_TEXT = SessionKey<String>("preprocessedText")
+
+        /**
+         * Flag indicating whether this message needs translation in the current pipeline.
+         */
+        val NEEDS_TRANSLATION = SessionKey<Boolean>("needsTranslation")
     }
 }

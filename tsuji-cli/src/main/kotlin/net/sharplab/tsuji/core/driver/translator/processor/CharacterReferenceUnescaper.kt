@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.SessionKey
 import org.jsoup.Jsoup
 
 /**
@@ -15,23 +16,23 @@ class CharacterReferenceUnescaper : MessageProcessor {
         }
 
         return messages.map { message ->
-            if (message.isHeader || message.messageString.isEmpty()) {
-                return@map message
+            if (!message.needsTranslation()) {
+                message
+            } else {
+                // First remove HTML tags and extract text only
+                val doc = Jsoup.parseBodyFragment(message.messageString)
+                val textOnly = doc.body().wholeText()
+
+                // Then unescape character references
+                val unescaped = textOnly
+                    .replace("&amp;", "&")
+                    .replace("&lt;", "<")
+                    .replace("&gt;", ">")
+                    .replace("&quot;", "\"")
+                    .replace("&apos;", "'")
+
+                message.copy(messageString = unescaped)
             }
-
-            // First remove HTML tags and extract text only
-            val doc = Jsoup.parseBodyFragment(message.messageString)
-            val textOnly = doc.body().wholeText()
-
-            // Then unescape character references
-            val unescaped = textOnly
-                .replace("&amp;", "&")
-                .replace("&lt;", "<")
-                .replace("&gt;", ">")
-                .replace("&quot;", "\"")
-                .replace("&apos;", "'")
-
-            message.copy(messageString = unescaped)
         }
     }
 }

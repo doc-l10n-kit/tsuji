@@ -4,6 +4,7 @@ import com.deepl.api.TextResult
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.SessionKey
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -32,12 +33,20 @@ internal class DeepLTranslationProcessorTest {
         messageId: String,
         messageString: String = "",
         type: MessageType = MessageType.PlainText
-    ) = PoMessage(
-        type = type,
-        messageId = messageId,
-        messageString = messageString,
-        sourceReferences = emptyList()
-    )
+    ): PoMessage {
+        val message = PoMessage(
+            type = type,
+            messageId = messageId,
+            messageString = messageString,
+            sourceReferences = emptyList()
+        )
+        // Set NEEDS_TRANSLATION only if messageString is empty
+        return if (messageString.isEmpty()) {
+            message.setSession(SessionKey.NEEDS_TRANSLATION, true)
+        } else {
+            message
+        }
+    }
 
     @Test
     fun `process should return empty list for empty input`() {

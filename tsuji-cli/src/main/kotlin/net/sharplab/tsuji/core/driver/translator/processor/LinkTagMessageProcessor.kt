@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.SessionKey
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
@@ -17,16 +18,16 @@ class LinkTagMessageProcessor : MessageProcessor {
         }
 
         return messages.map { message ->
-            if (message.isHeader || message.messageString.isEmpty()) {
-                return@map message
+            if (!message.needsTranslation()) {
+                message
+            } else {
+                val doc = Jsoup.parseBodyFragment(message.messageString)
+                val body = doc.body()
+                replaceLink(body)
+                val processed = body.html()
+
+                message.copy(messageString = processed)
             }
-
-            val doc = Jsoup.parseBodyFragment(message.messageString)
-            val body = doc.body()
-            replaceLink(body)
-            val processed = body.html()
-
-            message.copy(messageString = processed)
         }
     }
 
@@ -36,6 +37,7 @@ class LinkTagMessageProcessor : MessageProcessor {
                 val url = element.attr("href")
                 val linkText = " %s ".format(url)
                 element.replaceWith(TextNode(linkText))
+                return
             }
             val type = element.attr("data-tsuji-type").ifEmpty { element.attr("data-doc-l10n-kit-type") }
             val targetAttr = element.attr("data-tsuji-target").ifEmpty { element.attr("data-doc-l10n-kit-target") }

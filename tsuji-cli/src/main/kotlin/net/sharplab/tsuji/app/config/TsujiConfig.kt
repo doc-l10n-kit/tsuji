@@ -94,6 +94,14 @@ interface TsujiConfig {
         val to: String
     }
 
+    @get:WithName("translation")
+    val translation: Translation
+
+    interface Translation {
+        @get:WithName("target-directories")
+        val targetDirectories: Optional<List<String>>
+    }
+
     @get:WithName("translator")
     val translator: Translator
 

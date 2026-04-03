@@ -32,25 +32,25 @@ class AsciidoctorPreProcessor(
 
         // Process each message
         return messages.map { message ->
-            if (message.isHeader) {
-                return@map message
-            }
+            if (!message.needsTranslation()) {
+                message
+            } else {
+                // Convert Asciidoctor to HTML
+                val options = Options.builder()
+                    .templateDirs(tempDir.toFile())
+                    .build()
+                val document = asciidoctor.load(message.messageId, options)
+                document.attributes["relfilesuffix"] = ".adoc"
+                val html = document.convert()
+                val doc = Jsoup.parseBodyFragment(html)
+                val processedHtml = when (val first = doc.body().children().first()) {
+                    null -> message.messageId
+                    else -> first.children().html()
+                }
 
-            // Convert Asciidoctor to HTML
-            val options = Options.builder()
-                .templateDirs(tempDir.toFile())
-                .build()
-            val document = asciidoctor.load(message.messageId, options)
-            document.attributes["relfilesuffix"] = ".adoc"
-            val html = document.convert()
-            val doc = Jsoup.parseBodyFragment(html)
-            val processedHtml = when (val first = doc.body().children().first()) {
-                null -> message.messageId
-                else -> first.children().html()
+                // Store preprocessed HTML in session, keeping messageId unchanged
+                message.setSession(SessionKey.PREPROCESSED_TEXT, processedHtml)
             }
-
-            // Store preprocessed HTML in session, keeping messageId unchanged
-            message.setSession(SessionKey.PREPROCESSED_TEXT, processedHtml)
         }
     }
 

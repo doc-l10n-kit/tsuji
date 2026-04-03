@@ -4,6 +4,7 @@ import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.app.exception.TsujiAppException
 import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.model.po.Po
+import net.sharplab.tsuji.core.model.po.SessionKey
 import net.sharplab.tsuji.core.driver.translator.processor.*
 import org.slf4j.LoggerFactory
 
@@ -57,6 +58,15 @@ class DeepLTranslator(
             return po
         }
 
+        // Set translation flag for messages that need translation
+        val messagesWithFlags = messages.map { message ->
+            if (!message.isHeader && message.messageString.isEmpty()) {
+                message.setSession(SessionKey.NEEDS_TRANSLATION, true)
+            } else {
+                message
+            }
+        }
+
         val context = ProcessingContext(
             po = po,
             srcLang = srcLang,
@@ -66,7 +76,7 @@ class DeepLTranslator(
         )
 
         // Execute processor pipeline sequentially
-        val processedMessages = processors.fold(messages) { msgs, processor ->
+        val processedMessages = processors.fold(messagesWithFlags) { msgs, processor ->
             processor.process(msgs, context)
         }
 

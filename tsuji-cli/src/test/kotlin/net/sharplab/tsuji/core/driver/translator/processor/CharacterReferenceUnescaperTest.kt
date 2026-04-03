@@ -3,6 +3,7 @@ package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.SessionKey
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -18,12 +19,16 @@ internal class CharacterReferenceUnescaperTest {
         useRag = false
     )
 
-    private fun createMessage(messageString: String) = PoMessage(
-        type = MessageType.PlainText,
-        messageId = "test",
-        messageString = messageString,
-        sourceReferences = emptyList()
-    )
+    private fun createMessage(messageString: String): PoMessage {
+        return PoMessage(
+            type = MessageType.PlainText,
+            messageId = "test",
+            messageString = messageString,
+            sourceReferences = emptyList()
+        )
+            .setSession(SessionKey.NEEDS_TRANSLATION, true)
+            .setSession(SessionKey.PREPROCESSED_TEXT, "preprocessed")
+    }
 
     @Test
     fun `should unescape HTML entities`() {

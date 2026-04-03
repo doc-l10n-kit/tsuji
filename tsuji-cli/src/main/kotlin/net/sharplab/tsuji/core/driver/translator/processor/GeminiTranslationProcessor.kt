@@ -21,14 +21,14 @@ class GeminiTranslationProcessor(
     override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
         return messages.mapIndexed { index, msg ->
             when {
-                // Header message
-                msg.isHeader -> {
-                    logger.info("Skipping header message [${index + 1}/${messages.size}]")
+                // Skip messages that don't need translation
+                !msg.needsTranslation() -> {
+                    logger.info("Skipping message [${index + 1}/${messages.size}]")
                     msg
                 }
-                // Already translated
-                msg.messageString.isNotEmpty() -> {
-                    logger.info("Skipping already translated message [${index + 1}/${messages.size}]")
+                // Empty messageId
+                msg.messageId.isBlank() -> {
+                    logger.info("Skipping empty messageId [${index + 1}/${messages.size}]")
                     msg
                 }
                 // Message that should be filled with messageId (no translation needed)

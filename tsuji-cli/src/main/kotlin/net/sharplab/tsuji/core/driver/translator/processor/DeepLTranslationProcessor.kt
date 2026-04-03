@@ -38,8 +38,8 @@ class DeepLTranslationProcessor(
 
         messages.forEachIndexed { index, msg ->
             when {
-                msg.isHeader -> skipIndices.add(index)
-                msg.messageString.isNotEmpty() -> skipIndices.add(index)
+                !msg.needsTranslation() -> skipIndices.add(index)
+                msg.messageId.isBlank() -> skipIndices.add(index) // Skip empty messageId
                 MessageClassifier.shouldFillWithMessageId(msg) -> fillIndices.add(index)
                 MessageClassifier.isJekyllFrontMatter(msg.messageId) -> jekyllIndices.add(index)
                 else -> normalIndices.add(index)

@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 
 import net.sharplab.tsuji.core.model.po.PoMessage
+import net.sharplab.tsuji.core.model.po.SessionKey
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
@@ -20,16 +21,16 @@ class DecorationTagMessageProcessor(
         }
 
         return messages.map { message ->
-            if (message.isHeader || message.messageString.isEmpty()) {
-                return@map message
+            if (!message.needsTranslation()) {
+                message
+            } else {
+                val doc = Jsoup.parseBodyFragment(message.messageString)
+                val body = doc.body()
+                replaceDecoration(body)
+                val processed = body.html()
+
+                message.copy(messageString = processed)
             }
-
-            val doc = Jsoup.parseBodyFragment(message.messageString)
-            val body = doc.body()
-            replaceDecoration(body)
-            val processed = body.html()
-
-            message.copy(messageString = processed)
         }
     }
 

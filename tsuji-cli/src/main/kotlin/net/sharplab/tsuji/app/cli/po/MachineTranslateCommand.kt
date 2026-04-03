@@ -31,6 +31,6 @@ class MachineTranslateCommand(private val translationAppService: TranslationAppS
     private var help = false
 
     override fun execute() {
-        translationAppService.machineTranslatePoFiles(po, source, target, asciidoc, rag)
+        translationAppService.machineTranslatePoFiles(po, source, target, asciidoc, rag, null)
     }
 }

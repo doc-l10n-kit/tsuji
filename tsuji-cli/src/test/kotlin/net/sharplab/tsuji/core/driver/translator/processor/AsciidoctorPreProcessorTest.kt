@@ -27,12 +27,15 @@ internal class AsciidoctorPreProcessorTest {
         useRag = false
     )
 
-    private fun createMessage(messageId: String) = PoMessage(
-        type = MessageType.PlainText,
-        messageId = messageId,
-        messageString = "",
-        sourceReferences = emptyList()
-    )
+    private fun createMessage(messageId: String): PoMessage {
+        return PoMessage(
+            type = MessageType.PlainText,
+            messageId = messageId,
+            messageString = "",
+            sourceReferences = emptyList()
+        )
+            .setSession(SessionKey.NEEDS_TRANSLATION, true)
+    }
 
     @Test
     fun `process should convert decoration tag to HTML when isAsciidoctor is true`() {
@@ -208,7 +211,13 @@ internal class AsciidoctorPreProcessorTest {
 
     @Test
     fun `process should skip empty messageId`() {
-        val message = createMessage("")
+        // Empty messageId should not have NEEDS_TRANSLATION flag
+        val message = PoMessage(
+            type = MessageType.PlainText,
+            messageId = "",
+            messageString = "",
+            sourceReferences = emptyList()
+        )
         val context = createContext()
 
         val result = target.process(listOf(message), context)
