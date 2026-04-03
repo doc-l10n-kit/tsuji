@@ -1,9 +1,9 @@
 package net.sharplab.tsuji.core.driver.translator.processor
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
-import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.core.util.MessageClassifier
 import org.slf4j.LoggerFactory
 
@@ -18,35 +18,34 @@ class GeminiTranslationProcessor(
 
     private val logger = LoggerFactory.getLogger(GeminiTranslationProcessor::class.java)
 
-    override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
+    override fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
         return messages.mapIndexed { index, msg ->
             when {
                 // Skip messages that don't need translation
-                !msg.needsTranslation() -> {
+                !msg.needsTranslation -> {
                     logger.info("Skipping message [${index + 1}/${messages.size}]")
                     msg
                 }
-                // Empty messageId
-                msg.messageId.isBlank() -> {
-                    logger.info("Skipping empty messageId [${index + 1}/${messages.size}]")
+                // Empty text (after preprocessing or initial text)
+                msg.isEmpty() -> {
+                    logger.info("Skipping empty text [${index + 1}/${messages.size}]")
                     msg
                 }
                 // Message that should be filled with messageId (no translation needed)
-                MessageClassifier.shouldFillWithMessageId(msg) -> {
-                    logger.info("Filling with messageId [${index + 1}/${messages.size}]: type=${msg.type.value}")
-                    msg.copyWithTranslation(messageString = msg.messageId, fuzzy = false)
+                MessageClassifier.shouldFillWithMessageId(msg.original) -> {
+                    logger.info("Filling with messageId [${index + 1}/${messages.size}]: type=${msg.original.type.value}")
+                    msg.withText(msg.original.messageId).withFuzzy(false)
                 }
                 // Jekyll Front Matter
-                MessageClassifier.isJekyllFrontMatter(msg.messageId) -> {
+                MessageClassifier.isJekyllFrontMatter(msg.original.messageId) -> {
                     logger.info("Translating Jekyll Front Matter [${index + 1}/${messages.size}]: source=${context.srcLang}, target=${context.dstLang}")
-                    val textToTranslate = msg.getSession(SessionKey.PREPROCESSED_TEXT) ?: msg.messageId
+                    val textToTranslate = msg.text
                     val translated = translateJekyllFrontMatter(textToTranslate, context.srcLang, context.dstLang, context.useRag)
-                    msg.copyWithTranslation(messageString = translated, fuzzy = true)
+                    msg.withText(translated).withFuzzy(true)
                 }
                 // Normal translation
                 else -> {
-                    // Use preprocessed text from session if available, otherwise use messageId
-                    val textToTranslate = msg.getSession(SessionKey.PREPROCESSED_TEXT) ?: msg.messageId
+                    val textToTranslate = msg.text
                     logger.info("Translating [${index + 1}/${messages.size}]: source=${context.srcLang}, target=${context.dstLang}, useRag=${context.useRag}, text='${textToTranslate.take(50)}'")
                     // Escape braces to avoid LangChain4j prompt template "Variable not found" error
                     val escapedText = textToTranslate.replace("{", "{{").replace("}", "}}")
@@ -55,7 +54,7 @@ class GeminiTranslationProcessor(
                     } else {
                         geminiTranslationService.translate(escapedText, context.srcLang, context.dstLang)
                     }
-                    msg.copyWithTranslation(messageString = translated, fuzzy = true)
+                    msg.withText(translated).withFuzzy(true)
                 }
             }
         }

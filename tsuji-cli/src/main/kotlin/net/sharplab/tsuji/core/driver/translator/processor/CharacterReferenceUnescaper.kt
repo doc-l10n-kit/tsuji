@@ -1,7 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.processor
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
-import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.jsoup.Jsoup
 
 /**
@@ -10,17 +10,17 @@ import org.jsoup.Jsoup
  */
 class CharacterReferenceUnescaper : MessageProcessor {
 
-    override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
+    override fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
         if (!context.isAsciidoctor) {
             return messages
         }
 
         return messages.map { message ->
-            if (!message.needsTranslation()) {
+            if (!message.needsTranslation) {
                 message
             } else {
                 // First remove HTML tags and extract text only
-                val doc = Jsoup.parseBodyFragment(message.messageString)
+                val doc = Jsoup.parseBodyFragment(message.text)
                 val textOnly = doc.body().wholeText()
 
                 // Then unescape character references
@@ -31,7 +31,7 @@ class CharacterReferenceUnescaper : MessageProcessor {
                     .replace("&quot;", "\"")
                     .replace("&apos;", "'")
 
-                message.copy(messageString = unescaped)
+                message.withText(unescaped)
             }
         }
     }

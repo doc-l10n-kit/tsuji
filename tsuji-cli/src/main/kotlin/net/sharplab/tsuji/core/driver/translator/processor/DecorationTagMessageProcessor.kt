@@ -1,7 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.processor
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
-import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
@@ -15,21 +15,21 @@ class DecorationTagMessageProcessor(
     private val suffix: String
 ) : MessageProcessor {
 
-    override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
+    override fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
         if (!context.isAsciidoctor) {
             return messages
         }
 
         return messages.map { message ->
-            if (!message.needsTranslation()) {
+            if (!message.needsTranslation) {
                 message
             } else {
-                val doc = Jsoup.parseBodyFragment(message.messageString)
+                val doc = Jsoup.parseBodyFragment(message.text)
                 val body = doc.body()
                 replaceDecoration(body)
                 val processed = body.html()
 
-                message.copy(messageString = processed)
+                message.withText(processed)
             }
         }
     }

@@ -1,9 +1,10 @@
 package net.sharplab.tsuji.core.driver.translator.processor
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -11,7 +12,7 @@ internal class LinkTagMessageProcessorTest {
 
     private val processor = LinkTagMessageProcessor()
 
-    private fun createContext(isAsciidoctor: Boolean = true) = ProcessingContext(
+    private fun createContext(isAsciidoctor: Boolean = true) = TranslationContext(
         po = Po("ja", emptyList()),
         srcLang = "en",
         dstLang = "ja",
@@ -19,15 +20,18 @@ internal class LinkTagMessageProcessorTest {
         useRag = false
     )
 
-    private fun createMessage(messageString: String): PoMessage {
-        return PoMessage(
+    private fun createMessage(text: String): TranslationMessage {
+        val poMessage = PoMessage(
             type = MessageType.PlainText,
             messageId = "test",
-            messageString = messageString,
+            messageString = "",
             sourceReferences = emptyList()
         )
-            .setSession(SessionKey.NEEDS_TRANSLATION, true)
-            .setSession(SessionKey.PREPROCESSED_TEXT, "preprocessed")
+        return TranslationMessage(
+            original = poMessage,
+            text = text,
+            needsTranslation = true
+        )
     }
 
     private fun extractText(html: String): String {
@@ -44,7 +48,7 @@ internal class LinkTagMessageProcessorTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo(
+        assertThat(result[0].text).isEqualTo(
             "これは、webauthn4j GitHub組織への link:https://github.com/webauthn4j[リンク] です。"
         )
     }
@@ -58,7 +62,7 @@ internal class LinkTagMessageProcessorTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo(
+        assertThat(result[0].text).isEqualTo(
             "You may wonder about Reactive Streams ( https://www.reactive-streams.org/ )."
         )
     }
@@ -72,7 +76,7 @@ internal class LinkTagMessageProcessorTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo(
+        assertThat(result[0].text).isEqualTo(
             "link:#bootstrapping-the-project[Bootstrappingプロジェクト] 以降の手順に沿って、ステップバイステップでアプリを作成していくことをお勧めします。"
         )
     }
@@ -86,7 +90,7 @@ internal class LinkTagMessageProcessorTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo(
+        assertThat(result[0].text).isEqualTo(
             "xref:titles-headings[タイトルと見出し] のガイダンスに従って下さい。"
         )
     }
@@ -100,7 +104,7 @@ internal class LinkTagMessageProcessorTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo("xref:test.adoc[Test doc]")
+        assertThat(result[0].text).isEqualTo("xref:test.adoc[Test doc]")
     }
 
     @Test
@@ -112,7 +116,7 @@ internal class LinkTagMessageProcessorTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo("xref:test.adoc#section[Test doc]")
+        assertThat(result[0].text).isEqualTo("xref:test.adoc#section[Test doc]")
     }
 
     @Test
@@ -125,7 +129,7 @@ internal class LinkTagMessageProcessorTest {
         val result = processor.process(listOf(message), context)
 
         // MessageProcessorはhtml()を返すので、wholeText()でテキストを抽出
-        assertThat(extractText(result[0].messageString)).isEqualTo("<<test-url>>")
+        assertThat(extractText(result[0].text)).isEqualTo("<<test-url>>")
     }
 
     @Test
@@ -137,7 +141,7 @@ internal class LinkTagMessageProcessorTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo("xref:test-url[test-text]")
+        assertThat(result[0].text).isEqualTo("xref:test-url[test-text]")
     }
 
     @Test
@@ -147,6 +151,6 @@ internal class LinkTagMessageProcessorTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo("<a data-doc-l10n-kit-type=\"link\">test</a>")
+        assertThat(result[0].text).isEqualTo("<a data-doc-l10n-kit-type=\"link\">test</a>")
     }
 }

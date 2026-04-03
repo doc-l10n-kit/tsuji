@@ -1,11 +1,12 @@
 package net.sharplab.tsuji.core.driver.translator.processor
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -22,7 +23,7 @@ import org.mockito.kotlin.*
  */
 internal class GeminiTranslationProcessorTest {
 
-    private fun createContext(useRag: Boolean = false) = ProcessingContext(
+    private fun createContext(useRag: Boolean = false) = TranslationContext(
         po = Po("ja", emptyList()),
         srcLang = "en",
         dstLang = "ja",
@@ -34,19 +35,18 @@ internal class GeminiTranslationProcessorTest {
         messageId: String,
         messageString: String = "",
         type: MessageType = MessageType.PlainText
-    ): PoMessage {
-        val message = PoMessage(
+    ): TranslationMessage {
+        val poMessage = PoMessage(
             type = type,
             messageId = messageId,
             messageString = messageString,
             sourceReferences = emptyList()
         )
-        // Set NEEDS_TRANSLATION only if messageString is empty
-        return if (messageString.isEmpty()) {
-            message.setSession(SessionKey.NEEDS_TRANSLATION, true)
-        } else {
-            message
-        }
+        return TranslationMessage(
+            original = poMessage,
+            text = if (messageString.isEmpty()) messageId else messageString,
+            needsTranslation = messageString.isEmpty()
+        )
     }
 
     @Test
@@ -67,7 +67,7 @@ internal class GeminiTranslationProcessorTest {
         assertThat(result).hasSize(1)
         // LangChain4j のプロンプトテンプレート用にエスケープされるべき
         verify(mockTranslationService).translate(eq("Test with {{brackets}}"), eq("en"), eq("ja"))
-        assertThat(result[0].messageString).isEqualTo("translated")
+        assertThat(result[0].text).isEqualTo("translated")
         assertThat(result[0].fuzzy).isTrue()
     }
 
@@ -89,7 +89,7 @@ internal class GeminiTranslationProcessorTest {
         assertThat(result).hasSize(1)
         verify(mockRAGService).translate(eq("Test text"), eq("en"), eq("ja"))
         verifyNoInteractions(mockTranslationService)
-        assertThat(result[0].messageString).isEqualTo("rag-translated")
+        assertThat(result[0].text).isEqualTo("rag-translated")
     }
 
     @Test
@@ -111,7 +111,7 @@ internal class GeminiTranslationProcessorTest {
         // RAGでも波括弧がエスケープされることを確認
         verify(mockRAGService).translate(eq("{{RAG}} test"), eq("en"), eq("ja"))
         verifyNoInteractions(mockTranslationService)
-        assertThat(result[0].messageString).isEqualTo("translated")
+        assertThat(result[0].text).isEqualTo("translated")
     }
 
     @Test
@@ -128,12 +128,12 @@ internal class GeminiTranslationProcessorTest {
 
         // Then
         assertThat(result).hasSize(1)
-        assertThat(result[0].messageString).isEqualTo("こんにちは")
+        assertThat(result[0].text).isEqualTo("こんにちは")
         verifyNoInteractions(mockTranslationService, mockRAGService)
     }
 
     @Test
-    fun `process should skip empty messageId`() {
+    fun `process should skip empty text`() {
         // Given
         val mockTranslationService = mock<GeminiTranslationService>()
         val mockRAGService = mock<GeminiRAGTranslationService>()
@@ -146,7 +146,7 @@ internal class GeminiTranslationProcessorTest {
 
         // Then
         assertThat(result).hasSize(1)
-        assertThat(result[0].messageString).isEmpty()
+        assertThat(result[0].text).isEmpty()
         verifyNoInteractions(mockTranslationService, mockRAGService)
     }
 
@@ -167,7 +167,7 @@ internal class GeminiTranslationProcessorTest {
 
         // Then
         assertThat(result).hasSize(1)
-        assertThat(result[0].messageString).isEqualTo("some-id")
+        assertThat(result[0].text).isEqualTo("some-id")
         assertThat(result[0].fuzzy).isFalse()
         verifyNoInteractions(mockTranslationService, mockRAGService)
     }
@@ -205,14 +205,14 @@ author: me"""
         assertThat(result[0].fuzzy).isTrue()
 
         // title と synopsis が翻訳されていることを確認
-        assertThat(result[0].messageString).contains("title: Hello!")
-        assertThat(result[0].messageString).contains("synopsis: World!")
+        assertThat(result[0].text).contains("title: Hello!")
+        assertThat(result[0].text).contains("synopsis: World!")
 
         // 他のフィールドは保持されていることを確認
-        assertThat(result[0].messageString).contains("layout: post")
-        assertThat(result[0].messageString).contains("date: 2024")
-        assertThat(result[0].messageString).contains("tags: []")
-        assertThat(result[0].messageString).contains("author: me")
+        assertThat(result[0].text).contains("layout: post")
+        assertThat(result[0].text).contains("date: 2024")
+        assertThat(result[0].text).contains("tags: []")
+        assertThat(result[0].text).contains("author: me")
 
         // 翻訳サービスが呼ばれたことを確認
         verify(mockTranslationService).translate(eq("Hello"), eq("en"), eq("ja"))
@@ -254,8 +254,8 @@ author: me"""
         verify(mockTranslationService).translate(eq("Test {{variable}} here"), eq("en"), eq("ja"))
 
         // 翻訳結果にも波括弧が含まれることを確認
-        assertThat(result[0].messageString).contains("title: Test {{variable}} here!")
-        assertThat(result[0].messageString).contains("layout: post")
+        assertThat(result[0].text).contains("title: Test {{variable}} here!")
+        assertThat(result[0].text).contains("layout: post")
     }
 
     @Test
@@ -280,7 +280,7 @@ author: me"""
         assertThat(result).hasSize(3)
         verify(mockTranslationService, times(3)).translate(any(), eq("en"), eq("ja"))
         result.forEach {
-            assertThat(it.messageString).isEqualTo("translated")
+            assertThat(it.text).isEqualTo("translated")
             assertThat(it.fuzzy).isTrue()
         }
     }

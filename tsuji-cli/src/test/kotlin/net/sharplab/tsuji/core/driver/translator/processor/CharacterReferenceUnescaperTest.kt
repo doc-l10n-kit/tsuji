@@ -1,9 +1,10 @@
 package net.sharplab.tsuji.core.driver.translator.processor
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -11,7 +12,7 @@ internal class CharacterReferenceUnescaperTest {
 
     private val processor = CharacterReferenceUnescaper()
 
-    private fun createContext(isAsciidoctor: Boolean = true) = ProcessingContext(
+    private fun createContext(isAsciidoctor: Boolean = true) = TranslationContext(
         po = Po("ja", emptyList()),
         srcLang = "en",
         dstLang = "ja",
@@ -19,15 +20,18 @@ internal class CharacterReferenceUnescaperTest {
         useRag = false
     )
 
-    private fun createMessage(messageString: String): PoMessage {
-        return PoMessage(
+    private fun createMessage(text: String): TranslationMessage {
+        val poMessage = PoMessage(
             type = MessageType.PlainText,
             messageId = "test",
-            messageString = messageString,
+            messageString = "",
             sourceReferences = emptyList()
         )
-            .setSession(SessionKey.NEEDS_TRANSLATION, true)
-            .setSession(SessionKey.PREPROCESSED_TEXT, "preprocessed")
+        return TranslationMessage(
+            original = poMessage,
+            text = text,
+            needsTranslation = true
+        )
     }
 
     @Test
@@ -37,7 +41,7 @@ internal class CharacterReferenceUnescaperTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo("previous word `(>_<)` next word")
+        assertThat(result[0].text).isEqualTo("previous word `(>_<)` next word")
     }
 
     @Test
@@ -47,7 +51,7 @@ internal class CharacterReferenceUnescaperTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo("< > & \" '")
+        assertThat(result[0].text).isEqualTo("< > & \" '")
     }
 
     @Test
@@ -57,6 +61,6 @@ internal class CharacterReferenceUnescaperTest {
 
         val result = processor.process(listOf(message), context)
 
-        assertThat(result[0].messageString).isEqualTo("&lt;test&gt;")
+        assertThat(result[0].text).isEqualTo("&lt;test&gt;")
     }
 }

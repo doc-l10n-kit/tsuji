@@ -1,8 +1,9 @@
 package net.sharplab.tsuji.core.driver.translator.gemini
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.model.po.Po
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.core.driver.translator.processor.*
 import org.slf4j.LoggerFactory
 
@@ -38,16 +39,10 @@ class GeminiTranslator(
             return po
         }
 
-        // Set translation flag for messages that need translation
-        val messagesWithFlags = messages.map { message ->
-            if (!message.isHeader && message.messageString.isEmpty()) {
-                message.setSession(SessionKey.NEEDS_TRANSLATION, true)
-            } else {
-                message
-            }
-        }
+        // Convert PoMessage → TranslationMessage
+        val translationMessages = messages.map { TranslationMessage.from(it) }
 
-        val context = ProcessingContext(
+        val context = TranslationContext(
             po = po,
             srcLang = srcLang,
             dstLang = dstLang,
@@ -56,11 +51,13 @@ class GeminiTranslator(
         )
 
         // Execute processor pipeline sequentially
-        val processedMessages = processors.fold(messagesWithFlags) { msgs, processor ->
+        val processedMessages = processors.fold(translationMessages) { msgs, processor ->
             processor.process(msgs, context)
         }
 
-        return Po(po.target, processedMessages, po.header)
+        // Convert TranslationMessage → PoMessage
+        val finalMessages = processedMessages.map { it.toPoMessage() }
+        return Po(po.target, finalMessages, po.header)
     }
 
 }

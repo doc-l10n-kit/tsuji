@@ -1,11 +1,11 @@
 package net.sharplab.tsuji.core.driver.translator.processor
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import com.deepl.api.DeepLException
 import com.deepl.api.Formality
 import com.deepl.api.TextTranslationOptions
 import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslatorException
-import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.core.util.MessageClassifier
 import org.slf4j.LoggerFactory
 
@@ -19,7 +19,7 @@ class DeepLTranslationProcessor(
 
     private val logger = LoggerFactory.getLogger(DeepLTranslationProcessor::class.java)
 
-    override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
+    override fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
         if (messages.isEmpty()) {
             return messages
         }
@@ -38,10 +38,10 @@ class DeepLTranslationProcessor(
 
         messages.forEachIndexed { index, msg ->
             when {
-                !msg.needsTranslation() -> skipIndices.add(index)
-                msg.messageId.isBlank() -> skipIndices.add(index) // Skip empty messageId
-                MessageClassifier.shouldFillWithMessageId(msg) -> fillIndices.add(index)
-                MessageClassifier.isJekyllFrontMatter(msg.messageId) -> jekyllIndices.add(index)
+                !msg.needsTranslation -> skipIndices.add(index)
+                msg.isEmpty() -> skipIndices.add(index) // Skip empty text
+                MessageClassifier.shouldFillWithMessageId(msg.original) -> fillIndices.add(index)
+                MessageClassifier.isJekyllFrontMatter(msg.original.messageId) -> jekyllIndices.add(index)
                 else -> normalIndices.add(index)
             }
         }
@@ -50,31 +50,24 @@ class DeepLTranslationProcessor(
 
         // Fill processing (no translation needed)
         fillIndices.forEach { index ->
-            result[index] = result[index].copyWithTranslation(
-                messageString = result[index].messageId,
-                fuzzy = false
-            )
+            result[index] = result[index]
+                .withText(result[index].original.messageId)
+                .withFuzzy(false)
         }
 
         // Jekyll Front Matter processing (individual translation)
         jekyllIndices.forEach { index ->
             logger.info("Translating Jekyll Front Matter [${index + 1}/${messages.size}]")
             val msg = messages[index]
-            val textToTranslate = msg.getSession(SessionKey.PREPROCESSED_TEXT) ?: msg.messageId
-            val translated = translateJekyllFrontMatter(textToTranslate, context.srcLang, context.dstLang, options)
-            result[index] = result[index].copyWithTranslation(
-                messageString = translated,
-                fuzzy = true
-            )
+            val translated = translateJekyllFrontMatter(msg.text, context.srcLang, context.dstLang, options)
+            result[index] = result[index]
+                .withText(translated)
+                .withFuzzy(true)
         }
 
         // Normal translation (batch processing)
         if (normalIndices.isNotEmpty()) {
-            val normalTexts = normalIndices.map {
-                val msg = messages[it]
-                // Use preprocessed text from session if available, otherwise use messageId
-                msg.getSession(SessionKey.PREPROCESSED_TEXT) ?: msg.messageId
-            }
+            val normalTexts = normalIndices.map { messages[it].text }
             val textBatches = splitIntoBatches(normalTexts)
             logger.info("Translating ${normalTexts.size} normal texts in ${textBatches.size} batch(es) (${context.srcLang} -> ${context.dstLang})")
 
@@ -89,10 +82,9 @@ class DeepLTranslationProcessor(
 
             translated.forEachIndexed { i, translatedText ->
                 val index = normalIndices[i]
-                result[index] = result[index].copyWithTranslation(
-                    messageString = translatedText,
-                    fuzzy = true
-                )
+                result[index] = result[index]
+                    .withText(translatedText)
+                    .withFuzzy(true)
             }
         }
 

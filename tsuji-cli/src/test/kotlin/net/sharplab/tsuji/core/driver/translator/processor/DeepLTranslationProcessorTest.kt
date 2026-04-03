@@ -1,10 +1,11 @@
 package net.sharplab.tsuji.core.driver.translator.processor
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import com.deepl.api.TextResult
 import net.sharplab.tsuji.core.model.po.MessageType
 import net.sharplab.tsuji.core.model.po.Po
 import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -21,7 +22,7 @@ import org.mockito.kotlin.*
  */
 internal class DeepLTranslationProcessorTest {
 
-    private fun createContext(isAsciidoctor: Boolean = false) = ProcessingContext(
+    private fun createContext(isAsciidoctor: Boolean = false) = TranslationContext(
         po = Po("ja", emptyList()),
         srcLang = "en",
         dstLang = "ja",
@@ -33,19 +34,18 @@ internal class DeepLTranslationProcessorTest {
         messageId: String,
         messageString: String = "",
         type: MessageType = MessageType.PlainText
-    ): PoMessage {
-        val message = PoMessage(
+    ): TranslationMessage {
+        val poMessage = PoMessage(
             type = type,
             messageId = messageId,
             messageString = messageString,
             sourceReferences = emptyList()
         )
-        // Set NEEDS_TRANSLATION only if messageString is empty
-        return if (messageString.isEmpty()) {
-            message.setSession(SessionKey.NEEDS_TRANSLATION, true)
-        } else {
-            message
-        }
+        return TranslationMessage(
+            original = poMessage,
+            text = if (messageString.isEmpty()) messageId else messageString,
+            needsTranslation = messageString.isEmpty()
+        )
     }
 
     @Test
@@ -76,12 +76,12 @@ internal class DeepLTranslationProcessorTest {
 
         // Then
         assertThat(result).hasSize(1)
-        assertThat(result[0].messageString).isEqualTo("こんにちは")
+        assertThat(result[0].text).isEqualTo("こんにちは")
         verifyNoInteractions(mockApi)
     }
 
     @Test
-    fun `process should skip empty messageId`() {
+    fun `process should skip empty text`() {
         // Given
         val mockApi = mock<com.deepl.api.Translator>()
         val processor = DeepLTranslationProcessor(mockApi)
@@ -93,7 +93,7 @@ internal class DeepLTranslationProcessorTest {
 
         // Then
         assertThat(result).hasSize(1)
-        assertThat(result[0].messageString).isEmpty()
+        assertThat(result[0].text).isEmpty()
         verifyNoInteractions(mockApi)
     }
 
@@ -136,13 +136,13 @@ internal class DeepLTranslationProcessorTest {
         assertThat(result).hasSize(3)
 
         // 各メッセージが翻訳されていることを確認
-        assertThat(result[0].messageString).isEqualTo("こんにちは")
+        assertThat(result[0].text).isEqualTo("こんにちは")
         assertThat(result[0].fuzzy).isTrue()
 
-        assertThat(result[1].messageString).isEqualTo("世界")
+        assertThat(result[1].text).isEqualTo("世界")
         assertThat(result[1].fuzzy).isTrue()
 
-        assertThat(result[2].messageString).isEqualTo("テスト")
+        assertThat(result[2].text).isEqualTo("テスト")
         assertThat(result[2].fuzzy).isTrue()
 
         // バッチ翻訳APIが1回だけ呼ばれたことを確認
@@ -195,14 +195,14 @@ author: me"""
         assertThat(result[0].fuzzy).isTrue()
 
         // title と synopsis が翻訳されていることを確認
-        assertThat(result[0].messageString).contains("title: Hello!")
-        assertThat(result[0].messageString).contains("synopsis: World!")
+        assertThat(result[0].text).contains("title: Hello!")
+        assertThat(result[0].text).contains("synopsis: World!")
 
         // 他のフィールドは保持されていることを確認
-        assertThat(result[0].messageString).contains("layout: post")
-        assertThat(result[0].messageString).contains("date: 2024")
-        assertThat(result[0].messageString).contains("tags: []")
-        assertThat(result[0].messageString).contains("author: me")
+        assertThat(result[0].text).contains("layout: post")
+        assertThat(result[0].text).contains("date: 2024")
+        assertThat(result[0].text).contains("tags: []")
+        assertThat(result[0].text).contains("author: me")
 
         // 翻訳APIが呼ばれたことを確認
         verify(mockApi).translateText(
@@ -229,7 +229,7 @@ author: me"""
 
         // Then
         assertThat(result).hasSize(1)
-        assertThat(result[0].messageString).isEqualTo("some-id")
+        assertThat(result[0].text).isEqualTo("some-id")
         assertThat(result[0].fuzzy).isFalse()
         verifyNoInteractions(mockApi)
     }

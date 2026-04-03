@@ -1,15 +1,15 @@
 package net.sharplab.tsuji.core.driver.translator.processor
+import net.sharplab.tsuji.core.model.translation.TranslationContext
 
-import net.sharplab.tsuji.core.model.po.PoMessage
-import net.sharplab.tsuji.core.model.po.SessionKey
+import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.asciidoctor.Asciidoctor
 import org.asciidoctor.Options
 import org.jsoup.Jsoup
 import java.nio.file.Files
 
 /**
- * Preprocessing that converts Asciidoctor format messageId to HTML.
- * Stores the HTML in session data for translation, keeping messageId unchanged.
+ * Preprocessing that converts Asciidoctor format to HTML.
+ * Reads TranslationMessage.text (Asciidoctor format) and writes back HTML.
  */
 class AsciidoctorPreProcessor(
     private val asciidoctor: Asciidoctor
@@ -24,7 +24,7 @@ class AsciidoctorPreProcessor(
         Files.copy(inputStream, inlineAnchorTemplateFile.toPath())
     }
 
-    override fun process(messages: List<PoMessage>, context: ProcessingContext): List<PoMessage> {
+    override fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
         // Skip if not Asciidoctor
         if (!context.isAsciidoctor) {
             return messages
@@ -32,24 +32,24 @@ class AsciidoctorPreProcessor(
 
         // Process each message
         return messages.map { message ->
-            if (!message.needsTranslation()) {
+            if (!message.needsTranslation) {
                 message
             } else {
                 // Convert Asciidoctor to HTML
                 val options = Options.builder()
                     .templateDirs(tempDir.toFile())
                     .build()
-                val document = asciidoctor.load(message.messageId, options)
+                val document = asciidoctor.load(message.text, options)
                 document.attributes["relfilesuffix"] = ".adoc"
                 val html = document.convert()
                 val doc = Jsoup.parseBodyFragment(html)
                 val processedHtml = when (val first = doc.body().children().first()) {
-                    null -> message.messageId
+                    null -> message.text
                     else -> first.children().html()
                 }
 
-                // Store preprocessed HTML in session, keeping messageId unchanged
-                message.setSession(SessionKey.PREPROCESSED_TEXT, processedHtml)
+                // Update working text with HTML
+                message.withText(processedHtml)
             }
         }
     }

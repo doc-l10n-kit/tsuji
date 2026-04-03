@@ -31,3 +31,4 @@ nbdist/
 **/application.local.properties
 **/config/application.properties
 log/
+CLAUDE.local.md
