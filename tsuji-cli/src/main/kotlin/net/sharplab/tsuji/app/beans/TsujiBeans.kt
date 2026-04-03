@@ -102,8 +102,8 @@ class TsujiBeans() {
     }
 
     @Produces
-    fun poNormalizerService(gettextDriver: GettextDriver): PoNormalizerService {
-        return PoNormalizerServiceImpl(gettextDriver)
+    fun poNormalizerService(poDriver: PoDriver, gettextDriver: GettextDriver): PoNormalizerService {
+        return PoNormalizerServiceImpl(poDriver, gettextDriver)
     }
 
     @Produces

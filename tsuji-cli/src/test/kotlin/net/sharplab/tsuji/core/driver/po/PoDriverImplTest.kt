@@ -77,8 +77,8 @@ class PoDriverImplTest {
         target.save(po, savePath)
         val loadedPo = target.load(savePath)
 
-        // Then - header message + actual message
-        assertThat(loadedPo.messages).hasSize(2)
+        // Then
+        assertThat(loadedPo.messages).hasSize(1)
         val loadedMessage = loadedPo.messages.find { it.messageId == "test message" }
         assertThat(loadedMessage).isNotNull
         assertThat(loadedMessage?.type).isEqualTo(MessageType("type: Hash Value: footer_text"))
@@ -244,7 +244,7 @@ class PoDriverImplTest {
     }
 
     @Test
-    fun `should preserve POT-Creation-Date header on save and load`(@TempDir tempDir: Path) {
+    fun `should remove POT-Creation-Date header on save`(@TempDir tempDir: Path) {
         // Given
         val header = mapOf(
             "POT-Creation-Date" to "2026-01-01 12:00+0000",
@@ -270,7 +270,7 @@ class PoDriverImplTest {
         val loadedPo = target.load(savePath)
 
         // Then
-        assertThat(loadedPo.header["POT-Creation-Date"]).isEqualTo("2026-01-01 12:00+0000")
+        assertThat(loadedPo.header["POT-Creation-Date"]).isNull()
         assertThat(loadedPo.header["Language"]).isEqualTo("ja_JP")
     }
 }

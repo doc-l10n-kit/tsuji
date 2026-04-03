@@ -16,7 +16,10 @@ class PoDriverImpl : PoDriver {
     override fun load(path: Path): Po {
         val catalog = PoParser().parseCatalog(path.toFile())
         val (target, header) = extractHeader(catalog)
-        val messages = catalog.map { item -> parseMessage(item) }
+        // Filter out obsolete entries (#~) and header message (already stored in Po.header)
+        val messages = catalog
+            .filter { !it.isObsolete && it.msgid.isNotEmpty() }
+            .map { item -> parseMessage(item) }
         return Po(target, messages, header)
     }
 
@@ -88,33 +91,33 @@ class PoDriverImpl : PoDriver {
     private fun buildCatalog(po: Po): Catalog {
         val catalog = Catalog()
 
-        // If no header message exists in po.messages, create one from po.header
-        if (po.messages.none { it.isHeader }) {
-            val headerMessage = Message()
+        // Create header from po.header (header message is already filtered out in load())
+        val headerMessage = Message()
 
-            // Use existing header if available, otherwise create minimal header
-            val headerMap = if (po.header.isNotEmpty()) {
-                po.header.toMutableMap().apply {
-                    // Always set Language to current target
-                    put("Language", po.target)
-                }
-            } else {
-                mutableMapOf(
-                    "Language" to po.target,
-                    "MIME-Version" to "1.0",
-                    "Content-Type" to "text/plain; charset=UTF-8",
-                    "Content-Transfer-Encoding" to "8bit",
-                    "X-Generator" to "doc-l10n-kit"
-                )
+        // Use existing header if available, otherwise create minimal header
+        val headerMap = if (po.header.isNotEmpty()) {
+            po.header.toMutableMap().apply {
+                // Always set Language to current target
+                put("Language", po.target)
+                // Remove POT-Creation-Date to prevent unnecessary diffs
+                remove("POT-Creation-Date")
             }
-
-            // Build header string
-            val headerValues = headerMap.entries.joinToString("\n") { "${it.key}: ${it.value}" } + "\n"
-
-            headerMessage.msgid = ""
-            headerMessage.msgstr = headerValues
-            catalog.addMessage(headerMessage)
+        } else {
+            mutableMapOf(
+                "Language" to po.target,
+                "MIME-Version" to "1.0",
+                "Content-Type" to "text/plain; charset=UTF-8",
+                "Content-Transfer-Encoding" to "8bit",
+                "X-Generator" to "doc-l10n-kit"
+            )
         }
+
+        // Build header string
+        val headerValues = headerMap.entries.joinToString("\n") { "${it.key}: ${it.value}" } + "\n"
+
+        headerMessage.msgid = ""
+        headerMessage.msgstr = headerValues
+        catalog.addMessage(headerMessage)
 
         po.messages.forEach { item ->
             catalog.addMessage(createMessage(item))

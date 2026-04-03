@@ -9,14 +9,8 @@ class GettextDriverImpl(
 ) : GettextDriver {
 
     override fun normalize(path: Path) {
-        // Remove obsolete lines starting with #|
-        externalProcessDriver.execute(
-            command = listOf("sed", "-e", "/^#|/d", "-i", path.toString()),
-            timeoutValue = 30,
-            timeoutUnit = TimeUnit.SECONDS
-        )
-
-        // msgcat preserves all flags (fuzzy, no-wrap, etc.) while normalizing the format
+        // msgcat normalizes the format (line breaks, encoding, etc.)
+        // Note: obsolete entries and POT-Creation-Date are already removed by PoDriver.load/save in PoNormalizerService
         externalProcessDriver.execute(
             command = listOf("msgcat", "--to-code=utf-8", "--no-wrap", "-o", path.toString(), path.toString()),
             timeoutValue = 60,
