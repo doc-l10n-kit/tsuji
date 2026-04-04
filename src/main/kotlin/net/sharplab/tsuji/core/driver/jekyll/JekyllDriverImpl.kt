@@ -113,12 +113,6 @@ class JekyllDriverImpl(private val externalProcessDriver: ExternalProcessDriver)
             directory = jekyllSourceDir
         )
 
-        // Enable deployment mode for production optimization
-        externalProcessDriver.execute(
-            command = listOf("bundle", "config", "set", "deployment", "true"),
-            directory = jekyllSourceDir
-        )
-
         // Check if bundle is already installed
         val checkProcess = ProcessBuilder("bundle", "check")
             .directory(jekyllSourceDir.toFile())
