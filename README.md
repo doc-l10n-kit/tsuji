@@ -69,6 +69,20 @@ java -jar build/tsuji.jar <command> [options]
 
 - **[Design Document](./design-doc.md)**: Detailed overview of the architecture and core components (Japanese).
 
+## Real-world Usage
+
+tsuji is actively used in production for translating the Quarkus website:
+
+- **Project**: [ja.quarkus.io](https://github.com/quarkusio/ja.quarkus.io)
+- **Workflow**: Fully automated translation pipeline with GitHub Actions
+  - Weekly upstream synchronization
+  - Translation memory application
+  - DeepL API machine translation
+  - Daily builds and GitHub Pages deployment
+- **Configuration**: See [config/application.yaml](https://github.com/quarkusio/ja.quarkus.io/blob/main/config/application.yaml) for a complete example
+
+This serves as a comprehensive reference implementation of tsuji's capabilities.
+
 ## License
 
 This project is licensed under the [Apache License, Version 2.0](./LICENSE.txt).
