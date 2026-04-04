@@ -57,4 +57,15 @@ class PoServiceImpl : PoService {
         if (trimmed.isEmpty()) return 0
         return trimmed.split("\\s+".toRegex()).size
     }
+
+    override fun createFuzzyPurgedPo(po: Po): Po {
+        val updatedMessages = po.messages.map { msg ->
+            if (msg.fuzzy) {
+                msg.copy(messageString = "").also { it.fuzzy = false }
+            } else {
+                msg
+            }
+        }
+        return po.copy(messages = updatedMessages)
+    }
 }

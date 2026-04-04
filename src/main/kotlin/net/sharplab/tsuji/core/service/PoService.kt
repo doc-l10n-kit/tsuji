@@ -26,5 +26,12 @@ interface PoService {
      * Counts words in a string.
      */
     fun countWords(text: String): Int
+
+    /**
+     * Creates a new Po with fuzzy messages purged.
+     * Fuzzy messages will have their messageString cleared and fuzzy flag removed.
+     * Pure domain operation with no side effects.
+     */
+    fun createFuzzyPurgedPo(po: Po): Po
 }
 

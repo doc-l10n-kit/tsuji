@@ -32,67 +32,44 @@ class TmxAppServiceImpl(
     private val logger = LoggerFactory.getLogger(TmxAppServiceImpl::class.java)
 
     override fun applyConfirmedTmx(confirmedTmx: Path, po: Path?) {
-        val resolvedPo = po ?: Paths.get(tsujiConfig.po.baseDir)
-
-        // Load TMX once
-        logger.info("Loading TMX file: ${confirmedTmx.absolutePathString()}")
-        val confirmedTmxFile = tmxDriver.load(confirmedTmx)
-
-        // Build translation index once
-        logger.info("Building translation index from TMX")
-        val translationIndex = net.sharplab.tsuji.tmx.index.TranslationIndex.create(
-            confirmedTmxFile,
-            tsujiConfig.language.to
-        )
-
-        fun doApplyTmx(poPath: Path){
-            try{
-                logger.info("Start applying TMX: ${poPath.absolutePathString()}")
-                val poFile = poDriver.load(poPath)
-                val translated = poTranslatorService.applyTmxWithIndex(translationIndex, poFile, fuzzy = false)
-                poDriver.save(translated, poPath)
-                poNormalizerService.normalize(poPath)
-                logger.info("Finish applying TMX: ${poPath.absolutePathString()}")
-            }
-            catch(e: RuntimeException){
-                throw TsujiAppException("Failed applying TMX: ${poPath.absolutePathString()}", e)
-            }
-        }
-
-        Files.walk(resolvedPo).use { stream ->
-            stream.filter { it.extension == "po" }
-                .filter{ !it.isDirectory() }
-                .parallel()
-                .forEach(::doApplyTmx)
-        }
+        applyTmx(confirmedTmx, po, fuzzy = false, logPrefix = "confirmed")
     }
 
     override fun applyFuzzyTmx(fuzzyTmx: Path, po: Path?) {
+        applyTmx(fuzzyTmx, po, fuzzy = true, logPrefix = "fuzzy")
+    }
+
+    /**
+     * Common logic for applying TMX to PO files.
+     */
+    private fun applyTmx(tmxPath: Path, po: Path?, fuzzy: Boolean, logPrefix: String) {
         val resolvedPo = po ?: Paths.get(tsujiConfig.po.baseDir)
 
-        // Load TMX once
-        logger.info("Loading fuzzy TMX file: ${fuzzyTmx.absolutePathString()}")
-        val fuzzyTmxFile = tmxDriver.load(fuzzyTmx)
+        logger.info("Loading $logPrefix TMX file: ${tmxPath.absolutePathString()}")
+        val tmxFile = tmxDriver.load(tmxPath)
 
-        // Build translation index once
-        logger.info("Building translation index from fuzzy TMX")
+        logger.info("Building translation index from $logPrefix TMX")
         val translationIndex = net.sharplab.tsuji.tmx.index.TranslationIndex.create(
-            fuzzyTmxFile,
+            tmxFile,
             tsujiConfig.language.to
         )
 
-        fun doApplyTmx(poPath: Path){
-            logger.info("Start applying fuzzy TMX: ${poPath.absolutePathString()}")
-            val poFile = poDriver.load(poPath)
-            val translated = poTranslatorService.applyTmxWithIndex(translationIndex, poFile, fuzzy = true)
-            poDriver.save(translated, poPath)
-            poNormalizerService.normalize(poPath)
-            logger.info("Finish applying fuzzy TMX: ${poPath.absolutePathString()}")
+        fun doApplyTmx(poPath: Path) {
+            try {
+                logger.info("Start applying $logPrefix TMX: ${poPath.absolutePathString()}")
+                val poFile = poDriver.load(poPath)
+                val translated = poTranslatorService.applyTmxWithIndex(translationIndex, poFile, fuzzy = fuzzy)
+                poDriver.save(translated, poPath)
+                poNormalizerService.normalize(poPath)
+                logger.info("Finish applying $logPrefix TMX: ${poPath.absolutePathString()}")
+            } catch (e: RuntimeException) {
+                throw TsujiAppException("Failed applying $logPrefix TMX: ${poPath.absolutePathString()}", e)
+            }
         }
 
         Files.walk(resolvedPo).use { stream ->
             stream.filter { it.extension == "po" }
-                .filter{ !it.isDirectory() }
+                .filter { !it.isDirectory() }
                 .parallel()
                 .forEach(::doApplyTmx)
         }

@@ -76,4 +76,39 @@ class PoServiceImplTest {
         // Then
         assertThat(count).isEqualTo(2)
     }
+
+    @Test
+    fun createFuzzyPurgedPo_shouldClearFuzzyFlagAndEmptyMessage() {
+        // Given
+        val fuzzyMsg = createPoMessage("test", "テスト", fuzzy = true)
+        val normalMsg = createPoMessage("normal", "通常")
+        val po = Po("ja", listOf(fuzzyMsg, normalMsg))
+
+        // When
+        val result = target.createFuzzyPurgedPo(po)
+
+        // Then
+        assertThat(result.messages).hasSize(2)
+        assertThat(result.messages[0].fuzzy).isFalse()
+        assertThat(result.messages[0].messageString).isEmpty()
+        assertThat(result.messages[1].fuzzy).isFalse()
+        assertThat(result.messages[1].messageString).isEqualTo("通常")
+    }
+
+    @Test
+    fun createFuzzyPurgedPo_shouldNotModifyOriginalPo() {
+        // Given
+        val fuzzyMsg = createPoMessage("test", "テスト", fuzzy = true)
+        val po = Po("ja", listOf(fuzzyMsg))
+
+        // When
+        val result = target.createFuzzyPurgedPo(po)
+
+        // Then - Original should remain unchanged
+        assertThat(po.messages[0].fuzzy).isTrue()
+        assertThat(po.messages[0].messageString).isEqualTo("テスト")
+        // Result should be modified
+        assertThat(result.messages[0].fuzzy).isFalse()
+        assertThat(result.messages[0].messageString).isEmpty()
+    }
 }

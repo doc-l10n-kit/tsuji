@@ -33,6 +33,8 @@ import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
 import net.sharplab.tsuji.core.service.IndexingService
 import net.sharplab.tsuji.core.service.IndexingServiceImpl
+import net.sharplab.tsuji.core.service.JekyllService
+import net.sharplab.tsuji.core.service.JekyllServiceImpl
 import net.sharplab.tsuji.core.service.PoNormalizerService
 import net.sharplab.tsuji.core.service.PoNormalizerServiceImpl
 import net.sharplab.tsuji.core.service.PoService
@@ -63,6 +65,11 @@ class TsujiBeans() {
     @Produces
     fun tmxService(): TmxService {
         return TmxServiceImpl()
+    }
+
+    @Produces
+    fun jekyllService(): JekyllService {
+        return JekyllServiceImpl()
     }
 
     @Produces

@@ -4,6 +4,7 @@ import jakarta.enterprise.context.Dependent
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.core.driver.common.ExternalProcessDriver
 import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
+import net.sharplab.tsuji.core.service.JekyllService
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -15,6 +16,7 @@ class JekyllAppServiceImpl(
     private val jekyllDriver: JekyllDriver,
     private val poAppService: PoAppService,
     private val externalProcessDriver: ExternalProcessDriver,
+    private val jekyllService: JekyllService,
     private val tsujiConfig: TsujiConfig
 ) : JekyllAppService {
 
@@ -82,7 +84,7 @@ class JekyllAppServiceImpl(
             val overrideTime = getGitTimestamp(path, path.parent)
             val upstreamTime = getGitTimestamp(upstreamFile, upstreamDir)
 
-            val status = if (overrideTime.epoch >= upstreamTime.epoch) "OK" else "NG"
+            val status = jekyllService.determineOverrideStatus(overrideTime.epoch, upstreamTime.epoch)
 
             results.add(
                 OverrideStat(
