@@ -48,8 +48,10 @@ class JekyllDriverImpl(private val externalProcessDriver: ExternalProcessDriver)
         // Ensure basic gems are installed
         ensureBundleInstalled(jekyllSourceDir)
 
+        // Always ensure jekyll-l10n plugin is installed
+        ensureJekyllL10nPlugin(jekyllSourceDir, jekyllL10nRepo)
+
         if (translate) {
-            ensureJekyllL10nPlugin(jekyllSourceDir, jekyllL10nRepo)
             createLanguageConfig(jekyllSourceDir, siteLanguageCode)
             configsList.add("language_config.yml")
 
@@ -78,8 +80,10 @@ class JekyllDriverImpl(private val externalProcessDriver: ExternalProcessDriver)
         // Ensure basic gems are installed
         ensureBundleInstalled(jekyllSourceDir)
 
+        // Always ensure jekyll-l10n plugin is installed
+        ensureJekyllL10nPlugin(jekyllSourceDir, jekyllL10nRepo)
+
         if (translate) {
-            ensureJekyllL10nPlugin(jekyllSourceDir, jekyllL10nRepo)
             createLanguageConfig(jekyllSourceDir, siteLanguageCode)
             configsList.add("language_config.yml")
 
