@@ -28,7 +28,6 @@ import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
-import net.sharplab.tsuji.core.driver.vectorstore.InMemoryVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.LuceneVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
@@ -153,20 +152,8 @@ class TsujiBeans() {
     @Produces
     @ApplicationScoped
     fun vectorStoreDriver(embeddingModel: EmbeddingModel, tsujiConfig: TsujiConfig): VectorStoreDriver {
-        return when (tsujiConfig.rag.storeType.lowercase()) {
-            "lucene" -> {
-                logger.info("Using Lucene VectorStore")
-                LuceneVectorStoreDriver(embeddingModel, tsujiConfig.rag.indexPath)
-            }
-            "inmemory" -> {
-                logger.info("Using InMemory VectorStore")
-                InMemoryVectorStoreDriver(embeddingModel, tsujiConfig.rag.indexPath)
-            }
-            else -> {
-                logger.warn("Unknown vectorstore type: ${tsujiConfig.rag.storeType}, defaulting to InMemory")
-                InMemoryVectorStoreDriver(embeddingModel, tsujiConfig.rag.indexPath)
-            }
-        }
+        logger.info("Using Lucene VectorStore")
+        return LuceneVectorStoreDriver(embeddingModel, tsujiConfig.rag.indexPath)
     }
 
     @Produces
