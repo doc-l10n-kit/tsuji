@@ -45,6 +45,6 @@ class IndexingAppServiceImplTest {
 
         // Then
         verify(vectorStoreDriver).addAll(segments)
-        verify(vectorStoreDriver).save(isNull())
+        verify(vectorStoreDriver).save()
     }
 }
