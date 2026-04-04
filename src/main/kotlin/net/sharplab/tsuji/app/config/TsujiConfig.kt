@@ -19,6 +19,10 @@ interface TsujiConfig {
         @get:WithName("index-path")
         @get:WithDefault("l10n/rag/index")
         val indexPath: String
+
+        @get:WithName("store-type")
+        @get:WithDefault("inmemory")
+        val storeType: String
     }
 
     @get:WithName("po")
