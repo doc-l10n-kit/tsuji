@@ -7,6 +7,6 @@ import java.nio.file.Path
 
 interface VectorStoreDriver {
     fun addAll(segments: List<TextSegment>)
-    fun save(indexDir: Path? = null)
+    fun save()
     fun asContentRetriever(maxResults: Int = 3): ContentRetriever
 }

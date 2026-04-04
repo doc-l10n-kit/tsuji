@@ -157,17 +157,17 @@ class PoAppServiceImpl(
         logger.info("Applying PO files from $poBaseDir to $workDir")
         poBaseDir.walk().filter { it.extension == "po" }.forEach { poFile ->
             val relativePoPath = poBaseDir.relativize(poFile).toString()
-            
+
             if (poService.isIgnored(poFile)) {
                 return@forEach
             }
 
             val relativeMasterPath = relativePoPath.removeSuffix(".po")
             val masterFile = workDir.resolve(relativeMasterPath).normalize()
-            
+
             if (masterFile.exists()) {
                 val format = po4aDriver.determineFormat(masterFile)
-                
+
                 if (format != null) {
                     logger.info("Applying translation to $masterFile using $poFile (format: $format)")
                     po4aDriver.translate(masterFile, poFile, masterFile, format, workDir)

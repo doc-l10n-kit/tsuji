@@ -44,7 +44,7 @@ class LuceneVectorStoreDriver(
         )
     }
 
-    override fun save(indexDir: Path?) {
+    override fun save() {
         // Lucene automatically saves to disk, so this is a no-op
         logger.info("Lucene index is automatically persisted to disk")
     }

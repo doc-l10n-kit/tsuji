@@ -18,14 +18,14 @@ class IndexingAppServiceImpl(
 
     private val logger = LoggerFactory.getLogger(IndexingAppServiceImpl::class.java)
 
-    override fun indexTmx(tmxPath: Path, indexDir: Path?) {
+    override fun indexTmx(tmxPath: Path) {
         logger.info("Start indexing TMX: ${tmxPath.absolutePathString()}")
-        
+
         val tmx = tmxDriver.load(tmxPath)
         val segments = indexingService.convertToSegments(tmx)
 
         vectorStoreDriver.addAll(segments)
-        vectorStoreDriver.save(indexDir)
+        vectorStoreDriver.save()
 
         logger.info("Finish indexing TMX.")
     }

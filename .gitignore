@@ -30,5 +30,7 @@ nbdist/
 ### Project Files ###
 **/application.local.properties
 **/config/application.properties
+.env
 log/
+l10n/
 CLAUDE.local.md

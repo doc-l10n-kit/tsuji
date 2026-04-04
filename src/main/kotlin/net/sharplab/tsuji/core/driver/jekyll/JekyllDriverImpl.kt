@@ -44,6 +44,10 @@ class JekyllDriverImpl(private val externalProcessDriver: ExternalProcessDriver)
     override fun build(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String>, translate: Boolean) {
         val configsList = mutableListOf("_config.yml")
         val env = mutableMapOf<String, String>()
+
+        // Ensure basic gems are installed
+        ensureBundleInstalled(jekyllSourceDir)
+
         if (translate) {
             ensureJekyllL10nPlugin(jekyllSourceDir, jekyllL10nRepo)
             createLanguageConfig(jekyllSourceDir, siteLanguageCode)
@@ -70,6 +74,10 @@ class JekyllDriverImpl(private val externalProcessDriver: ExternalProcessDriver)
     override fun serve(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String>, translate: Boolean) {
         val configsList = mutableListOf("_config.yml")
         val env = mutableMapOf<String, String>()
+
+        // Ensure basic gems are installed
+        ensureBundleInstalled(jekyllSourceDir)
+
         if (translate) {
             ensureJekyllL10nPlugin(jekyllSourceDir, jekyllL10nRepo)
             createLanguageConfig(jekyllSourceDir, siteLanguageCode)
@@ -92,20 +100,47 @@ class JekyllDriverImpl(private val externalProcessDriver: ExternalProcessDriver)
         )
     }
 
+    private fun ensureBundleInstalled(jekyllSourceDir: Path) {
+        // Use absolute path to project root's vendor/bundle to leverage cache
+        val bundlePath = Path.of("").toAbsolutePath().resolve("vendor/bundle")
+
+        externalProcessDriver.execute(
+            command = listOf("bundle", "config", "set", "path", bundlePath.toString()),
+            directory = jekyllSourceDir
+        )
+
+        // Enable deployment mode for production optimization
+        externalProcessDriver.execute(
+            command = listOf("bundle", "config", "set", "deployment", "true"),
+            directory = jekyllSourceDir
+        )
+
+        // Check if bundle is already installed
+        val checkProcess = ProcessBuilder("bundle", "check")
+            .directory(jekyllSourceDir.toFile())
+            .start()
+        checkProcess.waitFor()
+
+        if (checkProcess.exitValue() != 0) {
+            // Bundle install with parallel jobs for faster installation
+            externalProcessDriver.execute(
+                command = listOf("bundle", "install", "--jobs=4", "--retry=3"),
+                directory = jekyllSourceDir,
+                timeoutValue = 10,
+                timeoutUnit = TimeUnit.MINUTES
+            )
+        }
+    }
+
     private fun ensureJekyllL10nPlugin(jekyllSourceDir: Path, gitRepo: String) {
         val listProcess = ProcessBuilder("bundle", "list")
             .directory(jekyllSourceDir.toFile())
             .start()
-        
+
         val output = listProcess.inputStream.bufferedReader().readText()
         listProcess.waitFor()
 
         if (!output.contains("jekyll-l10n")) {
-            externalProcessDriver.execute(
-                command = listOf("bundle", "config", "set", "path", "vendor/bundle"),
-                directory = jekyllSourceDir
-            )
-
             externalProcessDriver.execute(
                 command = listOf("bundle", "add", "jekyll-l10n", "--group", "jekyll_plugins", "--git", gitRepo, "--branch", "main"),
                 directory = jekyllSourceDir,

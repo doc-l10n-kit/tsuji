@@ -15,10 +15,7 @@ class IndexCommand(private val indexingAppService: IndexingAppService) : BaseCom
     @CommandLine.Option(order = 1, names = ["--tmx"], description = ["tmx file path"], required = true)
     private lateinit var tmx: Path
 
-    @CommandLine.Option(order = 2, names = ["--index-dir"], description = ["index directory path"])
-    private var indexDir: Path? = null
-
     override fun execute() {
-        indexingAppService.indexTmx(tmx, indexDir)
+        indexingAppService.indexTmx(tmx)
     }
 }
