@@ -27,6 +27,9 @@ class JekyllDriverImpl(private val externalProcessDriver: ExternalProcessDriver)
     }
 
     override fun extractPo(jekyllSourceDir: Path, poBaseDir: Path) {
+        // Ensure basic gems are installed before adding jekyll-l10n plugin
+        ensureBundleInstalled(jekyllSourceDir)
+
         ensureJekyllL10nPlugin(jekyllSourceDir, asciidoctorL10nRepo)
 
         externalProcessDriver.execute(
