@@ -1,10 +1,10 @@
 package net.sharplab.tsuji.core.driver.vectorstore
 
-import dev.langchain4j.community.rag.content.retriever.lucene.LuceneContentRetriever
 import dev.langchain4j.community.rag.content.retriever.lucene.LuceneEmbeddingStore
 import dev.langchain4j.data.segment.TextSegment
 import dev.langchain4j.model.embedding.EmbeddingModel
 import dev.langchain4j.rag.content.retriever.ContentRetriever
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever
 import org.apache.lucene.store.FSDirectory
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -50,11 +50,10 @@ class LuceneVectorStoreDriver(
     }
 
     override fun asContentRetriever(maxResults: Int): ContentRetriever {
-        val indexPath = Paths.get(ragIndexPath)
-        val directory = FSDirectory.open(indexPath)
-
-        return LuceneContentRetriever.builder()
-            .directory(directory)
+        // Use EmbeddingStoreContentRetriever instead of LuceneContentRetriever
+        // to avoid Lucene query parser errors with HTML tags and special characters
+        return EmbeddingStoreContentRetriever.builder()
+            .embeddingStore(embeddingStore)
             .embeddingModel(embeddingModel)
             .maxResults(maxResults)
             .minScore(0.5)
