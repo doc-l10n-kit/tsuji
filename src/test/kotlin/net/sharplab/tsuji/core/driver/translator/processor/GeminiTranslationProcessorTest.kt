@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 
+import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationResponse
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
 import net.sharplab.tsuji.po.model.MessageType
@@ -49,27 +50,6 @@ internal class GeminiTranslationProcessorTest {
         )
     }
 
-    @Test
-    fun `process should escape curly braces for LangChain4j`() {
-        // Given
-        val mockTranslationService = mock<GeminiTranslationService>()
-        val mockRAGService = mock<GeminiRAGTranslationService>()
-        whenever(mockTranslationService.translate(any(), any(), any())).thenReturn("translated")
-
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
-        val message = createMessage("Test with {brackets}")
-        val context = createContext()
-
-        // When
-        val result = processor.process(listOf(message), context)
-
-        // Then
-        assertThat(result).hasSize(1)
-        // LangChain4j のプロンプトテンプレート用にエスケープされるべき
-        verify(mockTranslationService).translate(eq("Test with {{brackets}}"), eq("en"), eq("ja"))
-        assertThat(result[0].text).isEqualTo("translated")
-        assertThat(result[0].fuzzy).isTrue()
-    }
 
     @Test
     fun `process should use RAG service when useRag is true`() {
@@ -92,27 +72,6 @@ internal class GeminiTranslationProcessorTest {
         assertThat(result[0].text).isEqualTo("rag-translated")
     }
 
-    @Test
-    fun `process with RAG should also escape curly braces`() {
-        // Given
-        val mockTranslationService = mock<GeminiTranslationService>()
-        val mockRAGService = mock<GeminiRAGTranslationService>()
-        whenever(mockRAGService.translate(any(), any(), any())).thenReturn("translated")
-
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
-        val message = createMessage("{RAG} test")
-        val context = createContext(useRag = true)
-
-        // When
-        val result = processor.process(listOf(message), context)
-
-        // Then
-        assertThat(result).hasSize(1)
-        // RAGでも波括弧がエスケープされることを確認
-        verify(mockRAGService).translate(eq("{{RAG}} test"), eq("en"), eq("ja"))
-        verifyNoInteractions(mockTranslationService)
-        assertThat(result[0].text).isEqualTo("translated")
-    }
 
     @Test
     fun `process should skip already translated messages`() {
@@ -221,49 +180,17 @@ author: me"""
         verifyNoInteractions(mockRAGService)
     }
 
+
     @Test
-    fun `process should escape curly braces in Jekyll Front Matter`() {
+    fun `process should use batch translation for multiple normal messages`() {
         // Given
         val mockTranslationService = mock<GeminiTranslationService>()
         val mockRAGService = mock<GeminiRAGTranslationService>()
 
-        // Mock translation with escaped braces
-        whenever(mockTranslationService.translate(eq("Test {{variable}} here"), eq("en"), eq("ja")))
-            .thenReturn("Test {{variable}} here!")
-
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
-
-        // Jekyll Front Matter には全フィールドが必要 (layout, title, date, tags, author)
-        val jekyllMessage = """title: Test {variable} here
-layout: post
-date: 2024
-tags: []
-author: me"""
-
-        val message = createMessage(jekyllMessage)
-        val context = createContext()
-
-        // When
-        val result = processor.process(listOf(message), context)
-
-        // Then
-        assertThat(result).hasSize(1)
-        assertThat(result[0].fuzzy).isTrue()
-
-        // 波括弧がエスケープされて翻訳サービスに渡されることを確認
-        verify(mockTranslationService).translate(eq("Test {{variable}} here"), eq("en"), eq("ja"))
-
-        // 翻訳結果にも波括弧が含まれることを確認
-        assertThat(result[0].text).contains("title: Test {{variable}} here!")
-        assertThat(result[0].text).contains("layout: post")
-    }
-
-    @Test
-    fun `process should handle multiple messages`() {
-        // Given
-        val mockTranslationService = mock<GeminiTranslationService>()
-        val mockRAGService = mock<GeminiRAGTranslationService>()
-        whenever(mockTranslationService.translate(any(), any(), any())).thenReturn("translated")
+        val batchResponse = BatchTranslationResponse(
+            translations = listOf("translated 1", "translated 2", "translated 3")
+        )
+        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(batchResponse)
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
         val messages = listOf(
@@ -278,10 +205,43 @@ author: me"""
 
         // Then
         assertThat(result).hasSize(3)
-        verify(mockTranslationService, times(3)).translate(any(), eq("en"), eq("ja"))
+        // Batch method should be called once, not individual translate
+        verify(mockTranslationService, times(1)).translateBatch(any(), eq("en"), eq("ja"))
+        verify(mockTranslationService, never()).translate(any(), any(), any())
+
+        assertThat(result[0].text).isEqualTo("translated 1")
+        assertThat(result[1].text).isEqualTo("translated 2")
+        assertThat(result[2].text).isEqualTo("translated 3")
         result.forEach {
-            assertThat(it.text).isEqualTo("translated")
             assertThat(it.fuzzy).isTrue()
         }
+    }
+
+    @Test
+    fun `process should preserve curly braces in batch translation`() {
+        // Given
+        val mockTranslationService = mock<GeminiTranslationService>()
+        val mockRAGService = mock<GeminiRAGTranslationService>()
+
+        val batchResponse = BatchTranslationResponse(translations = listOf("translated with {variable}"))
+        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(batchResponse)
+
+        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
+        val message = createMessage("Test {variable} here")
+        val context = createContext()
+
+        // When
+        val result = processor.process(listOf(message), context)
+
+        // Then
+        // Curly braces should be passed as-is without escaping
+        verify(mockTranslationService).translateBatch(
+            argThat { request ->
+                request.texts.size == 1 && request.texts[0] == "Test {variable} here"
+            },
+            eq("en"),
+            eq("ja")
+        )
+        assertThat(result[0].text).isEqualTo("translated with {variable}")
     }
 }

@@ -10,5 +10,6 @@ import net.sharplab.tsuji.core.driver.rag.TsujiRetrievalAugmentorSupplier
 interface GeminiRAGTranslationService {
 
     @SystemMessage(fromResource = "prompts/translation-rag-system-prompt.txt")
-    fun translate(@UserMessage text: String, @V("srcLang") srcLang: String, @V("dstLang") dstLang: String): String
+    @UserMessage("Translate this text: {text}")
+    fun translate(@V("text") text: String, @V("srcLang") srcLang: String, @V("dstLang") dstLang: String): String
 }
