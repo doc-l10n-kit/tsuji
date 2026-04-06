@@ -179,7 +179,12 @@ class TsujiBeans() {
         return when (tsujiConfig.translator.type.lowercase()) {
             "deepl" -> {
                 logger.info("Using DeepL Translator")
-                DeepLTranslator(tsujiConfig.translator.deepl.apiKey.get(), asciidoctorPreProcessor)
+                DeepLTranslator(
+                    tsujiConfig.translator.deepl.apiKey.get(),
+                    asciidoctorPreProcessor,
+                    adaptiveParallelismController,
+                    tsujiConfig.translator.gemini.adaptive.maxRetries
+                )
             }
             "gemini" -> {
                 logger.info("Using Gemini Translator")

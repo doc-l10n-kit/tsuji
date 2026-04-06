@@ -2,6 +2,7 @@ package net.sharplab.tsuji.core.driver.translator.deepl
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.driver.translator.Translator
+import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.core.driver.translator.processor.*
@@ -10,6 +11,8 @@ import org.slf4j.LoggerFactory
 class DeepLTranslator(
     private val deepLApiKey: String,
     private val asciidoctorPreProcessor: AsciidoctorPreProcessor,
+    private val parallelismController: AdaptiveParallelismController,
+    private val maxRetries: Int = 3,
     deepLApiForTest: com.deepl.api.Translator? = null
 ) : Translator {
 
@@ -32,7 +35,7 @@ class DeepLTranslator(
             // Preprocessing: Asciidoc → HTML
             asciidoctorPreProcessor,
             // Translation
-            DeepLTranslationProcessor(deepLApi),
+            DeepLTranslationProcessor(deepLApi, maxRetries, parallelismController),
             // Postprocessing: HTML → Asciidoc
             LinkTagMessageProcessor(),
             ImageTagMessageProcessor(),
