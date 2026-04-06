@@ -2,6 +2,7 @@ package net.sharplab.tsuji.core.driver.translator.gemini
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.driver.translator.Translator
+import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.core.driver.translator.processor.*
@@ -10,7 +11,11 @@ import org.slf4j.LoggerFactory
 class GeminiTranslator(
     private val geminiTranslationService: GeminiTranslationService,
     private val geminiRAGTranslationService: GeminiRAGTranslationService,
-    private val asciidoctorPreProcessor: AsciidoctorPreProcessor
+    private val asciidoctorPreProcessor: AsciidoctorPreProcessor,
+    private val maxTextsPerRequest: Int = 10,
+    private val maxTextSizeBytes: Int = 50000,
+    private val maxRetries: Int = 3,
+    private val parallelismController: AdaptiveParallelismController
 ) : Translator {
 
     private val logger = LoggerFactory.getLogger(GeminiTranslator::class.java)
@@ -20,7 +25,14 @@ class GeminiTranslator(
         // Preprocessing: Asciidoc → HTML
         asciidoctorPreProcessor,
         // Translation
-        GeminiTranslationProcessor(geminiTranslationService, geminiRAGTranslationService),
+        GeminiTranslationProcessor(
+            geminiTranslationService,
+            geminiRAGTranslationService,
+            maxTextsPerRequest,
+            maxTextSizeBytes,
+            maxRetries,
+            parallelismController
+        ),
         // Postprocessing: HTML → Asciidoc
         LinkTagMessageProcessor(),
         ImageTagMessageProcessor(),

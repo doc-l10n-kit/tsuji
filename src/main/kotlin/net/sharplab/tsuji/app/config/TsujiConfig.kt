@@ -117,6 +117,49 @@ interface TsujiConfig {
             @get:WithName("api-key")
             val apiKey: Optional<String>
         }
+
+        @get:WithName("gemini")
+        val gemini: Gemini
+
+        interface Gemini {
+            @get:WithName("batch")
+            val batch: Batch
+
+            @get:WithName("adaptive")
+            val adaptive: Adaptive
+
+            interface Batch {
+                @get:WithName("max-texts-per-request")
+                @get:WithDefault("10")
+                val maxTextsPerRequest: Int
+
+                @get:WithName("max-text-size-bytes")
+                @get:WithDefault("50000")
+                val maxTextSizeBytes: Int
+            }
+
+            interface Adaptive {
+                @get:WithName("enabled")
+                @get:WithDefault("true")
+                val enabled: Boolean
+
+                @get:WithName("initial-concurrency")
+                @get:WithDefault("3")
+                val initialConcurrency: Int
+
+                @get:WithName("min-concurrency")
+                @get:WithDefault("1")
+                val minConcurrency: Int
+
+                @get:WithName("max-concurrency")
+                @get:WithDefault("10")
+                val maxConcurrency: Int
+
+                @get:WithName("max-retries")
+                @get:WithDefault("3")
+                val maxRetries: Int
+            }
+        }
     }
 
     @get:WithName("git")

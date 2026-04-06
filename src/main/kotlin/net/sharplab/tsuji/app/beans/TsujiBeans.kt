@@ -31,6 +31,7 @@ import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationServ
 import net.sharplab.tsuji.core.driver.vectorstore.LuceneVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
+import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.service.IndexingService
 import net.sharplab.tsuji.core.service.IndexingServiceImpl
 import net.sharplab.tsuji.core.service.JekyllService
@@ -157,12 +158,23 @@ class TsujiBeans() {
     }
 
     @Produces
+    @Singleton
+    fun adaptiveParallelismController(tsujiConfig: TsujiConfig): AdaptiveParallelismController {
+        return AdaptiveParallelismController(
+            initialConcurrency = tsujiConfig.translator.gemini.adaptive.initialConcurrency,
+            minConcurrency = tsujiConfig.translator.gemini.adaptive.minConcurrency,
+            maxConcurrency = tsujiConfig.translator.gemini.adaptive.maxConcurrency
+        )
+    }
+
+    @Produces
     @ApplicationScoped
     fun translator(
         tsujiConfig: TsujiConfig,
         asciidoctorPreProcessor: AsciidoctorPreProcessor,
         geminiTranslationService: GeminiTranslationService,
-        geminiRAGTranslationService: GeminiRAGTranslationService
+        geminiRAGTranslationService: GeminiRAGTranslationService,
+        adaptiveParallelismController: AdaptiveParallelismController
     ): Translator {
         return when (tsujiConfig.translator.type.lowercase()) {
             "deepl" -> {
@@ -171,11 +183,27 @@ class TsujiBeans() {
             }
             "gemini" -> {
                 logger.info("Using Gemini Translator")
-                GeminiTranslator(geminiTranslationService, geminiRAGTranslationService, asciidoctorPreProcessor)
+                GeminiTranslator(
+                    geminiTranslationService,
+                    geminiRAGTranslationService,
+                    asciidoctorPreProcessor,
+                    tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
+                    tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
+                    tsujiConfig.translator.gemini.adaptive.maxRetries,
+                    adaptiveParallelismController
+                )
             }
             else -> {
                 logger.warn("Unknown translator type: ${tsujiConfig.translator.type}, defaulting to Gemini")
-                GeminiTranslator(geminiTranslationService, geminiRAGTranslationService, asciidoctorPreProcessor)
+                GeminiTranslator(
+                    geminiTranslationService,
+                    geminiRAGTranslationService,
+                    asciidoctorPreProcessor,
+                    tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
+                    tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
+                    tsujiConfig.translator.gemini.adaptive.maxRetries,
+                    adaptiveParallelismController
+                )
             }
         }
     }
