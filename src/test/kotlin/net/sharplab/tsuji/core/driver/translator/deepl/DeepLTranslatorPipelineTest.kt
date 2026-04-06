@@ -1,6 +1,8 @@
 package net.sharplab.tsuji.core.driver.translator.deepl
 
 import com.deepl.api.TextResult
+import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
+import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
 import net.sharplab.tsuji.po.model.MessageType
 import net.sharplab.tsuji.po.model.Po
@@ -27,6 +29,13 @@ internal class DeepLTranslatorPipelineTest {
     private lateinit var mockDeepLApi: com.deepl.api.Translator
     private lateinit var translator: DeepLTranslator
 
+    private fun createMockParallelismController() = AdaptiveParallelismController(
+        initialConcurrency = 3,
+        minConcurrency = 1,
+        maxConcurrency = 10,
+        rateLimitExceptionClass = RateLimitException::class
+    )
+
     @BeforeEach
     fun setUp() {
         asciidoctor = Asciidoctor.Factory.create()
@@ -34,7 +43,7 @@ internal class DeepLTranslatorPipelineTest {
         mockDeepLApi = mock()
 
         // モックAPIを注入
-        translator = DeepLTranslator("dummy-api-key", preProcessor, mockDeepLApi)
+        translator = DeepLTranslator("dummy-api-key", preProcessor, createMockParallelismController(), deepLApiForTest = mockDeepLApi)
     }
 
     @AfterEach

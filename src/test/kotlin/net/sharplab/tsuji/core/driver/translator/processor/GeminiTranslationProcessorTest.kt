@@ -1,6 +1,8 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 
+import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
+import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationResponse
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
@@ -23,6 +25,15 @@ import org.mockito.kotlin.*
  * - メッセージ分類（skip/fill/jekyll/normal）
  */
 internal class GeminiTranslationProcessorTest {
+
+    private fun createMockParallelismController(): AdaptiveParallelismController {
+        return AdaptiveParallelismController(
+            initialConcurrency = 3,
+            minConcurrency = 1,
+            maxConcurrency = 10,
+            rateLimitExceptionClass = RateLimitException::class
+        )
+    }
 
     private fun createContext(useRag: Boolean = false) = TranslationContext(
         po = Po("ja", emptyList()),
@@ -58,7 +69,7 @@ internal class GeminiTranslationProcessorTest {
         val mockRAGService = mock<GeminiRAGTranslationService>()
         whenever(mockRAGService.translate(any(), any(), any())).thenReturn("rag-translated")
 
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
+        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val message = createMessage("Test text")
         val context = createContext(useRag = true)
 
@@ -78,7 +89,7 @@ internal class GeminiTranslationProcessorTest {
         // Given
         val mockTranslationService = mock<GeminiTranslationService>()
         val mockRAGService = mock<GeminiRAGTranslationService>()
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
+        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val message = createMessage("Hello", messageString = "こんにちは")
         val context = createContext()
 
@@ -96,7 +107,7 @@ internal class GeminiTranslationProcessorTest {
         // Given
         val mockTranslationService = mock<GeminiTranslationService>()
         val mockRAGService = mock<GeminiRAGTranslationService>()
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
+        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val message = createMessage("")
         val context = createContext()
 
@@ -114,7 +125,7 @@ internal class GeminiTranslationProcessorTest {
         // Given
         val mockTranslationService = mock<GeminiTranslationService>()
         val mockRAGService = mock<GeminiRAGTranslationService>()
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
+        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val message = createMessage(
             "some-id",
             type = MessageType.DelimitedBlock
@@ -143,7 +154,7 @@ internal class GeminiTranslationProcessorTest {
         whenever(mockTranslationService.translate(eq("World"), eq("en"), eq("ja")))
             .thenReturn("World!")
 
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
+        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
 
         // 元のテストと同じ形式
         val jekyllMessage = """title: Hello
@@ -192,7 +203,7 @@ author: me"""
         )
         whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(batchResponse)
 
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
+        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val messages = listOf(
             createMessage("Text 1"),
             createMessage("Text 2"),
@@ -226,7 +237,7 @@ author: me"""
         val batchResponse = BatchTranslationResponse(translations = listOf("translated with {variable}"))
         whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(batchResponse)
 
-        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService)
+        val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val message = createMessage("Test {variable} here")
         val context = createContext()
 

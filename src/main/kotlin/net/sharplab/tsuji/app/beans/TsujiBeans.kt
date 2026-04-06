@@ -163,7 +163,8 @@ class TsujiBeans() {
         return AdaptiveParallelismController(
             initialConcurrency = tsujiConfig.translator.gemini.adaptive.initialConcurrency,
             minConcurrency = tsujiConfig.translator.gemini.adaptive.minConcurrency,
-            maxConcurrency = tsujiConfig.translator.gemini.adaptive.maxConcurrency
+            maxConcurrency = tsujiConfig.translator.gemini.adaptive.maxConcurrency,
+            rateLimitExceptionClass = net.sharplab.tsuji.core.driver.translator.exception.RateLimitException::class
         )
     }
 
@@ -191,7 +192,6 @@ class TsujiBeans() {
                 GeminiTranslator(
                     geminiTranslationService,
                     geminiRAGTranslationService,
-                    asciidoctorPreProcessor,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
                     tsujiConfig.translator.gemini.adaptive.maxRetries,
@@ -203,7 +203,6 @@ class TsujiBeans() {
                 GeminiTranslator(
                     geminiTranslationService,
                     geminiRAGTranslationService,
-                    asciidoctorPreProcessor,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
                     tsujiConfig.translator.gemini.adaptive.maxRetries,

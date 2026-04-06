@@ -1,5 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.deepl
 
+import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
+import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.po.model.MessageType
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.po.model.PoMessage
@@ -23,6 +25,13 @@ internal class DeepLTranslatorIntegrationTest {
     private val asciidoctor = Asciidoctor.Factory.create()
     private val preProcessor = AsciidoctorPreProcessor(asciidoctor)
 
+    private fun createMockParallelismController() = AdaptiveParallelismController(
+        initialConcurrency = 3,
+        minConcurrency = 1,
+        maxConcurrency = 10,
+        rateLimitExceptionClass = RateLimitException::class
+    )
+
     @AfterEach
     fun tearDown() {
         preProcessor.close()
@@ -41,7 +50,7 @@ internal class DeepLTranslatorIntegrationTest {
     @Test
     fun `translate should return empty Po for empty messages`() {
         // Given
-        val translator = DeepLTranslator("dummy-api-key", preProcessor)
+        val translator = DeepLTranslator("dummy-api-key", preProcessor, createMockParallelismController())
         val po = Po("ja", emptyList())
 
         // When
@@ -54,7 +63,7 @@ internal class DeepLTranslatorIntegrationTest {
     @Test
     fun `translate should throw exception when API key is missing`() {
         // Given
-        val translator = DeepLTranslator("", preProcessor)
+        val translator = DeepLTranslator("", preProcessor, createMockParallelismController())
         val po = Po("ja", listOf(createMessage("test")))
 
         // When & Then
@@ -67,7 +76,7 @@ internal class DeepLTranslatorIntegrationTest {
     @Test
     fun `translate should throw exception when API key is blank`() {
         // Given
-        val translator = DeepLTranslator("   ", preProcessor)
+        val translator = DeepLTranslator("   ", preProcessor, createMockParallelismController())
         val po = Po("ja", listOf(createMessage("test")))
 
         // When & Then
@@ -80,7 +89,7 @@ internal class DeepLTranslatorIntegrationTest {
     @Test
     fun `translate should throw exception when API key is empty string`() {
         // Given
-        val translator = DeepLTranslator("", preProcessor)
+        val translator = DeepLTranslator("", preProcessor, createMockParallelismController())
         val po = Po("ja", listOf(createMessage("test")))
 
         // When & Then
@@ -93,7 +102,7 @@ internal class DeepLTranslatorIntegrationTest {
     @Test
     fun `translate should log warning when useRag is true`() {
         // Given
-        val translator = DeepLTranslator("dummy-api-key", preProcessor)
+        val translator = DeepLTranslator("dummy-api-key", preProcessor, createMockParallelismController())
         val po = Po("ja", emptyList())
 
         // When (useRag=true はDeepLではサポートされない)

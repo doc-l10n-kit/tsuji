@@ -114,30 +114,38 @@ class DeepLTranslationProcessor(
                 logger.info("Translating batch $batchNumber/$totalBatches (${batch.size} texts, attempt ${attempt + 1})")
 
                 // All API calls go through parallelismController
+                // Success/error callbacks are automatically handled inside executeWithControl
                 val result = parallelismController.executeWithControl {
-                    deepLApi.translateText(batch, srcLang, dstLang, options).map { it.text }
+                    try {
+                        deepLApi.translateText(batch, srcLang, dstLang, options).map { it.text }
+                    } catch (e: DeepLException) {
+                        // Convert DeepL rate limit errors to RateLimitException
+                        // so parallelismController can recognize and handle it
+                        if (isRateLimitError(e)) {
+                            throw RateLimitException("DeepL rate limit exceeded: ${e.message}")
+                        }
+                        throw e
+                    }
                 }
 
-                parallelismController.onRequestSuccess()
                 return result
 
-            } catch (e: DeepLException) {
-                // Check if it's a rate limit error
-                if (isRateLimitError(e)) {
-                    parallelismController.onRateLimitError()
-                    logger.warn("DeepL rate limit error, retrying in ${1000L * (attempt + 1)}ms")
-                    delay(1000L * (attempt + 1))
-                    if (attempt == maxRetries - 1) {
-                        throw RateLimitException("DeepL rate limit exceeded: ${e.message}")
-                    }
-                } else {
-                    // Other DeepL errors: simple retry with exponential backoff
-                    logger.warn("DeepL API error: ${e.message}, retrying")
-                    delay(1000L * (attempt + 1))
-                    if (attempt == maxRetries - 1) {
-                        throw DeepLTranslatorException("DeepL API error occurred after $maxRetries retries", e)
-                    }
+            } catch (e: RateLimitException) {
+                // Rate limit: already handled by parallelismController, just retry
+                logger.warn("DeepL rate limit error, retrying in ${1000L * (attempt + 1)}ms")
+                delay(1000L * (attempt + 1))
+                if (attempt == maxRetries - 1) {
+                    throw e
                 }
+
+            } catch (e: DeepLException) {
+                // Other DeepL errors: simple retry with exponential backoff
+                logger.warn("DeepL API error: ${e.message}, retrying")
+                delay(1000L * (attempt + 1))
+                if (attempt == maxRetries - 1) {
+                    throw DeepLTranslatorException("DeepL API error occurred after $maxRetries retries", e)
+                }
+
             } catch (e: Exception) {
                 // Transport errors: simple retry
                 logger.warn("Transport error: ${e.javaClass.simpleName}: ${e.message}, retrying")
@@ -207,24 +215,34 @@ class DeepLTranslationProcessor(
     ): List<String> {
         repeat(maxRetries) { attempt ->
             try {
+                // Success/error callbacks are automatically handled inside executeWithControl
                 return parallelismController.executeWithControl {
-                    deepLApi.translateText(texts, srcLang, dstLang, options).map { it.text }
+                    try {
+                        deepLApi.translateText(texts, srcLang, dstLang, options).map { it.text }
+                    } catch (e: DeepLException) {
+                        // Convert DeepL rate limit errors to RateLimitException
+                        if (isRateLimitError(e)) {
+                            throw RateLimitException("DeepL rate limit exceeded: ${e.message}")
+                        }
+                        throw e
+                    }
                 }
+
+            } catch (e: RateLimitException) {
+                // Rate limit: already handled by parallelismController, just retry
+                logger.warn("DeepL rate limit error, retrying in ${1000L * (attempt + 1)}ms")
+                delay(1000L * (attempt + 1))
+                if (attempt == maxRetries - 1) {
+                    throw e
+                }
+
             } catch (e: DeepLException) {
-                if (isRateLimitError(e)) {
-                    parallelismController.onRateLimitError()
-                    logger.warn("DeepL rate limit error, retrying in ${1000L * (attempt + 1)}ms")
-                    delay(1000L * (attempt + 1))
-                    if (attempt == maxRetries - 1) {
-                        throw RateLimitException("DeepL rate limit exceeded: ${e.message}")
-                    }
-                } else {
-                    logger.warn("DeepL API error: ${e.message}, retrying")
-                    delay(1000L * (attempt + 1))
-                    if (attempt == maxRetries - 1) {
-                        throw DeepLTranslatorException("DeepL API error occurred after $maxRetries retries", e)
-                    }
+                logger.warn("DeepL API error: ${e.message}, retrying")
+                delay(1000L * (attempt + 1))
+                if (attempt == maxRetries - 1) {
+                    throw DeepLTranslatorException("DeepL API error occurred after $maxRetries retries", e)
                 }
+
             } catch (e: Exception) {
                 logger.warn("Transport error: ${e.javaClass.simpleName}: ${e.message}, retrying")
                 delay(1000L * (attempt + 1))

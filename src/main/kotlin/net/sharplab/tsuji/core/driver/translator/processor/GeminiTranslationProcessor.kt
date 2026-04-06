@@ -148,17 +148,16 @@ class GeminiTranslationProcessor(
                 logger.info("Translating batch $batchNumber/$totalBatches (${batch.size} texts, attempt ${attempt + 1})")
 
                 // All API calls go through parallelismController
+                // Success/error callbacks are automatically handled inside executeWithControl
                 val result = parallelismController.executeWithControl {
                     translateBatchWithValidation(batch, context)
                 }
 
                 batchController.onBatchSuccess()
-                parallelismController.onRequestSuccess()
                 return result
 
             } catch (e: RateLimitException) {
-                // Rate limit: reduce parallelism + backoff
-                parallelismController.onRateLimitError()
+                // Rate limit: already handled by parallelismController, just retry
                 logger.warn("Rate limit error, retrying in ${1000L * (attempt + 1)}ms")
                 delay(1000L * (attempt + 1))
                 if (attempt == maxRetries - 1) {

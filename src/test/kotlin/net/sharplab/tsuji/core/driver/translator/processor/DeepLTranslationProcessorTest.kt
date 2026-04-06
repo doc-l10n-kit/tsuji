@@ -2,6 +2,8 @@ package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import com.deepl.api.TextResult
+import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
+import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.po.model.MessageType
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.po.model.PoMessage
@@ -21,6 +23,15 @@ import org.mockito.kotlin.*
  * - メッセージ分類（skip/fill/jekyll/normal）
  */
 internal class DeepLTranslationProcessorTest {
+
+    private fun createMockParallelismController(): AdaptiveParallelismController {
+        return AdaptiveParallelismController(
+            initialConcurrency = 3,
+            minConcurrency = 1,
+            maxConcurrency = 10,
+            rateLimitExceptionClass = RateLimitException::class
+        )
+    }
 
     private fun createContext(isAsciidoctor: Boolean = false) = TranslationContext(
         po = Po("ja", emptyList()),
@@ -52,7 +63,7 @@ internal class DeepLTranslationProcessorTest {
     fun `process should return empty list for empty input`() {
         // Given
         val mockApi = mock<com.deepl.api.Translator>()
-        val processor = DeepLTranslationProcessor(mockApi)
+        val processor = DeepLTranslationProcessor(mockApi, parallelismController = createMockParallelismController())
         val context = createContext()
 
         // When
@@ -67,7 +78,7 @@ internal class DeepLTranslationProcessorTest {
     fun `process should skip already translated messages`() {
         // Given
         val mockApi = mock<com.deepl.api.Translator>()
-        val processor = DeepLTranslationProcessor(mockApi)
+        val processor = DeepLTranslationProcessor(mockApi, parallelismController = createMockParallelismController())
         val message = createMessage("Hello", messageString = "こんにちは")
         val context = createContext()
 
@@ -84,7 +95,7 @@ internal class DeepLTranslationProcessorTest {
     fun `process should skip empty text`() {
         // Given
         val mockApi = mock<com.deepl.api.Translator>()
-        val processor = DeepLTranslationProcessor(mockApi)
+        val processor = DeepLTranslationProcessor(mockApi, parallelismController = createMockParallelismController())
         val message = createMessage("")
         val context = createContext()
 
@@ -120,7 +131,7 @@ internal class DeepLTranslationProcessorTest {
             any()
         )).thenReturn(listOf(result1, result2, result3))
 
-        val processor = DeepLTranslationProcessor(mockApi)
+        val processor = DeepLTranslationProcessor(mockApi, parallelismController = createMockParallelismController())
 
         val messages = listOf(
             createMessage("Hello"),
@@ -174,7 +185,7 @@ internal class DeepLTranslationProcessorTest {
             any()
         )).thenReturn(listOf(titleResult, synopsisResult))
 
-        val processor = DeepLTranslationProcessor(mockApi)
+        val processor = DeepLTranslationProcessor(mockApi, parallelismController = createMockParallelismController())
 
         // Same format as original test
         val jekyllMessage = """title: Hello
@@ -217,7 +228,7 @@ author: me"""
     fun `process should fill messageString with messageId for special types`() {
         // Given
         val mockApi = mock<com.deepl.api.Translator>()
-        val processor = DeepLTranslationProcessor(mockApi)
+        val processor = DeepLTranslationProcessor(mockApi, parallelismController = createMockParallelismController())
         val message = createMessage(
             "some-id",
             type = MessageType.DelimitedBlock
