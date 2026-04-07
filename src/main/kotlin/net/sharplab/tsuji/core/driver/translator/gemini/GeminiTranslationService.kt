@@ -1,22 +1,160 @@
 package net.sharplab.tsuji.core.driver.translator.gemini
 
-import dev.langchain4j.service.SystemMessage
-import dev.langchain4j.service.UserMessage
-import dev.langchain4j.service.V
-import io.quarkiverse.langchain4j.RegisterAiService
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import dev.langchain4j.data.message.SystemMessage
+import dev.langchain4j.data.message.UserMessage
+import dev.langchain4j.model.chat.ChatModel
+import dev.langchain4j.model.chat.request.ChatRequest
+import dev.langchain4j.model.chat.request.ResponseFormat
+import dev.langchain4j.model.chat.request.ResponseFormatType
+import dev.langchain4j.model.chat.request.json.JsonArraySchema
+import dev.langchain4j.model.chat.request.json.JsonIntegerSchema
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema
+import dev.langchain4j.model.chat.request.json.JsonSchema
+import dev.langchain4j.model.chat.request.json.JsonStringSchema
+import io.quarkus.runtime.Startup
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.inject.Inject
+import org.slf4j.LoggerFactory
+import java.io.InputStreamReader
 
-@RegisterAiService
-interface GeminiTranslationService {
+@ApplicationScoped
+@Startup
+class GeminiTranslationService {
 
-    @SystemMessage(fromResource = "prompts/translation-system-prompt.txt")
-    @UserMessage("Translate this text: {text}")
-    fun translate(@V("text") text: String, @V("srcLang") srcLang: String, @V("dstLang") dstLang: String): String
+    private val logger = LoggerFactory.getLogger(GeminiTranslationService::class.java)
+    private val mapper = jacksonObjectMapper()
 
-    @SystemMessage(fromResource = "prompts/translation-batch-system-prompt.txt")
-    @UserMessage("Translate the following JSON object. Return a JSON object with the SAME keys:\n{request}")
+    @Inject
+    lateinit var chatModel: ChatModel
+
+    // Load prompts from resources
+    private val translationSystemPrompt: String by lazy {
+        loadPrompt("prompts/translation-system-prompt.txt")
+    }
+
+    private val translationBatchSystemPrompt: String by lazy {
+        loadPrompt("prompts/translation-batch-system-prompt.txt")
+    }
+
+    private fun loadPrompt(resourcePath: String): String {
+        return javaClass.classLoader.getResourceAsStream(resourcePath)?.use {
+            InputStreamReader(it).readText()
+        } ?: throw IllegalStateException("Failed to load prompt from $resourcePath")
+    }
+
+    private fun buildSystemPrompt(template: String, srcLang: String, dstLang: String): String {
+        return template
+            .replace("{srcLang}", srcLang)
+            .replace("{dstLang}", dstLang)
+    }
+
+    companion object {
+        private val BATCH_RESPONSE_TYPE_REF =
+            object : com.fasterxml.jackson.core.type.TypeReference<List<BatchTranslationResponseItem>>() {}
+    }
+
+    fun translate(text: String, srcLang: String, dstLang: String): String {
+        val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
+        val userPrompt = "Translate this text: $text"
+
+        val request = ChatRequest.builder()
+            .messages(
+                SystemMessage.from(systemPrompt),
+                UserMessage.from(userPrompt)
+            )
+            .build()
+
+        val response = chatModel.chat(request)
+        return response.aiMessage().text()
+    }
+
     fun translateBatch(
-        @V("request") request: BatchTranslationRequest,
-        @V("srcLang") srcLang: String,
-        @V("dstLang") dstLang: String
-    ): String
+        texts: List<String>,
+        srcLang: String,
+        dstLang: String
+    ): List<String> {
+        val systemPrompt = buildSystemPrompt(translationBatchSystemPrompt, srcLang, dstLang)
+        val requestJson = serializeBatchRequest(texts)
+        val userPrompt = "Translate the following JSON array. Return a JSON array with the SAME indices:\n$requestJson"
+
+        val chatRequest = ChatRequest.builder()
+            .messages(
+                SystemMessage.from(systemPrompt),
+                UserMessage.from(userPrompt)
+            )
+            .responseFormat(createBatchResponseSchema())
+            .build()
+
+        logger.debug("Sending batch translation request with array-based schema (batch size: ${texts.size})")
+
+        val response = chatModel.chat(chatRequest)
+        val batchResponse = parseBatchResponse(response.aiMessage().text())
+
+        validateIndices(texts.indices.toSet(), batchResponse)
+
+        return toTranslations(batchResponse)
+    }
+
+    private fun serializeBatchRequest(texts: List<String>): String {
+        val items = texts.mapIndexed { index, text ->
+            BatchTranslationRequestItem(index, text)
+        }
+        return mapper.writeValueAsString(items)
+    }
+
+    private fun parseBatchResponse(responseJson: String): List<BatchTranslationResponseItem> {
+        return try {
+            mapper.readValue(responseJson, BATCH_RESPONSE_TYPE_REF)
+        } catch (e: Exception) {
+            logger.error("Failed to parse batch translation response: $responseJson", e)
+            throw e
+        }
+    }
+
+    private fun validateIndices(expectedIndices: Set<Int>, batchResponse: List<BatchTranslationResponseItem>) {
+        val actualIndices = batchResponse.map { it.index }.toSet()
+
+        if (expectedIndices != actualIndices) {
+            val missing = expectedIndices - actualIndices
+            val extra = actualIndices - expectedIndices
+            logger.error("Index mismatch: expected=$expectedIndices, actual=$actualIndices, missing=$missing, extra=$extra")
+            throw IllegalStateException("Translation index mismatch: missing=$missing, extra=$extra")
+        }
+    }
+
+    private fun toTranslations(batchResponse: List<BatchTranslationResponseItem>): List<String> {
+        return batchResponse.sortedBy { it.index }.map { it.translation }
+    }
+
+    /**
+     * Creates a fixed JSON Schema for array-based batch translation.
+     * The schema defines the structure of each array element, not the array length.
+     * This prevents the LLM from splitting texts at newlines or returning wrong indices.
+     */
+    private fun createBatchResponseSchema(): ResponseFormat {
+        // Define the schema for each array element: {"index": Int, "translation": String}
+        val itemSchema = JsonObjectSchema.builder()
+            .addIntegerProperty("index", "Index of the translation (0-based)")
+            .addStringProperty("translation", "Translated text")
+            .required(listOf("index", "translation"))
+            .build()
+
+        // Define the array schema
+        val arraySchema = JsonArraySchema.builder()
+            .items(itemSchema)
+            .description("Array of translation results")
+            .build()
+
+        val jsonSchema = JsonSchema.builder()
+            .name("BatchTranslationResponse")
+            .rootElement(arraySchema)
+            .build()
+
+        return ResponseFormat.builder()
+            .type(ResponseFormatType.JSON)
+            .jsonSchema(jsonSchema)
+            .build()
+    }
 }

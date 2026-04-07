@@ -3,7 +3,6 @@ import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
-import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationResponse
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
 import net.sharplab.tsuji.po.model.MessageType
@@ -198,8 +197,8 @@ author: me"""
         val mockTranslationService = mock<GeminiTranslationService>()
         val mockRAGService = mock<GeminiRAGTranslationService>()
 
-        val responseJson = """{"0":"translated 1","1":"translated 2","2":"translated 3"}"""
-        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(responseJson)
+        val translations = listOf("translated 1", "translated 2", "translated 3")
+        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(translations)
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val messages = listOf(
@@ -232,8 +231,8 @@ author: me"""
         val mockTranslationService = mock<GeminiTranslationService>()
         val mockRAGService = mock<GeminiRAGTranslationService>()
 
-        val responseJson = """{"0":"translated with {variable}"}"""
-        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(responseJson)
+        val translations = listOf("translated with {variable}")
+        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(translations)
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val message = createMessage("Test {variable} here")
@@ -245,8 +244,8 @@ author: me"""
         // Then
         // Curly braces should be passed as-is without escaping
         verify(mockTranslationService).translateBatch(
-            argThat { request ->
-                request.texts.size == 1 && request.texts[0] == "Test {variable} here"
+            argThat { texts ->
+                texts.size == 1 && texts[0] == "Test {variable} here"
             },
             eq("en"),
             eq("ja")

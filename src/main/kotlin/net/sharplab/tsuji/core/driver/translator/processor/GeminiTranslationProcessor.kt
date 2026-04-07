@@ -5,8 +5,6 @@ import kotlinx.coroutines.runBlocking
 import net.sharplab.tsuji.core.driver.translator.adaptive.GeminiBatchProvider
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.exception.*
-import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequest
-import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationResponse
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
@@ -126,47 +124,8 @@ class GeminiTranslationProcessor(
                     geminiRAGTranslationService.translate(text, context.srcLang, context.dstLang)
                 }
             } else {
-                val request = BatchTranslationRequest(batch)
                 logger.debug("Sending batch: ${batch.size} items")
-
-                // Call batch translation
-                // 送信: {"0": "text1", "1": "text2", ...}（Jacksonが自動変換）
-                // 受信: String形式のJSON
-                val responseJson = geminiTranslationService.translateBatch(request, context.srcLang, context.dstLang)
-
-                // Parse JSON response manually
-                val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
-                val response = try {
-                    mapper.readValue(responseJson, BatchTranslationResponse::class.java)
-                } catch (e: Exception) {
-                    logger.error("Failed to parse response JSON: $responseJson", e)
-                    throw ResponseParseException("Failed to parse LLM response: ${e.message}", e)
-                }
-
-                // Validate response keys match request keys
-                val expectedKeys = batch.indices.map { it.toString() }.toSet()
-                val actualKeys = response.keys
-
-                if (expectedKeys != actualKeys) {
-                    val missing = expectedKeys - actualKeys
-                    val extra = actualKeys - expectedKeys
-                    throw KeyMismatchException(
-                        message = "Translation key mismatch: missing=$missing, extra=$extra",
-                        expectedKeys = expectedKeys,
-                        actualKeys = actualKeys
-                    )
-                }
-
-                // Also check size for backward compatibility
-                if (response.translations.size != batch.size) {
-                    throw BatchSizeMismatchException(
-                        expected = batch.size,
-                        actual = response.translations.size,
-                        message = "Batch translation size mismatch: expected ${batch.size}, got ${response.translations.size}"
-                    )
-                }
-
-                response.translations
+                geminiTranslationService.translateBatch(batch, context.srcLang, context.dstLang)
             }
 
         } catch (e: TranslationValidationException) {

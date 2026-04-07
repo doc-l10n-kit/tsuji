@@ -11,7 +11,6 @@ import org.eclipse.microprofile.config.ConfigProvider
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -41,8 +40,7 @@ class GeminiTranslatorComparisonTest {
     @Inject
     lateinit var poDriver: PoDriver
 
-    @TempDir
-    lateinit var tempDir: Path
+    private val outputDir = Path.of("build/translation-comparison/gemini")
 
     @BeforeEach
     fun checkApiKey() {
@@ -66,7 +64,7 @@ class GeminiTranslatorComparisonTest {
         assertThat(poFiles).isNotEmpty()
         logger.info("Found ${poFiles.size} PO files to translate")
 
-        val testDir = tempDir.resolve("test-po-files")
+        val testDir = outputDir.resolve("test-po-files")
         Files.createDirectories(testDir)
 
         val copiedFiles = poFiles.map { sourceFile ->
@@ -154,7 +152,7 @@ class GeminiTranslatorComparisonTest {
         assertThat(largestFile).isNotNull()
         logger.info("Testing with largest file: ${largestFile!!.fileName} (${Files.size(largestFile)} bytes)")
 
-        val testFile = tempDir.resolve(largestFile.fileName)
+        val testFile = outputDir.resolve(largestFile.fileName)
         Files.copy(largestFile, testFile, StandardCopyOption.REPLACE_EXISTING)
 
         // When: Translate the file
