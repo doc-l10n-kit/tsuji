@@ -31,56 +31,55 @@ class BatchedExecutor<T>(
         operation: suspend (batch: List<T>) -> List<R>
     ): List<R> {
         val results = mutableListOf<R>()
+        var validationRetryCount = 0
+        var generalRetryCount = 0
 
         while (batchProvider.hasNext()) {
-            var nextBatch = batchProvider.peekNext()
-            var validationRetryCount = 0
-            var generalRetryCount = 0
+            val nextBatch = batchProvider.peekNext()
 
-            // Retry loop for current batch
-            while (true) {
-                try {
-                    val attemptNumber = generalRetryCount + 1
-                    logger.info("Processing batch (${nextBatch.size} items, attempt $attemptNumber)")
+            try {
+                val attemptNumber = generalRetryCount + 1
+                logger.info("Processing batch (${nextBatch.size} items, attempt $attemptNumber)")
 
-                    // Execute operation on this batch
-                    val batchResults = operation(nextBatch)
+                // Execute operation on this batch
+                val batchResults = operation(nextBatch)
 
-                    // Success
-                    results.addAll(batchResults)
-                    // Consume just to move next batch
-                    batchProvider.consumeNext()
-                    batchProvider.notifySuccess()
-                    break  // Success, move to next batch
+                // Success: consume and move to next batch
+                results.addAll(batchResults)
+                batchProvider.consumeNext()
+                batchProvider.notifySuccess()
 
-                } catch (e: TranslationValidationException) {
-                    // Validation error: reduce size limit and recreate batch
-                    validationRetryCount++
-                    logger.warn("Validation error (retry $validationRetryCount/$maxValidationRetries): ${e.javaClass.simpleName}: ${e.message}")
+                // Reset retry counts for next batch
+                validationRetryCount = 0
+                generalRetryCount = 0
 
-                    if (validationRetryCount >= maxValidationRetries) {
-                        logger.error("Exceeded maximum validation retries ($maxValidationRetries), giving up")
-                        throw e
-                    }
+            } catch (e: TranslationValidationException) {
+                // Validation error: reduce size limit and retry from same position
+                validationRetryCount++
+                logger.warn("Validation error (retry $validationRetryCount/$maxValidationRetries): ${e.javaClass.simpleName}: ${e.message}")
 
-                    // Reduce size limit and recreate batch
-                    val newLimit = batchProvider.notifyValidationError()
-                    nextBatch = batchProvider.peekNext()
-                    logger.info("Reduced size limit to $newLimit, recreated batch with ${nextBatch.size} items")
-
-                    delay(1000L * validationRetryCount)
-                } catch (e: Exception) {
-                    // General errors (rate limit, transport, etc.): simple retry without size limit change
-                    // Note: RateLimitException is handled by AdaptiveParallelismController (reduces concurrency)
-                    generalRetryCount++
-                    logger.warn("Error: ${e.javaClass.simpleName}: ${e.message}, retrying")
-
-                    if (generalRetryCount >= maxRetries) {
-                        throw e
-                    }
-
-                    delay(1000L * generalRetryCount)
+                if (validationRetryCount >= maxValidationRetries) {
+                    logger.error("Exceeded maximum validation retries ($maxValidationRetries), giving up")
+                    throw e
                 }
+
+                // Reduce size limit (next peekNext() will create smaller batch from same position)
+                val newLimit = batchProvider.notifyValidationError()
+                logger.info("Reduced size limit to $newLimit, will retry with smaller batch")
+
+                delay(1000L * validationRetryCount)
+
+            } catch (e: Exception) {
+                // General errors (rate limit, transport, etc.): simple retry without size limit change
+                // Note: RateLimitException is handled by AdaptiveParallelismController (reduces concurrency)
+                generalRetryCount++
+                logger.warn("Error: ${e.javaClass.simpleName}: ${e.message}, retrying")
+
+                if (generalRetryCount >= maxRetries) {
+                    throw e
+                }
+
+                delay(1000L * generalRetryCount)
             }
         }
 
