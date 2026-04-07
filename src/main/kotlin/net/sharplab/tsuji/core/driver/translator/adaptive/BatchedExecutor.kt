@@ -65,7 +65,8 @@ class BatchedExecutor<T>(
 
                     // Reduce size limit and recreate batch
                     val newLimit = batchProvider.notifyValidationError()
-                    logger.info("Reduced size limit to $newLimit")
+                    nextBatch = batchProvider.peekNext()
+                    logger.info("Reduced size limit to $newLimit, recreated batch with ${nextBatch.size} items")
 
                     delay(1000L * validationRetryCount)
                 } catch (e: Exception) {

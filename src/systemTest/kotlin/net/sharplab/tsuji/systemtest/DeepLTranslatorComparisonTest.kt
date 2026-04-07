@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.systemtest
 
 import io.quarkus.test.junit.QuarkusTest
+import io.quarkus.test.junit.TestProfile
 import jakarta.inject.Inject
 import net.sharplab.tsuji.core.driver.po.PoDriver
 import net.sharplab.tsuji.core.driver.translator.Translator
@@ -20,15 +21,16 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
 /**
- * Translator comparison system test.
+ * DeepL translator comparison system test.
  *
- * Tests machine translation of multiple PO files using both DeepL and Gemini translators.
+ * Tests machine translation of multiple PO files using DeepL translator.
  * Uses real PO files from the ja.quarkus.io project (10 files, ~320 messages total).
  */
 @QuarkusTest
-class TranslatorComparisonTest {
+@TestProfile(DeepLTranslatorProfile::class)
+class DeepLTranslatorComparisonTest {
 
-    private val logger = LoggerFactory.getLogger(TranslatorComparisonTest::class.java)
+    private val logger = LoggerFactory.getLogger(DeepLTranslatorComparisonTest::class.java)
 
     @Inject
     lateinit var translator: Translator
@@ -45,24 +47,11 @@ class TranslatorComparisonTest {
     @BeforeEach
     fun checkApiKey() {
         val config = ConfigProvider.getConfig()
-        val translatorType = config.getValue("tsuji.translator.type", String::class.java)
-
-        when (translatorType.lowercase()) {
-            "deepl" -> {
-                val apiKey = config.getOptionalValue("tsuji.translator.deepl.api-key", String::class.java)
-                Assumptions.assumeTrue(
-                    apiKey.isPresent && apiKey.get().isNotBlank(),
-                    "DeepL API Key is not configured, skipping test."
-                )
-            }
-            "gemini" -> {
-                val apiKey = config.getOptionalValue("quarkus.langchain4j.ai.gemini.api-key", String::class.java)
-                Assumptions.assumeTrue(
-                    apiKey.isPresent && apiKey.get().isNotBlank(),
-                    "Gemini API Key is not configured, skipping test."
-                )
-            }
-        }
+        val apiKey = config.getOptionalValue("tsuji.translator.deepl.api-key", String::class.java)
+        Assumptions.assumeTrue(
+            apiKey.isPresent && apiKey.get().isNotBlank(),
+            "DeepL API Key is not configured, skipping test."
+        )
     }
 
     @Test
@@ -128,7 +117,7 @@ class TranslatorComparisonTest {
         val completionRate = (totalTranslated.toDouble() / totalMessages * 100)
 
         logger.info("=" * 80)
-        logger.info("Translation Results")
+        logger.info("DeepL Translation Results")
         logger.info("=" * 80)
         results.forEach { result ->
             logger.info("  ${result.fileName}: ${result.translatedCount}/${result.totalMessages} translated " +
@@ -145,31 +134,16 @@ class TranslatorComparisonTest {
         assertThat(totalMessages).isGreaterThanOrEqualTo(180) // Should have at least 180 messages total (10 files)
         assertThat(totalTranslated).isGreaterThan(0) // At least some messages should be translated
 
-        // Allow some tolerance for translation failures
-        // Gemini should achieve close to 100%, DeepL may have some failures
-        val config = ConfigProvider.getConfig()
-        val translatorType = config.getValue("tsuji.translator.type", String::class.java)
-
-        when (translatorType.lowercase()) {
-            "gemini" -> {
-                // Gemini should achieve high completion rate (>95%)
-                assertThat(completionRate)
-                    .describedAs("Gemini should translate most messages successfully")
-                    .isGreaterThan(95.0)
-            }
-            "deepl" -> {
-                // DeepL may have tag handling issues, so we allow lower completion rate
-                // but it should still translate at least some messages
-                assertThat(completionRate)
-                    .describedAs("DeepL should translate at least 30% of messages")
-                    .isGreaterThan(30.0)
-            }
-        }
+        // DeepL may have tag handling issues, so we allow lower completion rate
+        // but it should still translate at least some messages
+        assertThat(completionRate)
+            .describedAs("DeepL should translate at least 30% of messages")
+            .isGreaterThan(30.0)
     }
 
     @Test
     fun `translate single large PO file - should handle large files correctly`() {
-        // Given: Find the largest PO file (security-webauthn.adoc.po or similar)
+        // Given: Find the largest PO file
         val testResourceDir = Path.of("src/systemTest/resources/po/translator-comparison")
         val poFiles = Files.walk(testResourceDir).use { stream ->
             stream.filter { it.isRegularFile() && it.extension == "po" }
@@ -206,7 +180,7 @@ class TranslatorComparisonTest {
         val translatedCount = untranslatedBefore - untranslatedAfter
         val completionRate = (translatedCount.toDouble() / po.messages.size * 100)
 
-        logger.info("Large file translation result:")
+        logger.info("DeepL large file translation result:")
         logger.info("  File: ${testFile.name}")
         logger.info("  Total messages: ${po.messages.size}")
         logger.info("  Translated: $translatedCount")
@@ -215,27 +189,11 @@ class TranslatorComparisonTest {
         logger.info("  Time: ${elapsedTime}ms")
 
         // Assertions
-        assertThat(translatedCount).isGreaterThan(0)
-
-        // Check translator-specific expectations
-        val config = ConfigProvider.getConfig()
-        val translatorType = config.getValue("tsuji.translator.type", String::class.java)
-
-        when (translatorType.lowercase()) {
-            "gemini" -> {
-                // Gemini should handle large files well
-                assertThat(completionRate)
-                    .describedAs("Gemini should handle large files with high completion rate")
-                    .isGreaterThan(90.0)
-            }
-            "deepl" -> {
-                // DeepL may struggle with large files due to tag handling
-                // We just verify it attempts translation
-                assertThat(translatedCount)
-                    .describedAs("DeepL should translate at least some messages in large files")
-                    .isGreaterThan(0)
-            }
-        }
+        // DeepL may struggle with large files due to tag handling
+        // We just verify it attempts translation
+        assertThat(translatedCount)
+            .describedAs("DeepL should translate at least some messages in large files")
+            .isGreaterThan(0)
     }
 
     private data class TranslationResult(
