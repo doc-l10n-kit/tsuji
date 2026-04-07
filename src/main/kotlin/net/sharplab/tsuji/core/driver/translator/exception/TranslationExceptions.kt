@@ -27,6 +27,15 @@ class ResponseParseException(
 ) : TranslationValidationException(message, cause)
 
 /**
+ * Response keys do not match request keys in indexed batch translation.
+ */
+class KeyMismatchException(
+    message: String,
+    val expectedKeys: Set<String>,
+    val actualKeys: Set<String>
+) : TranslationValidationException(message)
+
+/**
  * Rate limit error from API.
  * This should reduce parallelism, not batch size.
  */

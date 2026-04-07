@@ -44,7 +44,7 @@ class BatchedExecutor<T>(
                 // Execute operation on this batch
                 val batchResults = operation(nextBatch)
 
-                // Success: consume and move to next batch
+                // Success: consumeNext to move to next batch
                 results.addAll(batchResults)
                 batchProvider.consumeNext()
                 batchProvider.notifySuccess()

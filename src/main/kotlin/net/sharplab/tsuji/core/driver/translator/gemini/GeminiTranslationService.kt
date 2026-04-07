@@ -13,10 +13,10 @@ interface GeminiTranslationService {
     fun translate(@V("text") text: String, @V("srcLang") srcLang: String, @V("dstLang") dstLang: String): String
 
     @SystemMessage(fromResource = "prompts/translation-batch-system-prompt.txt")
-    @UserMessage("Translate these texts: {request}")
+    @UserMessage("Translate the following JSON object. Return a JSON object with the SAME keys:\n{request}")
     fun translateBatch(
         @V("request") request: BatchTranslationRequest,
         @V("srcLang") srcLang: String,
         @V("dstLang") dstLang: String
-    ): BatchTranslationResponse
+    ): String
 }

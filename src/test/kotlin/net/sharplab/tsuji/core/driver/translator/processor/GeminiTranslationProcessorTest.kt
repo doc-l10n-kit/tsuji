@@ -198,10 +198,8 @@ author: me"""
         val mockTranslationService = mock<GeminiTranslationService>()
         val mockRAGService = mock<GeminiRAGTranslationService>()
 
-        val batchResponse = BatchTranslationResponse(
-            translations = listOf("translated 1", "translated 2", "translated 3")
-        )
-        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(batchResponse)
+        val responseJson = """{"0":"translated 1","1":"translated 2","2":"translated 3"}"""
+        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(responseJson)
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val messages = listOf(
@@ -234,8 +232,8 @@ author: me"""
         val mockTranslationService = mock<GeminiTranslationService>()
         val mockRAGService = mock<GeminiRAGTranslationService>()
 
-        val batchResponse = BatchTranslationResponse(translations = listOf("translated with {variable}"))
-        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(batchResponse)
+        val responseJson = """{"0":"translated with {variable}"}"""
+        whenever(mockTranslationService.translateBatch(any(), any(), any())).thenReturn(responseJson)
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController())
         val message = createMessage("Test {variable} here")
