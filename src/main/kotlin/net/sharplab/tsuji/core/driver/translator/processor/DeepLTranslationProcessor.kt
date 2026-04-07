@@ -43,7 +43,7 @@ class DeepLTranslationProcessor(
         val options = TextTranslationOptions()
         options.nonSplittingTags = INLINE_ELEMENT_NAMES
         options.ignoreTags = IGNORE_ELEMENT_NAMES
-        options.tagHandling = "xml"
+        options.tagHandling = "html"  // Use "html" instead of "xml" to support HTML entities
         options.formality = Formality.PreferMore
 
         // Classify messages
