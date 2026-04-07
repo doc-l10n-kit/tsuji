@@ -4,7 +4,8 @@ Translate the given text from {srcLang} to {dstLang}.
 Use the provided information (retrieved from previous translations) as a reference for terminology and style consistency.
 
 Rules:
+- Translate ONLY the natural language content - preserve ALL formatting, markup, and structure exactly as is.
+- Do NOT add, remove, or modify any markup elements (backticks, HTML tags, Asciidoc syntax, etc.).
+- Keep the exact same formatting style as the source text.
 - Maintain the technical context of the documentation.
-- Preserve all HTML/Asciidoc tags (e.g., <a data-doc-l10n-kit-type="...">, <code>, <em>, etc.) exactly as they are.
-- Do not translate the content inside <code> tags if it represents code or technical identifiers.
 - Ensure consistent terminology usage with the provided references.

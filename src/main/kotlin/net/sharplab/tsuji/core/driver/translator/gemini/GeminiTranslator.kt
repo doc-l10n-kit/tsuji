@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 class GeminiTranslator(
     private val geminiTranslationService: GeminiTranslationService,
     private val geminiRAGTranslationService: GeminiRAGTranslationService,
-    private val asciidoctorPreProcessor: AsciidoctorPreProcessor,
     private val maxTextsPerRequest: Int = 10,
     private val maxTextSizeBytes: Int = 50000,
     private val maxRetries: Int = 3,
@@ -20,11 +19,9 @@ class GeminiTranslator(
 
     private val logger = LoggerFactory.getLogger(GeminiTranslator::class.java)
 
-    // Processor pipeline (order is important)
+    // Processor pipeline - Gemini handles Asciidoc markup natively
     private val processors = listOf(
-        // Preprocessing: Asciidoc → HTML
-        asciidoctorPreProcessor,
-        // Translation
+        // Translation only - no Asciidoc preprocessing/postprocessing
         GeminiTranslationProcessor(
             geminiTranslationService,
             geminiRAGTranslationService,
@@ -32,17 +29,7 @@ class GeminiTranslator(
             maxTextSizeBytes,
             maxRetries,
             parallelismController
-        ),
-        // Postprocessing: HTML → Asciidoc
-        LinkTagMessageProcessor(),
-        ImageTagMessageProcessor(),
-        DecorationTagMessageProcessor("em", "_", "_"),
-        DecorationTagMessageProcessor("strong", "*", "*"),
-        DecorationTagMessageProcessor("monospace", "`", "`"),
-        DecorationTagMessageProcessor("superscript", "^", "^"),
-        DecorationTagMessageProcessor("subscript", "~", "~"),
-        DecorationTagMessageProcessor("code", "`", "`"),
-        CharacterReferenceUnescaper()  // Unescape at the end
+        )
     )
 
     override fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po {

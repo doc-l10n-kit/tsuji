@@ -6,6 +6,7 @@ import com.deepl.api.Formality
 import com.deepl.api.TextTranslationOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import net.sharplab.tsuji.core.driver.translator.adaptive.DeepLBatchProvider
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslatorException
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
@@ -83,11 +84,35 @@ class DeepLTranslationProcessor(
         // Normal translation (batch processing with retry)
         if (normalIndices.isNotEmpty()) {
             val normalTexts = normalIndices.map { messages[it].text }
-            val textBatches = splitIntoBatches(normalTexts)
-            logger.info("Translating ${normalTexts.size} normal texts in ${textBatches.size} batch(es) (${context.srcLang} -> ${context.dstLang})")
 
-            val translated = textBatches.flatMapIndexed { batchIndex, textBatch ->
-                translateBatchWithRetry(textBatch, context.srcLang, context.dstLang, options, batchIndex + 1, textBatches.size)
+            logger.info("Translating ${normalTexts.size} texts (${context.srcLang} -> ${context.dstLang})")
+
+            // Create batch provider and executor
+            val batchProvider = DeepLBatchProvider(
+                items = normalTexts,
+                initialLimit = MAX_TEXT_SIZE_BYTES,
+                minLimit = MAX_TEXT_SIZE_BYTES,
+                maxLimit = MAX_TEXT_SIZE_BYTES
+            )
+            val executor = net.sharplab.tsuji.core.driver.translator.adaptive.BatchedExecutor(
+                batchProvider = batchProvider,
+                maxRetries = maxRetries,
+                maxValidationRetries = 5
+            )
+
+            val translated = executor.execute { batch ->
+                // Execute translation for this batch through parallelism controller
+                parallelismController.execute {
+                    try {
+                        deepLApi.translateText(batch, context.srcLang, context.dstLang, options).map { it.text }
+                    } catch (e: DeepLException) {
+                        // Convert DeepL rate limit errors to RateLimitException
+                        if (isRateLimitError(e)) {
+                            throw RateLimitException("DeepL rate limit exceeded: ${e.message}")
+                        }
+                        throw e
+                    }
+                }
             }
 
             translated.forEachIndexed { i, translatedText ->
@@ -99,63 +124,6 @@ class DeepLTranslationProcessor(
         }
 
         return result
-    }
-
-    private suspend fun translateBatchWithRetry(
-        batch: List<String>,
-        srcLang: String,
-        dstLang: String,
-        options: TextTranslationOptions,
-        batchNumber: Int,
-        totalBatches: Int
-    ): List<String> {
-        repeat(maxRetries) { attempt ->
-            try {
-                logger.info("Translating batch $batchNumber/$totalBatches (${batch.size} texts, attempt ${attempt + 1})")
-
-                // All API calls go through parallelismController
-                // Success/error callbacks are automatically handled inside executeWithControl
-                val result = parallelismController.executeWithControl {
-                    try {
-                        deepLApi.translateText(batch, srcLang, dstLang, options).map { it.text }
-                    } catch (e: DeepLException) {
-                        // Convert DeepL rate limit errors to RateLimitException
-                        // so parallelismController can recognize and handle it
-                        if (isRateLimitError(e)) {
-                            throw RateLimitException("DeepL rate limit exceeded: ${e.message}")
-                        }
-                        throw e
-                    }
-                }
-
-                return result
-
-            } catch (e: RateLimitException) {
-                // Rate limit: already handled by parallelismController, just retry
-                logger.warn("DeepL rate limit error, retrying in ${1000L * (attempt + 1)}ms")
-                delay(1000L * (attempt + 1))
-                if (attempt == maxRetries - 1) {
-                    throw e
-                }
-
-            } catch (e: DeepLException) {
-                // Other DeepL errors: simple retry with exponential backoff
-                logger.warn("DeepL API error: ${e.message}, retrying")
-                delay(1000L * (attempt + 1))
-                if (attempt == maxRetries - 1) {
-                    throw DeepLTranslatorException("DeepL API error occurred after $maxRetries retries", e)
-                }
-
-            } catch (e: Exception) {
-                // Transport errors: simple retry
-                logger.warn("Transport error: ${e.javaClass.simpleName}: ${e.message}, retrying")
-                delay(1000L * (attempt + 1))
-                if (attempt == maxRetries - 1) {
-                    throw e
-                }
-            }
-        }
-        error("Unreachable")
     }
 
     private fun isRateLimitError(e: DeepLException): Boolean {
@@ -216,7 +184,7 @@ class DeepLTranslationProcessor(
         repeat(maxRetries) { attempt ->
             try {
                 // Success/error callbacks are automatically handled inside executeWithControl
-                return parallelismController.executeWithControl {
+                return parallelismController.execute {
                     try {
                         deepLApi.translateText(texts, srcLang, dstLang, options).map { it.text }
                     } catch (e: DeepLException) {
@@ -254,44 +222,6 @@ class DeepLTranslationProcessor(
         error("Unreachable")
     }
 
-    /**
-     * Splits texts into batches according to DeepL API limits.
-     *
-     * DeepL API limits:
-     * - Maximum 50 texts per request
-     * - Maximum request body size of 128 KiB
-     *
-     * Uses 100,000 bytes (approx. 97 KiB) as limit to ensure margin for JSON overhead.
-     */
-    private fun splitIntoBatches(texts: List<String>): List<List<String>> {
-        val batches = mutableListOf<List<String>>()
-        var currentBatch = mutableListOf<String>()
-        var currentSizeBytes = 0
-
-        texts.forEach { text ->
-            val textSizeBytes = text.toByteArray(Charsets.UTF_8).size
-
-            // Check if adding this text would exceed limits
-            if (currentBatch.size >= MAX_TEXTS_PER_REQUEST ||
-                (currentBatch.isNotEmpty() && currentSizeBytes + textSizeBytes > MAX_TEXT_SIZE_BYTES)
-            ) {
-                // Save current batch and start a new one
-                batches.add(currentBatch)
-                currentBatch = mutableListOf()
-                currentSizeBytes = 0
-            }
-
-            currentBatch.add(text)
-            currentSizeBytes += textSizeBytes
-        }
-
-        // Add the last batch
-        if (currentBatch.isNotEmpty()) {
-            batches.add(currentBatch)
-        }
-
-        return batches
-    }
 
     companion object {
         // DeepL API limits

@@ -28,7 +28,7 @@ class AdaptiveParallelismControllerTest {
         // Launch 5 concurrent requests
         val jobs = List(5) {
             async {
-                controller.executeWithControl {
+                controller.execute {
                     val current = concurrentExecutions.incrementAndGet()
                     maxObservedConcurrency.updateAndGet { max -> maxOf(max, current) }
                     delay(50) // Simulate work
@@ -56,7 +56,7 @@ class AdaptiveParallelismControllerTest {
 
         // Execute 10 successful requests (threshold for increase)
         repeat(10) {
-            controller.executeWithControl {
+            controller.execute {
                 delay(1)
             }
         }
@@ -66,7 +66,7 @@ class AdaptiveParallelismControllerTest {
 
         // Another 10 successes
         repeat(10) {
-            controller.executeWithControl {
+            controller.execute {
                 delay(1)
             }
         }
@@ -88,7 +88,7 @@ class AdaptiveParallelismControllerTest {
 
         // Trigger rate limit error
         assertThrows<TestRateLimitException> {
-            controller.executeWithControl {
+            controller.execute {
                 throw TestRateLimitException("Rate limit exceeded")
             }
         }
@@ -98,7 +98,7 @@ class AdaptiveParallelismControllerTest {
 
         // Another rate limit error
         assertThrows<TestRateLimitException> {
-            controller.executeWithControl {
+            controller.execute {
                 throw TestRateLimitException("Rate limit exceeded")
             }
         }
@@ -120,7 +120,7 @@ class AdaptiveParallelismControllerTest {
 
         // Trigger rate limit error
         assertThrows<TestRateLimitException> {
-            controller.executeWithControl {
+            controller.execute {
                 throw TestRateLimitException("Rate limit exceeded")
             }
         }
@@ -142,7 +142,7 @@ class AdaptiveParallelismControllerTest {
 
         // Execute 10 successful requests
         repeat(10) {
-            controller.executeWithControl {
+            controller.execute {
                 delay(1)
             }
         }
@@ -162,7 +162,7 @@ class AdaptiveParallelismControllerTest {
 
         // 9 successful requests (not enough to increase)
         repeat(9) {
-            controller.executeWithControl {
+            controller.execute {
                 delay(1)
             }
         }
@@ -171,7 +171,7 @@ class AdaptiveParallelismControllerTest {
 
         // Rate limit error resets counter
         assertThrows<TestRateLimitException> {
-            controller.executeWithControl {
+            controller.execute {
                 throw TestRateLimitException("Rate limit exceeded")
             }
         }
@@ -180,7 +180,7 @@ class AdaptiveParallelismControllerTest {
 
         // Need 10 more successes to increase
         repeat(10) {
-            controller.executeWithControl {
+            controller.execute {
                 delay(1)
             }
         }
@@ -201,7 +201,7 @@ class AdaptiveParallelismControllerTest {
 
         // Trigger different exception
         assertThrows<IllegalStateException> {
-            controller.executeWithControl {
+            controller.execute {
                 throw IllegalStateException("Some other error")
             }
         }
@@ -224,7 +224,7 @@ class AdaptiveParallelismControllerTest {
         // Launch 20 concurrent requests
         val jobs = List(20) {
             async {
-                controller.executeWithControl {
+                controller.execute {
                     delay(10)
                     completedCount.incrementAndGet()
                 }
@@ -250,7 +250,7 @@ class AdaptiveParallelismControllerTest {
 
         // Trigger rate limit error
         assertThrows<TestRateLimitException> {
-            controller.executeWithControl {
+            controller.execute {
                 throw TestRateLimitException("Rate limit exceeded")
             }
         }
@@ -263,7 +263,7 @@ class AdaptiveParallelismControllerTest {
 
         val jobs = List(5) {
             async {
-                controller.executeWithControl {
+                controller.execute {
                     val current = concurrentExecutions.incrementAndGet()
                     maxObservedConcurrency.updateAndGet { max -> maxOf(max, current) }
                     delay(50)
@@ -291,7 +291,7 @@ class AdaptiveParallelismControllerTest {
 
         // Trigger rate limit error at minimum
         assertThrows<TestRateLimitException> {
-            controller.executeWithControl {
+            controller.execute {
                 throw TestRateLimitException("Rate limit exceeded")
             }
         }
@@ -302,7 +302,7 @@ class AdaptiveParallelismControllerTest {
         // Verify that permit was released (not kept as reserved)
         // If permit was kept, this request would block forever
         var executed = false
-        controller.executeWithControl {
+        controller.execute {
             executed = true
         }
 
@@ -324,7 +324,7 @@ class AdaptiveParallelismControllerTest {
         val jobs = List(3) {
             async {
                 assertThrows<TestRateLimitException> {
-                    controller.executeWithControl {
+                    controller.execute {
                         delay(10) // Simulate some work before error
                         throw TestRateLimitException("Rate limit exceeded")
                     }
@@ -352,11 +352,11 @@ class AdaptiveParallelismControllerTest {
         assertEquals(3, controller.getCurrentConcurrency())
 
         // Pattern: success, success, error, success, success
-        controller.executeWithControl { delay(1) }
-        controller.executeWithControl { delay(1) }
+        controller.execute { delay(1) }
+        controller.execute { delay(1) }
 
         assertThrows<TestRateLimitException> {
-            controller.executeWithControl {
+            controller.execute {
                 throw TestRateLimitException("Rate limit")
             }
         }
@@ -369,7 +369,7 @@ class AdaptiveParallelismControllerTest {
 
         val jobs = List(4) {
             async {
-                controller.executeWithControl {
+                controller.execute {
                     val current = concurrentExecutions.incrementAndGet()
                     maxObservedConcurrency.updateAndGet { max -> maxOf(max, current) }
                     delay(50)
@@ -396,13 +396,13 @@ class AdaptiveParallelismControllerTest {
 
         // Increase to 3 (10 successes needed)
         repeat(10) {
-            controller.executeWithControl { delay(1) }
+            controller.execute { delay(1) }
         }
         assertEquals(3, controller.getCurrentConcurrency())
 
         // Decrease to 2 (rate limit error)
         assertThrows<TestRateLimitException> {
-            controller.executeWithControl {
+            controller.execute {
                 throw TestRateLimitException("Rate limit")
             }
         }
@@ -414,7 +414,7 @@ class AdaptiveParallelismControllerTest {
 
         val jobs = List(5) {
             async {
-                controller.executeWithControl {
+                controller.execute {
                     val current = concurrentExecutions.incrementAndGet()
                     maxObservedConcurrency.updateAndGet { max -> maxOf(max, current) }
                     delay(30)

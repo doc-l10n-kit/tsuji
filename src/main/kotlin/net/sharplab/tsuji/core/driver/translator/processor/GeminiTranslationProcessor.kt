@@ -1,15 +1,13 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveBatchController
+import net.sharplab.tsuji.core.driver.translator.adaptive.GeminiBatchProvider
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.exception.*
 import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequest
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
-import net.sharplab.tsuji.po.model.type
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.po.util.MessageClassifier
 import org.slf4j.LoggerFactory
@@ -81,17 +79,28 @@ class GeminiTranslationProcessor(
         // Normal translation with adaptive batch processing
         if (normalIndices.isNotEmpty()) {
             val normalTexts = normalIndices.map { messages[it].text }
-            val batchController = AdaptiveBatchController(
-                initialSize = maxTextsPerRequest,
-                minSize = 1,
-                maxSize = maxTextsPerRequest
+
+            logger.info("Translating ${normalTexts.size} texts (${context.srcLang} -> ${context.dstLang})")
+
+            // Create batch provider and executor
+            val batchProvider = GeminiBatchProvider(
+                items = normalTexts,
+                initialLimit = maxTextsPerRequest,
+                minLimit = 1,
+                maxLimit = maxTextsPerRequest
+            )
+            val executor = net.sharplab.tsuji.core.driver.translator.adaptive.BatchedExecutor(
+                batchProvider = batchProvider,
+                maxRetries = maxRetries,
+                maxValidationRetries = 5
             )
 
-            val translated = processBatchesSequentially(
-                normalTexts,
-                context,
-                batchController
-            )
+            val translated = executor.execute { batch ->
+                // Execute translation for this batch through parallelism controller
+                parallelismController.execute {
+                    translateBatchWithValidation(batch, context)
+                }
+            }
 
             translated.forEachIndexed { i, translatedText ->
                 val index = normalIndices[i]
@@ -102,94 +111,6 @@ class GeminiTranslationProcessor(
         }
 
         return result
-    }
-
-    private suspend fun processBatchesSequentially(
-        texts: List<String>,
-        context: TranslationContext,
-        batchController: AdaptiveBatchController
-    ): List<String> {
-        val results = mutableListOf<String>()
-        var remainingTexts = texts
-
-        while (remainingTexts.isNotEmpty()) {
-            val batchSize = batchController.getCurrentBatchSize()
-            val batches = splitIntoBatches(remainingTexts, batchSize)
-
-            logger.info("Processing ${remainingTexts.size} texts in ${batches.size} batch(es) (size: $batchSize)")
-
-            // Sequential batch processing
-            batches.forEachIndexed { index, batch ->
-                val batchResult = processBatchWithRetry(
-                    batch,
-                    context,
-                    batchController,
-                    index + 1,
-                    batches.size
-                )
-                results.addAll(batchResult)
-            }
-
-            remainingTexts = emptyList()
-        }
-
-        return results
-    }
-
-    private suspend fun processBatchWithRetry(
-        batch: List<String>,
-        context: TranslationContext,
-        batchController: AdaptiveBatchController,
-        batchNumber: Int,
-        totalBatches: Int
-    ): List<String> {
-        repeat(maxRetries) { attempt ->
-            try {
-                logger.info("Translating batch $batchNumber/$totalBatches (${batch.size} texts, attempt ${attempt + 1})")
-
-                // All API calls go through parallelismController
-                // Success/error callbacks are automatically handled inside executeWithControl
-                val result = parallelismController.executeWithControl {
-                    translateBatchWithValidation(batch, context)
-                }
-
-                batchController.onBatchSuccess()
-                return result
-
-            } catch (e: RateLimitException) {
-                // Rate limit: already handled by parallelismController, just retry
-                logger.warn("Rate limit error, retrying in ${1000L * (attempt + 1)}ms")
-                delay(1000L * (attempt + 1))
-                if (attempt == maxRetries - 1) {
-                    throw e
-                }
-
-            } catch (e: TranslationValidationException) {
-                // LLM response validation error: reduce batch size
-                logger.warn("Validation error: ${e.javaClass.simpleName}: ${e.message}")
-                if (attempt == maxRetries - 1) {
-                    throw e
-                }
-
-                // Reduce batch size and re-split
-                val newSize = batchController.onValidationError()
-                logger.info("Reducing batch size to $newSize due to validation error, re-splitting batch")
-
-                // Re-split and retry recursively
-                return batch.chunked(newSize).flatMap { subBatch ->
-                    processBatchWithRetry(subBatch, context, batchController, batchNumber, totalBatches)
-                }
-
-            } catch (e: Exception) {
-                // Transport errors (network, timeout, etc.): simple retry without batch size change
-                logger.warn("Transport error: ${e.javaClass.simpleName}: ${e.message}, retrying")
-                delay(1000L * (attempt + 1))
-                if (attempt == maxRetries - 1) {
-                    throw e
-                }
-            }
-        }
-        error("Unreachable")
     }
 
     private suspend fun translateBatchWithValidation(
@@ -287,40 +208,4 @@ class GeminiTranslationProcessor(
         return replaced
     }
 
-    /**
-     * Splits texts into batches according to Gemini API limits.
-     *
-     * Gemini API limits (conservative settings):
-     * - Maximum texts per request (adaptive, starts at maxTextsPerRequest)
-     * - Maximum request body size of ~50 KiB (accounting for prompt overhead)
-     */
-    private fun splitIntoBatches(texts: List<String>, maxBatchSize: Int): List<List<String>> {
-        val batches = mutableListOf<List<String>>()
-        var currentBatch = mutableListOf<String>()
-        var currentSizeBytes = 0
-
-        texts.forEach { text ->
-            val textSizeBytes = text.toByteArray(Charsets.UTF_8).size
-
-            // Check if adding this text would exceed limits
-            if (currentBatch.size >= maxBatchSize ||
-                (currentBatch.isNotEmpty() && currentSizeBytes + textSizeBytes > maxTextSizeBytes)
-            ) {
-                // Save current batch and start a new one
-                batches.add(currentBatch)
-                currentBatch = mutableListOf()
-                currentSizeBytes = 0
-            }
-
-            currentBatch.add(text)
-            currentSizeBytes += textSizeBytes
-        }
-
-        // Add the last batch
-        if (currentBatch.isNotEmpty()) {
-            batches.add(currentBatch)
-        }
-
-        return batches
-    }
 }

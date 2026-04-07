@@ -74,7 +74,7 @@ class AdaptiveParallelismController(
      * - RateLimitException: keeps permit (becomes reserved), decreases concurrency, and re-throws
      * - Other exceptions: releases permit and re-throws
      */
-    suspend fun <T> executeWithControl(block: suspend () -> T): T {
+    suspend fun <T> execute(block: suspend () -> T): T {
         // Acquire permit - suspends properly when none available
         semaphore.acquire()
 
