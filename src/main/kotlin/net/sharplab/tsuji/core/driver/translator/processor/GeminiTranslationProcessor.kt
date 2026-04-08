@@ -1,12 +1,13 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.core.driver.translator.adaptive.GeminiBatchProvider
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.exception.*
-import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
-import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
+import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationAiService
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.po.util.MessageClassifier
 import org.slf4j.LoggerFactory
@@ -16,8 +17,8 @@ import org.slf4j.LoggerFactory
  * Translates efficiently using batch processing with adaptive batch size and retry logic.
  */
 class GeminiTranslationProcessor(
-    private val geminiTranslationService: GeminiTranslationService,
-    private val geminiRAGTranslationService: GeminiRAGTranslationService,
+    private val geminiTranslationAiService: GeminiTranslationAiService,
+    private val geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
     private val maxTextsPerRequest: Int = 10,
     private val maxTextSizeBytes: Int = 50000,
     private val maxRetries: Int = 3,
@@ -26,13 +27,7 @@ class GeminiTranslationProcessor(
 
     private val logger = LoggerFactory.getLogger(GeminiTranslationProcessor::class.java)
 
-    override fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
-        return runBlocking {
-            processAsync(messages, context)
-        }
-    }
-
-    private suspend fun processAsync(
+    override suspend fun process(
         messages: List<TranslationMessage>,
         context: TranslationContext
     ): List<TranslationMessage> {
@@ -80,6 +75,8 @@ class GeminiTranslationProcessor(
             val normalTexts = normalIndices.map { messages[it].text }
 
             logger.info("Translating ${normalTexts.size} texts (${context.srcLang} -> ${context.dstLang})")
+            logger.debug("Current parallelism controller state: concurrency=${parallelismController.getCurrentConcurrency()}")
+            val processStartTime = System.currentTimeMillis()
 
             // Create batch provider and executor
             val batchProvider = GeminiBatchProvider(
@@ -94,9 +91,12 @@ class GeminiTranslationProcessor(
                 maxValidationRetries = 5
             )
 
+            logger.debug("Starting batch execution with parallelism control")
             val translated = executor.execute { batch ->
                 // Execute translation for this batch through parallelism controller
+                logger.debug("Batch of ${batch.size} texts entering parallelism controller")
                 parallelismController.execute {
+                    logger.debug("Batch of ${batch.size} texts executing translation")
                     translateBatchWithValidation(batch, context)
                 }
             }
@@ -107,6 +107,9 @@ class GeminiTranslationProcessor(
                     .withText(translatedText)
                     .withFuzzy(true)
             }
+
+            val processElapsedTime = System.currentTimeMillis() - processStartTime
+            logger.info("Translation process completed in ${processElapsedTime}ms for ${normalTexts.size} texts (avg: ${processElapsedTime / normalTexts.size}ms/text)")
         }
 
         return result
@@ -121,11 +124,19 @@ class GeminiTranslationProcessor(
                 // TODO: RAG batch support will be added in Phase 2
                 // For now, fall back to individual translation for RAG
                 batch.map { text ->
-                    geminiRAGTranslationService.translate(text, context.srcLang, context.dstLang)
+                    withContext(Dispatchers.IO) {
+                        geminiRAGTranslationAiService.translate(text, context.srcLang, context.dstLang)
+                    }
                 }
             } else {
                 logger.debug("Sending batch: ${batch.size} items")
-                geminiTranslationService.translateBatch(batch, context.srcLang, context.dstLang)
+
+                val batchStartTime = System.currentTimeMillis()
+                val result = geminiTranslationAiService.translateBatch(batch, context.srcLang, context.dstLang)
+                val batchElapsedTime = System.currentTimeMillis() - batchStartTime
+
+                logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${batch.size})")
+                result
             }
 
         } catch (e: TranslationValidationException) {
@@ -157,7 +168,7 @@ class GeminiTranslationProcessor(
      *
      * In the future, this could be improved to handle structured formats more flexibly using prompts.
      */
-    private fun translateJekyllFrontMatter(message: String, srcLang: String, dstLang: String, useRag: Boolean): String {
+    private suspend fun translateJekyllFrontMatter(message: String, srcLang: String, dstLang: String, useRag: Boolean): String {
         val titleRegex = Regex("""^title:\s*(.*)$""", RegexOption.MULTILINE)
         val synopsisRegex = Regex("""^synopsis:\s*(.*)$""", RegexOption.MULTILINE)
 
@@ -176,9 +187,11 @@ class GeminiTranslationProcessor(
         // Translate title and synopsis individually
         val translated = stringsToTranslate.map { text ->
             if (useRag) {
-                geminiRAGTranslationService.translate(text, srcLang, dstLang)
+                withContext(Dispatchers.IO) {
+                    geminiRAGTranslationAiService.translate(text, srcLang, dstLang)
+                }
             } else {
-                geminiTranslationService.translate(text, srcLang, dstLang)
+                geminiTranslationAiService.translate(text, srcLang, dstLang)
             }
         }
 

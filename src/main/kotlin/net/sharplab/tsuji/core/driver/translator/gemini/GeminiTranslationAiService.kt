@@ -1,7 +1,6 @@
 package net.sharplab.tsuji.core.driver.translator.gemini
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import dev.langchain4j.data.message.SystemMessage
 import dev.langchain4j.data.message.UserMessage
 import dev.langchain4j.model.chat.ChatModel
@@ -9,21 +8,21 @@ import dev.langchain4j.model.chat.request.ChatRequest
 import dev.langchain4j.model.chat.request.ResponseFormat
 import dev.langchain4j.model.chat.request.ResponseFormatType
 import dev.langchain4j.model.chat.request.json.JsonArraySchema
-import dev.langchain4j.model.chat.request.json.JsonIntegerSchema
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema
 import dev.langchain4j.model.chat.request.json.JsonSchema
-import dev.langchain4j.model.chat.request.json.JsonStringSchema
 import io.quarkus.runtime.Startup
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 
 @ApplicationScoped
 @Startup
-class GeminiTranslationService {
+class GeminiTranslationAiService {
 
-    private val logger = LoggerFactory.getLogger(GeminiTranslationService::class.java)
+    private val logger = LoggerFactory.getLogger(GeminiTranslationAiService::class.java)
     private val mapper = jacksonObjectMapper()
 
     @Inject
@@ -55,7 +54,7 @@ class GeminiTranslationService {
             object : com.fasterxml.jackson.core.type.TypeReference<List<BatchTranslationResponseItem>>() {}
     }
 
-    fun translate(text: String, srcLang: String, dstLang: String): String {
+    suspend fun translate(text: String, srcLang: String, dstLang: String): String {
         val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
         val userPrompt = "Translate this text: $text"
 
@@ -66,11 +65,13 @@ class GeminiTranslationService {
             )
             .build()
 
-        val response = chatModel.chat(request)
+        val response = withContext(Dispatchers.IO) {
+            chatModel.chat(request)
+        }
         return response.aiMessage().text()
     }
 
-    fun translateBatch(
+    suspend fun translateBatch(
         texts: List<String>,
         srcLang: String,
         dstLang: String
@@ -89,7 +90,14 @@ class GeminiTranslationService {
 
         logger.debug("Sending batch translation request with array-based schema (batch size: ${texts.size})")
 
-        val response = chatModel.chat(chatRequest)
+        val apiStartTime = System.currentTimeMillis()
+        val response = withContext(Dispatchers.IO) {
+            chatModel.chat(chatRequest)
+        }
+        val apiElapsedTime = System.currentTimeMillis() - apiStartTime
+
+        logger.debug("API call completed in ${apiElapsedTime}ms (batch size: ${texts.size})")
+
         val batchResponse = parseBatchResponse(response.aiMessage().text())
 
         validateIndices(texts.indices.toSet(), batchResponse)

@@ -1,5 +1,6 @@
 package net.sharplab.tsuji.core.driver.translator.deepl
 
+import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.po.model.MessageType
@@ -11,6 +12,7 @@ import org.asciidoctor.Asciidoctor
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import kotlinx.coroutines.runBlocking
 
 /**
  * DeepLTranslator の統合テスト。
@@ -21,6 +23,16 @@ import org.junit.jupiter.api.assertThrows
  * - Po全体の翻訳フロー
  */
 internal class DeepLTranslatorIntegrationTest {
+
+    // Helper extension to call suspend function from test
+    private fun Translator.translateBlocking(
+        po: Po, 
+        srcLang: String,
+        dstLang: String,
+        isAsciidoctor: Boolean,
+        useRag: Boolean
+    ): Po = runBlocking { translate(po, srcLang, dstLang, isAsciidoctor, useRag) }
+
 
     private val asciidoctor = Asciidoctor.Factory.create()
     private val preProcessor = AsciidoctorPreProcessor(asciidoctor)
@@ -54,7 +66,7 @@ internal class DeepLTranslatorIntegrationTest {
         val po = Po("ja", emptyList())
 
         // When
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = false, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = false, useRag = false)
 
         // Then
         assertThat(result.messages).isEmpty()
@@ -68,7 +80,7 @@ internal class DeepLTranslatorIntegrationTest {
 
         // When & Then
         val exception = assertThrows<IllegalStateException> {
-            translator.translate(po, "en", "ja", isAsciidoctor = false, useRag = false)
+            translator.translateBlocking(po, "en", "ja", isAsciidoctor = false, useRag = false)
         }
         assertThat(exception.message).contains("DeepL API key is not configured")
     }
@@ -81,7 +93,7 @@ internal class DeepLTranslatorIntegrationTest {
 
         // When & Then
         val exception = assertThrows<IllegalStateException> {
-            translator.translate(po, "en", "ja", isAsciidoctor = false, useRag = false)
+            translator.translateBlocking(po, "en", "ja", isAsciidoctor = false, useRag = false)
         }
         assertThat(exception.message).contains("DeepL API key is not configured")
     }
@@ -94,7 +106,7 @@ internal class DeepLTranslatorIntegrationTest {
 
         // When & Then
         val exception = assertThrows<IllegalStateException> {
-            translator.translate(po, "en", "ja", isAsciidoctor = false, useRag = false)
+            translator.translateBlocking(po, "en", "ja", isAsciidoctor = false, useRag = false)
         }
         assertThat(exception.message).contains("DeepL API key is not configured")
     }
@@ -106,7 +118,7 @@ internal class DeepLTranslatorIntegrationTest {
         val po = Po("ja", emptyList())
 
         // When (useRag=true はDeepLではサポートされない)
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = false, useRag = true)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = false, useRag = true)
 
         // Then (警告がログ出力されるが、例外は投げられない)
         assertThat(result.messages).isEmpty()

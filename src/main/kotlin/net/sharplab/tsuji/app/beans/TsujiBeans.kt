@@ -6,7 +6,6 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.context.Dependent
 import jakarta.enterprise.inject.Disposes
 import jakarta.enterprise.inject.Produces
-import jakarta.enterprise.inject.Typed
 import jakarta.inject.Singleton
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.core.driver.adoc.AsciidocDriver
@@ -26,8 +25,8 @@ import net.sharplab.tsuji.core.driver.tmx.TmxDriverImpl
 import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
-import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationService
-import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationService
+import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationAiService
 import net.sharplab.tsuji.core.driver.vectorstore.LuceneVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
@@ -173,8 +172,8 @@ class TsujiBeans() {
     fun translator(
         tsujiConfig: TsujiConfig,
         asciidoctorPreProcessor: AsciidoctorPreProcessor,
-        geminiTranslationService: GeminiTranslationService,
-        geminiRAGTranslationService: GeminiRAGTranslationService,
+        geminiTranslationAiService: GeminiTranslationAiService,
+        geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
         adaptiveParallelismController: AdaptiveParallelismController
     ): Translator {
         return when (tsujiConfig.translator.type.lowercase()) {
@@ -190,8 +189,8 @@ class TsujiBeans() {
             "gemini" -> {
                 logger.info("Using Gemini Translator")
                 GeminiTranslator(
-                    geminiTranslationService,
-                    geminiRAGTranslationService,
+                    geminiTranslationAiService,
+                    geminiRAGTranslationAiService,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
                     tsujiConfig.translator.gemini.adaptive.maxRetries,
@@ -201,8 +200,8 @@ class TsujiBeans() {
             else -> {
                 logger.warn("Unknown translator type: ${tsujiConfig.translator.type}, defaulting to Gemini")
                 GeminiTranslator(
-                    geminiTranslationService,
-                    geminiRAGTranslationService,
+                    geminiTranslationAiService,
+                    geminiRAGTranslationAiService,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
                     tsujiConfig.translator.gemini.adaptive.maxRetries,

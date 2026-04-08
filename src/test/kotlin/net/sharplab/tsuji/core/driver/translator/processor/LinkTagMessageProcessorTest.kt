@@ -7,8 +7,16 @@ import net.sharplab.tsuji.po.model.PoMessage
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlinx.coroutines.runBlocking
 
 internal class LinkTagMessageProcessorTest {
+
+    // Helper extension to call suspend function from test
+    private fun MessageProcessor.processBlocking(
+        messages: List<TranslationMessage>, 
+        context: TranslationContext
+    ): List<TranslationMessage> = runBlocking { process(messages, context) }
+
 
     private val processor = LinkTagMessageProcessor()
 
@@ -46,7 +54,7 @@ internal class LinkTagMessageProcessorTest {
         )
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo(
             "これは、webauthn4j GitHub組織への link:https://github.com/webauthn4j[リンク] です。"
@@ -60,7 +68,7 @@ internal class LinkTagMessageProcessorTest {
         )
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo(
             "You may wonder about Reactive Streams ( https://www.reactive-streams.org/ )."
@@ -74,7 +82,7 @@ internal class LinkTagMessageProcessorTest {
         )
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo(
             "link:#bootstrapping-the-project[Bootstrappingプロジェクト] 以降の手順に沿って、ステップバイステップでアプリを作成していくことをお勧めします。"
@@ -88,7 +96,7 @@ internal class LinkTagMessageProcessorTest {
         )
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo(
             "xref:titles-headings[タイトルと見出し] のガイダンスに従って下さい。"
@@ -102,7 +110,7 @@ internal class LinkTagMessageProcessorTest {
         )
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("xref:test.adoc[Test doc]")
     }
@@ -114,7 +122,7 @@ internal class LinkTagMessageProcessorTest {
         )
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("xref:test.adoc#section[Test doc]")
     }
@@ -126,7 +134,7 @@ internal class LinkTagMessageProcessorTest {
         )
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         // MessageProcessorはhtml()を返すので、wholeText()でテキストを抽出
         assertThat(extractText(result[0].text)).isEqualTo("<<test-url>>")
@@ -139,7 +147,7 @@ internal class LinkTagMessageProcessorTest {
         )
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("xref:test-url[test-text]")
     }
@@ -149,7 +157,7 @@ internal class LinkTagMessageProcessorTest {
         val message = createMessage("<a data-doc-l10n-kit-type=\"link\">test</a>")
         val context = createContext(isAsciidoctor = false)
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("<a data-doc-l10n-kit-type=\"link\">test</a>")
     }

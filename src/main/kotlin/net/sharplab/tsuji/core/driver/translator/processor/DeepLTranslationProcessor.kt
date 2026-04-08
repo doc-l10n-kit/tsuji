@@ -4,8 +4,9 @@ import net.sharplab.tsuji.core.model.translation.TranslationContext
 import com.deepl.api.DeepLException
 import com.deepl.api.Formality
 import com.deepl.api.TextTranslationOptions
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.core.driver.translator.adaptive.DeepLBatchProvider
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslatorException
@@ -26,13 +27,7 @@ class DeepLTranslationProcessor(
 
     private val logger = LoggerFactory.getLogger(DeepLTranslationProcessor::class.java)
 
-    override fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
-        return runBlocking {
-            processAsync(messages, context)
-        }
-    }
-
-    private suspend fun processAsync(
+    override suspend fun process(
         messages: List<TranslationMessage>,
         context: TranslationContext
     ): List<TranslationMessage> {
@@ -104,7 +99,9 @@ class DeepLTranslationProcessor(
                 // Execute translation for this batch through parallelism controller
                 parallelismController.execute {
                     try {
-                        deepLApi.translateText(batch, context.srcLang, context.dstLang, options).map { it.text }
+                        withContext(Dispatchers.IO) {
+                            deepLApi.translateText(batch, context.srcLang, context.dstLang, options).map { it.text }
+                        }
                     } catch (e: DeepLException) {
                         // Convert DeepL rate limit errors to RateLimitException
                         if (isRateLimitError(e)) {
@@ -186,7 +183,9 @@ class DeepLTranslationProcessor(
                 // Success/error callbacks are automatically handled inside executeWithControl
                 return parallelismController.execute {
                     try {
-                        deepLApi.translateText(texts, srcLang, dstLang, options).map { it.text }
+                        withContext(Dispatchers.IO) {
+                            deepLApi.translateText(texts, srcLang, dstLang, options).map { it.text }
+                        }
                     } catch (e: DeepLException) {
                         // Convert DeepL rate limit errors to RateLimitException
                         if (isRateLimitError(e)) {

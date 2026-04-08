@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import kotlinx.coroutines.runBlocking
 
 class TranslationAppServiceImplTest {
 
@@ -37,11 +38,11 @@ class TranslationAppServiceImplTest {
     }
 
     @Test
-    fun machineTranslatePoFiles_test() {
+    fun machineTranslatePoFiles_test() = runBlocking {
         // Given
         val poPath = TestUtil.resolveClasspath("po/sample.adoc.po")
         val dummyPo = PoDriverImpl().load(poPath)
-        
+
         whenever(poDriver.load(poPath)).thenReturn(dummyPo)
         whenever(poTranslatorService.translate(dummyPo, "en", "ja", true, true)).thenReturn(dummyPo)
 

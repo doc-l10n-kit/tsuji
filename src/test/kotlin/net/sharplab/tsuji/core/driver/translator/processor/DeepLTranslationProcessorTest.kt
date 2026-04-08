@@ -12,6 +12,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
+import kotlinx.coroutines.runBlocking
 
 /**
  * DeepLTranslationProcessor のテスト。
@@ -23,6 +24,13 @@ import org.mockito.kotlin.*
  * - メッセージ分類（skip/fill/jekyll/normal）
  */
 internal class DeepLTranslationProcessorTest {
+
+    // Helper extension to call suspend function from test
+    private fun MessageProcessor.processBlocking(
+        messages: List<TranslationMessage>, 
+        context: TranslationContext
+    ): List<TranslationMessage> = runBlocking { process(messages, context) }
+
 
     private fun createMockParallelismController(): AdaptiveParallelismController {
         return AdaptiveParallelismController(
@@ -67,7 +75,7 @@ internal class DeepLTranslationProcessorTest {
         val context = createContext()
 
         // When
-        val result = processor.process(emptyList(), context)
+        val result = processor.processBlocking(emptyList(), context)
 
         // Then
         assertThat(result).isEmpty()
@@ -83,7 +91,7 @@ internal class DeepLTranslationProcessorTest {
         val context = createContext()
 
         // When
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         // Then
         assertThat(result).hasSize(1)
@@ -100,7 +108,7 @@ internal class DeepLTranslationProcessorTest {
         val context = createContext()
 
         // When
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         // Then
         assertThat(result).hasSize(1)
@@ -141,7 +149,7 @@ internal class DeepLTranslationProcessorTest {
         val context = createContext()
 
         // When
-        val result = processor.process(messages, context)
+        val result = processor.processBlocking(messages, context)
 
         // Then
         assertThat(result).hasSize(3)
@@ -199,7 +207,7 @@ author: me"""
         val context = createContext()
 
         // When
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         // Then
         assertThat(result).hasSize(1)
@@ -236,7 +244,7 @@ author: me"""
         val context = createContext()
 
         // When
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         // Then
         assertThat(result).hasSize(1)

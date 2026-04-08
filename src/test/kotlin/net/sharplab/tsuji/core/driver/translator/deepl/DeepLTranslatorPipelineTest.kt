@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.deepl
 
 import com.deepl.api.TextResult
+import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
 import org.slf4j.LoggerFactory
+import kotlinx.coroutines.runBlocking
 
 /**
  * DeepLTranslator のパイプライン統合テスト。
@@ -21,6 +23,16 @@ import org.slf4j.LoggerFactory
  * パイプライン全体（前処理 → 翻訳 → 後処理）が正しく動作することを確認する。
  */
 internal class DeepLTranslatorPipelineTest {
+
+    // Helper extension to call suspend function from test
+    private fun Translator.translateBlocking(
+        po: Po, 
+        srcLang: String,
+        dstLang: String,
+        isAsciidoctor: Boolean,
+        useRag: Boolean
+    ): Po = runBlocking { translate(po, srcLang, dstLang, isAsciidoctor, useRag) }
+
 
     private val logger = LoggerFactory.getLogger(DeepLTranslatorPipelineTest::class.java)
 
@@ -79,7 +91,7 @@ internal class DeepLTranslatorPipelineTest {
             ))
 
         // When: パイプライン実行
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = true, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = true, useRag = false)
 
         // Then: AsciidoctorPreProcessorでHTML化されていることを確認
         val capturedTexts = textsCaptor.firstValue
@@ -110,7 +122,7 @@ internal class DeepLTranslatorPipelineTest {
             ))
 
         // When
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = true, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = true, useRag = false)
 
         // Then: 画像タグがAsciidoctor構文に戻される
         assertThat(result.messages[0].messageString).isEqualTo("image:diagram.png[alt=\"図\"] を参照してください")
@@ -129,7 +141,7 @@ internal class DeepLTranslatorPipelineTest {
             ))
 
         // When
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = true, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = true, useRag = false)
 
         // Then: 装飾タグがAsciidoctor構文に戻される
         assertThat(result.messages[0].messageString).isEqualTo("これは *太字* と _斜体_ テキストです。")
@@ -148,7 +160,7 @@ internal class DeepLTranslatorPipelineTest {
             ))
 
         // When
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = true, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = true, useRag = false)
 
         // Then: すべてのタグが正しく変換される
         assertThat(result.messages[0].messageString).isEqualTo("今すぐ *link:https://example.com[このリンク]* をクリックしてください。")
@@ -167,7 +179,7 @@ internal class DeepLTranslatorPipelineTest {
             ))
 
         // When
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = true, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = true, useRag = false)
 
         // Then: HTMLエンティティがアンエスケープされる
         assertThat(result.messages[0].messageString).isEqualTo("`<tag>` と `&` 記号を使います。")
@@ -186,7 +198,7 @@ internal class DeepLTranslatorPipelineTest {
             ))
 
         // When: isAsciidoctor = false
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = false, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = false, useRag = false)
 
         // Then: マークアップがそのまま（前処理・後処理がスキップされる）
         assertThat(result.messages[0].messageString).isEqualTo("これは*太字*テキストです。")
@@ -211,7 +223,7 @@ internal class DeepLTranslatorPipelineTest {
             ))
 
         // When
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = true, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = true, useRag = false)
 
         // Then: すべてのメッセージが正しく処理される
         assertThat(result.messages).hasSize(3)
@@ -227,7 +239,7 @@ internal class DeepLTranslatorPipelineTest {
         val po = Po("ja", listOf(message))
 
         // When: 翻訳実行（APIは呼ばれないはず）
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = false, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = false, useRag = false)
 
         // Then: 既存の翻訳がそのまま残る
         assertThat(result.messages[0].messageString).isEqualTo("こんにちは")

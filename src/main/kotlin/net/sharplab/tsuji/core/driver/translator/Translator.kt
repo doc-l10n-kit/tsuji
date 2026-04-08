@@ -14,5 +14,5 @@ interface Translator {
      * @param useRag Whether to use RAG (Retrieval-Augmented Generation)
      * @return A new Po object with translated messages
      */
-    fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po
+    suspend fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po
 }

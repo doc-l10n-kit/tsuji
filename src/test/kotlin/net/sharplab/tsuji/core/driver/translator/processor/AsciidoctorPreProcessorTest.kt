@@ -9,8 +9,16 @@ import org.asciidoctor.Asciidoctor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import kotlinx.coroutines.runBlocking
 
 internal class AsciidoctorPreProcessorTest {
+
+    // Helper extension to call suspend function from test
+    private fun MessageProcessor.processBlocking(
+        messages: List<TranslationMessage>, 
+        context: TranslationContext
+    ): List<TranslationMessage> = runBlocking { process(messages, context) }
+
 
     private val asciidoctor = Asciidoctor.Factory.create()
     private val target = AsciidoctorPreProcessor(asciidoctor)
@@ -43,7 +51,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("This is an _emphasized_ string.")
         val context = createContext(isAsciidoctor = true)
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result).hasSize(1)
         assertThat(result[0].original.messageId).isEqualTo("This is an _emphasized_ string.")
@@ -55,7 +63,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("This is an _emphasized_ string.")
         val context = createContext(isAsciidoctor = false)
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result).hasSize(1)
         assertThat(result[0].original.messageId).isEqualTo("This is an _emphasized_ string.")
@@ -67,7 +75,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("This is a link:https://github.com/webauthn4j[link], to webauthn4j GitHub org.")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("This is a link:https://github.com/webauthn4j[link], to webauthn4j GitHub org.")
         assertThat(result[0].text).isEqualTo(
@@ -80,7 +88,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("You may wonder about Reactive Streams (https://www.reactive-streams.org/).")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("You may wonder about Reactive Streams (https://www.reactive-streams.org/).")
         assertThat(result[0].text).isEqualTo(
@@ -93,7 +101,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("Follow guidance in xref:titles-headings[Titles and headings]")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("Follow guidance in xref:titles-headings[Titles and headings]")
         assertThat(result[0].text).isEqualTo(
@@ -106,7 +114,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("xref:test.adoc[Test doc]")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("xref:test.adoc[Test doc]")
         assertThat(result[0].text).isEqualTo(
@@ -119,7 +127,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("xref:test.adoc#section[Test doc]")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("xref:test.adoc#section[Test doc]")
         assertThat(result[0].text).isEqualTo(
@@ -132,7 +140,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("<<test-url,test-text>>")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("<<test-url,test-text>>")
         assertThat(result[0].text).isEqualTo(
@@ -145,7 +153,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("<<test-url>>")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("<<test-url>>")
         assertThat(result[0].text).isEqualTo(
@@ -158,7 +166,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("image:quarkus-reactive-stack.png[alt=Quarkus is based on a reactive engine, 50%]")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("image:quarkus-reactive-stack.png[alt=Quarkus is based on a reactive engine, 50%]")
         assertThat(result[0].text).isEqualTo(
@@ -171,7 +179,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("`https://example.com`")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("`https://example.com`")
         assertThat(result[0].text).isEqualTo(
@@ -184,7 +192,7 @@ internal class AsciidoctorPreProcessorTest {
         val message = createMessage("(>_<)")
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result[0].original.messageId).isEqualTo("(>_<)")
         assertThat(result[0].text).isEqualTo("(&gt;_&lt;)")
@@ -199,7 +207,7 @@ internal class AsciidoctorPreProcessorTest {
         )
         val context = createContext()
 
-        val result = target.process(messages, context)
+        val result = target.processBlocking(messages, context)
 
         assertThat(result).hasSize(3)
         assertThat(result[0].original.messageId).isEqualTo("This is _emphasized_.")
@@ -226,7 +234,7 @@ internal class AsciidoctorPreProcessorTest {
         )
         val context = createContext()
 
-        val result = target.process(listOf(message), context)
+        val result = target.processBlocking(listOf(message), context)
 
         assertThat(result).hasSize(1)
         assertThat(result[0].original.messageId).isEmpty()

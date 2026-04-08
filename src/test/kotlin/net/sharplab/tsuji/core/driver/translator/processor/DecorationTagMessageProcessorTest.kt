@@ -7,8 +7,16 @@ import net.sharplab.tsuji.po.model.PoMessage
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlinx.coroutines.runBlocking
 
 internal class DecorationTagMessageProcessorTest {
+
+    // Helper extension to call suspend function from test
+    private fun MessageProcessor.processBlocking(
+        messages: List<TranslationMessage>, 
+        context: TranslationContext
+    ): List<TranslationMessage> = runBlocking { process(messages, context) }
+
 
     private fun createContext(isAsciidoctor: Boolean = true) = TranslationContext(
         po = Po("ja", emptyList()),
@@ -38,7 +46,7 @@ internal class DecorationTagMessageProcessorTest {
         val message = createMessage("これは、<em>強調された</em>文字列です。")
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("これは、 _強調された_ 文字列です。")
     }
@@ -49,7 +57,7 @@ internal class DecorationTagMessageProcessorTest {
         val message = createMessage("This is <strong>strong</strong> text.")
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("This is *strong* text.")
     }
@@ -62,8 +70,8 @@ internal class DecorationTagMessageProcessorTest {
         val context = createContext()
 
         // パイプライン実行: DecorationTagProcessor → CharacterReferenceUnescaper
-        val afterCode = codeProcessor.process(listOf(message), context)
-        val result = unescaper.process(afterCode, context)
+        val afterCode = codeProcessor.processBlocking(listOf(message), context)
+        val result = unescaper.processBlocking(afterCode, context)
 
         assertThat(result[0].text).isEqualTo("previous word `(>_<)` next word")
     }
@@ -74,7 +82,7 @@ internal class DecorationTagMessageProcessorTest {
         val message = createMessage("<em>test</em>")
         val context = createContext(isAsciidoctor = false)
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("<em>test</em>")
     }

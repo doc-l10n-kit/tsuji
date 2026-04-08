@@ -57,6 +57,7 @@ class AdaptiveParallelismController(
         // Reserve permits to set initial concurrency limit
         // If max=10 and initial=3, we need to hold 7 permits
         val permitsToReserve = maxConcurrency - initialConcurrency
+        logger.info("AdaptiveParallelismController initializing: maxConcurrency=$maxConcurrency, initialConcurrency=$initialConcurrency, permitsToReserve=$permitsToReserve")
         if (permitsToReserve > 0) {
             runBlocking {
                 repeat(permitsToReserve) {
@@ -64,6 +65,7 @@ class AdaptiveParallelismController(
                 }
             }
         }
+        logger.info("AdaptiveParallelismController initialized: currentLimit=$currentLimit, available permits=${initialConcurrency}")
     }
 
     /**
@@ -76,7 +78,9 @@ class AdaptiveParallelismController(
      */
     suspend fun <T> execute(block: suspend () -> T): T {
         // Acquire permit - suspends properly when none available
+        logger.debug("Attempting to acquire permit (currentLimit=$currentLimit, availablePermits=${semaphore.availablePermits})")
         semaphore.acquire()
+        logger.debug("Permit acquired (currentLimit=$currentLimit, availablePermits=${semaphore.availablePermits})")
 
         try {
             val result = block()
@@ -84,6 +88,7 @@ class AdaptiveParallelismController(
             // Success: release permit and update state
             semaphore.release()
             onRequestSuccess()
+            logger.debug("Permit released (currentLimit=$currentLimit, availablePermits=${semaphore.availablePermits})")
             return result
         } catch (e: Exception) {
             if (isRateLimitException(e)) {
@@ -96,11 +101,13 @@ class AdaptiveParallelismController(
                     } else {
                         // Already at minimum, release the permit
                         semaphore.release()
+                        logger.warn("At minimum concurrency, releasing permit anyway")
                     }
                 }
             } else {
                 // Other errors: release permit
                 semaphore.release()
+                logger.debug("Error occurred, permit released: ${e.javaClass.simpleName}")
             }
             // Re-throw exception for caller to handle
             throw e

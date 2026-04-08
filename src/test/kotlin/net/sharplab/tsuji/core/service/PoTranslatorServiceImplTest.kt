@@ -8,11 +8,22 @@ import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.test.TestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlinx.coroutines.runBlocking
 
 internal class PoTranslatorServiceImplTest {
 
+    // Helper extension to call suspend function from test
+    private fun Translator.translateBlocking(
+        po: Po, 
+        srcLang: String,
+        dstLang: String,
+        isAsciidoctor: Boolean,
+        useRag: Boolean
+    ): Po = runBlocking { translate(po, srcLang, dstLang, isAsciidoctor, useRag) }
+
+
     private val mockTranslator = object : Translator {
-        override fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po = po
+        override suspend fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po = po
     }
 
     @Test

@@ -24,7 +24,7 @@ class AsciidoctorPreProcessor(
         Files.copy(inputStream, inlineAnchorTemplateFile.toPath())
     }
 
-    override fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
+    override suspend fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
         // Skip if not Asciidoctor
         if (!context.isAsciidoctor) {
             return messages

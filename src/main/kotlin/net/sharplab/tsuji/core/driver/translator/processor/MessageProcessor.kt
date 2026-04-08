@@ -18,5 +18,5 @@ interface MessageProcessor {
      * @param context Context information needed for processing
      * @return New list of TranslationMessages after processing (does not modify original instances)
      */
-    fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage>
+    suspend fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage>
 }

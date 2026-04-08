@@ -80,8 +80,9 @@ class TranslationAppServiceImpl(
             }
 
             // Parallel file processing with Flow (file-level parallelism)
+            // Increased concurrency to maximize throughput for slower translation APIs (e.g., Gemini)
             poFiles.asFlow()
-                .flatMapMerge(concurrency = 10) { file ->
+                .flatMapMerge(concurrency = 30) { file ->
                     flow {
                         emit(translateSingleFile(file, source, target, isAsciidoctor, useRag))
                     }
@@ -96,7 +97,7 @@ class TranslationAppServiceImpl(
         translateSingleFile(filePath, source, target, isAsciidoctor, useRag)
     }
 
-    private fun translateSingleFile(
+    private suspend fun translateSingleFile(
         filePath: Path,
         source: String?,
         target: String?,
@@ -106,11 +107,14 @@ class TranslationAppServiceImpl(
         val resolvedSourceLang = source ?: tsujiConfig.language.from
         val resolvedTargetLang = target ?: tsujiConfig.language.to
 
-        logger.info("Start translation: %s (%s -> %s)".format(filePath.absolutePathString(), resolvedSourceLang, resolvedTargetLang))
+        val startTime = System.currentTimeMillis()
+        logger.info("Start translation: %s (%s -> %s) at ${startTime}ms".format(filePath.fileName, resolvedSourceLang, resolvedTargetLang))
         val poFile = poDriver.load(filePath)
+        logger.debug("Loaded PO file: ${poFile.messages.size} messages")
         val translated = poTranslatorService.translate(poFile, resolvedSourceLang, resolvedTargetLang, isAsciidoctor, useRag)
         poDriver.save(translated, filePath)
         poNormalizerService.normalize(filePath)
-        logger.info("Finish translation: %s".format(filePath.absolutePathString()))
+        val elapsed = System.currentTimeMillis() - startTime
+        logger.info("Finish translation: %s in ${elapsed}ms".format(filePath.fileName))
     }
 }

@@ -5,7 +5,7 @@ import net.sharplab.tsuji.tmx.index.TranslationIndex
 import net.sharplab.tsuji.tmx.model.Tmx
 
 interface PoTranslatorService {
-    fun translate(
+    suspend fun translate(
         po: Po,
         source: String,
         target: String,

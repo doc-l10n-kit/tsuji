@@ -1,11 +1,9 @@
 package net.sharplab.tsuji.systemtest
 
-import io.quarkus.test.junit.QuarkusTest
+import io.quarkus.test.junit.main.QuarkusMainLauncher
+import io.quarkus.test.junit.main.QuarkusMainTest
 import io.quarkus.test.junit.TestProfile
-import jakarta.inject.Inject
-import net.sharplab.tsuji.core.driver.po.PoDriver
-import net.sharplab.tsuji.core.driver.translator.Translator
-import net.sharplab.tsuji.core.service.PoTranslatorService
+import net.sharplab.tsuji.core.driver.po.PoDriverImpl
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.microprofile.config.ConfigProvider
 import org.junit.jupiter.api.Assumptions
@@ -22,24 +20,15 @@ import kotlin.io.path.name
 /**
  * Gemini translator comparison system test.
  *
- * Tests machine translation of multiple PO files using Gemini translator.
+ * Tests machine translation of multiple PO files using Gemini translator via CLI.
  * Uses real PO files from the ja.quarkus.io project (10 files, ~320 messages total).
  */
-@QuarkusTest
+@QuarkusMainTest
 @TestProfile(GeminiTranslatorProfile::class)
 class GeminiTranslatorComparisonTest {
 
     private val logger = LoggerFactory.getLogger(GeminiTranslatorComparisonTest::class.java)
-
-    @Inject
-    lateinit var translator: Translator
-
-    @Inject
-    lateinit var poTranslatorService: PoTranslatorService
-
-    @Inject
-    lateinit var poDriver: PoDriver
-
+    private val poDriver = PoDriverImpl()
     private val outputDir = Path.of("build/translation-comparison/gemini")
 
     @BeforeEach
@@ -53,7 +42,7 @@ class GeminiTranslatorComparisonTest {
     }
 
     @Test
-    fun `translate multiple PO files - should translate all messages successfully`() {
+    fun `translate multiple PO files - should translate all messages successfully`(launcher: QuarkusMainLauncher) {
         // Given: Copy test PO files to temp directory
         val testResourceDir = Path.of("src/systemTest/resources/po/translator-comparison")
         val poFiles = Files.walk(testResourceDir).use { stream ->
@@ -73,42 +62,43 @@ class GeminiTranslatorComparisonTest {
             targetFile
         }
 
-        // When: Translate all files
-        val startTime = System.currentTimeMillis()
-        val results = copiedFiles.map { poFile ->
-            logger.info("Translating: ${poFile.name}")
-
+        // Count untranslated messages before translation
+        val beforeStats = copiedFiles.map { poFile ->
             val po = poDriver.load(poFile)
-            val originalMessageCount = po.messages.size
-
-            // Count untranslated messages before translation
-            val untranslatedBefore = po.messages.count { it.messageString.isBlank() }
-
-            val translated = poTranslatorService.translate(
-                po,
-                source = "en",
-                target = "ja",
-                isAsciidoctor = true,
-                useRag = false
+            poFile.name to TranslationStats(
+                totalMessages = po.messages.size,
+                untranslatedBefore = po.messages.count { it.messageString.isBlank() }
             )
+        }.toMap()
 
-            poDriver.save(translated, poFile)
+        // When: Translate all files using CLI
+        val startTime = System.currentTimeMillis()
+        val result = launcher.launch(
+            "po", "machine-translate",
+            "--po", testDir.toString(),
+            "--source", "en",
+            "--target", "ja",
+            "--rag=false"
+        )
+        val elapsedTime = System.currentTimeMillis() - startTime
 
-            // Count untranslated messages after translation
+        // Then: Verify translation results
+        assertThat(result.exitCode()).isEqualTo(0)
+
+        val results = copiedFiles.map { poFile ->
+            val stats = beforeStats[poFile.name]!!
             val translatedPo = poDriver.load(poFile)
             val untranslatedAfter = translatedPo.messages.count { it.messageString.isBlank() }
-            val translatedCount = untranslatedBefore - untranslatedAfter
+            val translatedCount = stats.untranslatedBefore - untranslatedAfter
 
             TranslationResult(
                 fileName = poFile.name,
-                totalMessages = originalMessageCount,
+                totalMessages = stats.totalMessages,
                 translatedCount = translatedCount,
                 untranslatedAfter = untranslatedAfter
             )
         }
-        val elapsedTime = System.currentTimeMillis() - startTime
 
-        // Then: Verify translation results
         val totalMessages = results.sumOf { it.totalMessages }
         val totalTranslated = results.sumOf { it.translatedCount }
         val totalUntranslated = results.sumOf { it.untranslatedAfter }
@@ -139,7 +129,7 @@ class GeminiTranslatorComparisonTest {
     }
 
     @Test
-    fun `translate single large PO file - should handle large files correctly`() {
+    fun `translate single large PO file - should handle large files correctly`(launcher: QuarkusMainLauncher) {
         // Given: Find the largest PO file
         val testResourceDir = Path.of("src/systemTest/resources/po/translator-comparison")
         val poFiles = Files.walk(testResourceDir).use { stream ->
@@ -155,23 +145,24 @@ class GeminiTranslatorComparisonTest {
         val testFile = outputDir.resolve(largestFile.fileName)
         Files.copy(largestFile, testFile, StandardCopyOption.REPLACE_EXISTING)
 
-        // When: Translate the file
+        // Count untranslated messages before translation
         val po = poDriver.load(testFile)
         val untranslatedBefore = po.messages.count { it.messageString.isBlank() }
 
+        // When: Translate the file using CLI
         val startTime = System.currentTimeMillis()
-        val translated = poTranslatorService.translate(
-            po,
-            source = "en",
-            target = "ja",
-            isAsciidoctor = true,
-            useRag = false
+        val result = launcher.launch(
+            "po", "machine-translate",
+            "--po", testFile.toString(),
+            "--source", "en",
+            "--target", "ja",
+            "--rag=false"
         )
         val elapsedTime = System.currentTimeMillis() - startTime
 
-        poDriver.save(translated, testFile)
-
         // Then: Verify translation
+        assertThat(result.exitCode()).isEqualTo(0)
+
         val translatedPo = poDriver.load(testFile)
         val untranslatedAfter = translatedPo.messages.count { it.messageString.isBlank() }
         val translatedCount = untranslatedBefore - untranslatedAfter
@@ -191,6 +182,11 @@ class GeminiTranslatorComparisonTest {
             .describedAs("Gemini should handle large files with high completion rate")
             .isGreaterThan(90.0)
     }
+
+    private data class TranslationStats(
+        val totalMessages: Int,
+        val untranslatedBefore: Int
+    )
 
     private data class TranslationResult(
         val fileName: String,

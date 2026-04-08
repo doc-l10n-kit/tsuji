@@ -15,7 +15,7 @@ class DecorationTagMessageProcessor(
     private val suffix: String
 ) : MessageProcessor {
 
-    override fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
+    override suspend fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {
         if (!context.isAsciidoctor) {
             return messages
         }

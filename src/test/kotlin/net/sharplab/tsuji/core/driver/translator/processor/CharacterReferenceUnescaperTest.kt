@@ -7,8 +7,16 @@ import net.sharplab.tsuji.po.model.PoMessage
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlinx.coroutines.runBlocking
 
 internal class CharacterReferenceUnescaperTest {
+
+    // Helper extension to call suspend function from test
+    private fun MessageProcessor.processBlocking(
+        messages: List<TranslationMessage>, 
+        context: TranslationContext
+    ): List<TranslationMessage> = runBlocking { process(messages, context) }
+
 
     private val processor = CharacterReferenceUnescaper()
 
@@ -39,7 +47,7 @@ internal class CharacterReferenceUnescaperTest {
         val message = createMessage("previous word `(&gt;_&lt;)` next word")
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("previous word `(>_<)` next word")
     }
@@ -49,7 +57,7 @@ internal class CharacterReferenceUnescaperTest {
         val message = createMessage("&lt; &gt; &amp; &quot; &apos;")
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("< > & \" '")
     }
@@ -59,7 +67,7 @@ internal class CharacterReferenceUnescaperTest {
         val message = createMessage("&lt;test&gt;")
         val context = createContext(isAsciidoctor = false)
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo("&lt;test&gt;")
     }

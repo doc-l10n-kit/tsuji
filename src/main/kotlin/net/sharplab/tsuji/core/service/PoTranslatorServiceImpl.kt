@@ -14,7 +14,7 @@ class PoTranslatorServiceImpl(
 
     private val logger = LoggerFactory.getLogger(PoTranslatorServiceImpl::class.java)
 
-    override fun translate(
+    override suspend fun translate(
             po: Po,
             source: String,
             target: String,

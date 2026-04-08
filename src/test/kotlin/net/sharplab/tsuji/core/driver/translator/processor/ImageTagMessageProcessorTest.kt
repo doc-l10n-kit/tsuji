@@ -7,8 +7,16 @@ import net.sharplab.tsuji.po.model.PoMessage
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlinx.coroutines.runBlocking
 
 internal class ImageTagMessageProcessorTest {
+
+    // Helper extension to call suspend function from test
+    private fun MessageProcessor.processBlocking(
+        messages: List<TranslationMessage>, 
+        context: TranslationContext
+    ): List<TranslationMessage> = runBlocking { process(messages, context) }
+
 
     private val processor = ImageTagMessageProcessor()
 
@@ -41,7 +49,7 @@ internal class ImageTagMessageProcessorTest {
         )
         val context = createContext()
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).isEqualTo(
             "image:quarkus-reactive-stack.png[alt=\"Quarkus is based on a reactive engine\", width=\"50%\"]"
@@ -53,7 +61,7 @@ internal class ImageTagMessageProcessorTest {
         val message = createMessage("<span class=\"image\"><img src=\"test.png\"></span>")
         val context = createContext(isAsciidoctor = false)
 
-        val result = processor.process(listOf(message), context)
+        val result = processor.processBlocking(listOf(message), context)
 
         assertThat(result[0].text).contains("<span class=\"image\">")
     }

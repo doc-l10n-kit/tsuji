@@ -7,12 +7,20 @@ import net.sharplab.tsuji.po.model.PoMessage
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlinx.coroutines.runBlocking
 
 /**
  * MessageProcessor パイプライン統合テスト。
  * 複数のプロセッサーを組み合わせた処理をテストする。
  */
 internal class MessageProcessorPipelineIntegrationTest {
+
+    // Helper extension to call suspend function from test
+    private fun MessageProcessor.processBlocking(
+        messages: List<TranslationMessage>, 
+        context: TranslationContext
+    ): List<TranslationMessage> = runBlocking { process(messages, context) }
+
 
     private fun createContext(isAsciidoctor: Boolean = true) = TranslationContext(
         po = Po("ja", emptyList()),
@@ -51,7 +59,7 @@ internal class MessageProcessorPipelineIntegrationTest {
         )
 
         val result = processors.fold(listOf(message)) { msgs, processor ->
-            processor.process(msgs, context)
+            processor.processBlocking(msgs, context)
         }
 
         assertThat(result[0].text).isEqualTo("`https://example.com`")

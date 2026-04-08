@@ -15,7 +15,6 @@ import org.mockito.kotlin.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-
 class TmxAppServiceImplTest {
 
     private val poTranslatorService: PoTranslatorService = mock()

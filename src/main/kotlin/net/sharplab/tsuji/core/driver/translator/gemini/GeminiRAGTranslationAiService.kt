@@ -7,7 +7,7 @@ import io.quarkiverse.langchain4j.RegisterAiService
 import net.sharplab.tsuji.core.driver.rag.TsujiRetrievalAugmentorSupplier
 
 @RegisterAiService(retrievalAugmentor = TsujiRetrievalAugmentorSupplier::class)
-interface GeminiRAGTranslationService {
+interface GeminiRAGTranslationAiService {
 
     @SystemMessage(fromResource = "prompts/translation-rag-system-prompt.txt")
     @UserMessage("Translate this text: {text}")

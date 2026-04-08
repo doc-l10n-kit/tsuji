@@ -49,7 +49,7 @@ class DeepLTranslator(
         )
     }
 
-    override fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po {
+    override suspend fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po {
         if (useRag) {
             logger.warn("DeepL translator does not support RAG. Ignoring useRag=true parameter.")
         }
@@ -71,8 +71,9 @@ class DeepLTranslator(
         )
 
         // Execute processor pipeline sequentially
-        val processedMessages = processors.fold(translationMessages) { msgs, processor ->
-            processor.process(msgs, context)
+        var processedMessages = translationMessages
+        for (processor in processors) {
+            processedMessages = processor.process(processedMessages, context)
         }
 
         // Convert TranslationMessage → PoMessage

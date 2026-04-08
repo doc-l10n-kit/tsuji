@@ -13,9 +13,20 @@ import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
+import kotlinx.coroutines.runBlocking
 
 @QuarkusTest
 class GeminiTranslatorTest {
+
+    // Helper extension to call suspend function from test
+    private fun Translator.translateBlocking(
+        po: Po,
+        srcLang: String,
+        dstLang: String,
+        isAsciidoctor: Boolean,
+        useRag: Boolean
+    ): Po = runBlocking { translate(po, srcLang, dstLang, isAsciidoctor, useRag) }
+
 
     private val logger = LoggerFactory.getLogger(GeminiTranslatorTest::class.java)
 
@@ -40,7 +51,7 @@ class GeminiTranslatorTest {
     fun translate_shouldWork() {
         val message = PoMessage("Hello, how are you?", "", emptyList())
         val po = Po(target = "", messages = listOf(message))
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = false, useRag = false)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = false, useRag = false)
 
         assertThat(result.messages).hasSize(1)
         assertThat(result.messages[0].messageString).isNotEmpty()
@@ -56,7 +67,7 @@ class GeminiTranslatorTest {
 
         val message = PoMessage("WebAuthn is a standard for secure web authentication.", "", emptyList())
         val po = Po(target = "", messages = listOf(message))
-        val result = translator.translate(po, "en", "ja", isAsciidoctor = false, useRag = true)
+        val result = translator.translateBlocking(po, "en", "ja", isAsciidoctor = false, useRag = true)
 
         assertThat(result.messages).hasSize(1)
         assertThat(result.messages[0].messageString).isNotEmpty()

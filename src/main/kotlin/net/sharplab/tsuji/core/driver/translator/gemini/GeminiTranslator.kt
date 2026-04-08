@@ -9,8 +9,8 @@ import net.sharplab.tsuji.core.driver.translator.processor.*
 import org.slf4j.LoggerFactory
 
 class GeminiTranslator(
-    private val geminiTranslationService: GeminiTranslationService,
-    private val geminiRAGTranslationService: GeminiRAGTranslationService,
+    private val geminiTranslationAiService: GeminiTranslationAiService,
+    private val geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
     private val maxTextsPerRequest: Int = 10,
     private val maxTextSizeBytes: Int = 50000,
     private val maxRetries: Int = 3,
@@ -23,8 +23,8 @@ class GeminiTranslator(
     private val processors = listOf(
         // Translation only - no Asciidoc preprocessing/postprocessing
         GeminiTranslationProcessor(
-            geminiTranslationService,
-            geminiRAGTranslationService,
+            geminiTranslationAiService,
+            geminiRAGTranslationAiService,
             maxTextsPerRequest,
             maxTextSizeBytes,
             maxRetries,
@@ -32,7 +32,7 @@ class GeminiTranslator(
         )
     )
 
-    override fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po {
+    override suspend fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po {
         val messages = po.messages
         if (messages.isEmpty()) {
             return po
@@ -50,8 +50,9 @@ class GeminiTranslator(
         )
 
         // Execute processor pipeline sequentially
-        val processedMessages = processors.fold(translationMessages) { msgs, processor ->
-            processor.process(msgs, context)
+        var processedMessages = translationMessages
+        for (processor in processors) {
+            processedMessages = processor.process(processedMessages, context)
         }
 
         // Convert TranslationMessage → PoMessage
