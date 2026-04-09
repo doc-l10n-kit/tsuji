@@ -9,8 +9,8 @@ import java.nio.file.Path
 
 @Dependent
 @Unremovable
-@CommandLine.Command(name = "purge-fuzzy", mixinStandardHelpOptions = true, description = ["Purges fuzzy messages in PO file(s)"])
-class PurgeFuzzyCommand(private val poAppService: PoAppService) : BaseCommand() {
+@CommandLine.Command(name = "purge", mixinStandardHelpOptions = true, description = ["Purges translations in PO file(s). By default only fuzzy, use --all for all."])
+class PurgeCommand(private val poAppService: PoAppService) : BaseCommand() {
 
     @CommandLine.Option(names = ["--po", "-p"], description = ["The PO file or directory to process"], required = true)
     lateinit var po: Path

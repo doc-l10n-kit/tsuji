@@ -9,21 +9,21 @@ import org.junit.jupiter.api.Test
 import kotlin.io.path.exists
 
 @QuarkusMainTest
-class PurgeFuzzyCommandTest {
+class PurgeCommandTest {
 
     @Test
-    fun testPurgeFuzzy(launcher: QuarkusMainLauncher) {
+    fun testPurgeFuzzyOnly(launcher: QuarkusMainLauncher) {
         // Given
         val buildDir = SystemTestUtils.prepareTestDir()
         SystemTestUtils.copyTestResources(buildDir, "sample.po")
         val tempPo = buildDir.resolve("sample.po")
 
         // When
-        val result = launcher.launch("po", "purge-fuzzy", "--po", tempPo.toString())
+        val result = launcher.launch("po", "purge", "--po", tempPo.toString())
 
         // Then
         assertThat(result.exitCode()).isEqualTo(0)
-        
+
         val poDriver = PoDriverImpl()
         val po = poDriver.load(tempPo)
 

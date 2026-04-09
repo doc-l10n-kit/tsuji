@@ -8,7 +8,7 @@ import net.sharplab.tsuji.app.cli.po.ApplyFuzzyTmxCommand
 import net.sharplab.tsuji.app.cli.po.ApplyTmxCommand
 import net.sharplab.tsuji.app.cli.po.MachineTranslateCommand
 import net.sharplab.tsuji.app.cli.po.NormalizeCommand
-import net.sharplab.tsuji.app.cli.po.PurgeFuzzyCommand
+import net.sharplab.tsuji.app.cli.po.PurgeCommand
 import net.sharplab.tsuji.app.cli.po.RemoveObsoleteCommand
 import net.sharplab.tsuji.app.cli.po.UpdateCommand
 import net.sharplab.tsuji.app.cli.po.UpdatePoStatsCommand
@@ -21,7 +21,7 @@ import net.sharplab.tsuji.app.cli.po.UpdatePoStatsCommand
     description = ["Commands for PO file operations"],
     subcommands = [
         NormalizeCommand::class,
-        PurgeFuzzyCommand::class,
+        PurgeCommand::class,
         RemoveObsoleteCommand::class,
         UpdateCommand::class,
         ApplyCommand::class,
