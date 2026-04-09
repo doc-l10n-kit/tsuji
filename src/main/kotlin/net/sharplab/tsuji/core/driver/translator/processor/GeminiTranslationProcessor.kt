@@ -136,6 +136,14 @@ class GeminiTranslationProcessor(
                     messages = retranslateBroken(messages, e.brokenMessages, context)
                 } else {
                     logger.warn("Asciidoc markup still broken in ${e.brokenMessages.size} translation(s), accepting anyway")
+                    val brokenIds = e.brokenMessages.map { it.original.messageId }.toSet()
+                    messages = messages.map { msg ->
+                        if (msg.original.messageId in brokenIds) {
+                            msg.withComment("WARNING: Asciidoc markup may be broken in this translation")
+                        } else {
+                            msg
+                        }
+                    }
                 }
             }
         }

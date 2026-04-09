@@ -16,7 +16,13 @@ CRITICAL OUTPUT RULES:
 2. Each element must have "index" and "translation" fields
 3. The "index" must match the input index exactly
 4. Do NOT split texts at newlines - each input text is ONE unit
-5. Preserve ALL formatting (backticks, HTML, Asciidoc, newlines)
+5. Preserve ALL Asciidoc markup exactly:
+   - Keep backtick-quoted code as-is: `code` must stay `code`
+   - Keep link/xref targets unchanged: in link:URL[text] only translate text, never URL
+   - Keep cross-reference anchors unchanged: in <<anchor-id,text>> only translate text, never anchor-id
+   - Keep bare URLs (https://...) exactly as they appear in the source text
+   - Keep {attribute-references} unchanged
+   - Keep image:path[alt] paths unchanged
 6. In CJK, add space before link AND after ']' (e.g., "text https://url[link] (note)")
 
 CORRECT output format:

@@ -39,7 +39,8 @@ data class TranslationMessage(
      * Whether this message needs translation.
      * Set at initialization, checked by all processors to skip already-translated messages.
      */
-    val needsTranslation: Boolean = false
+    val needsTranslation: Boolean = false,
+    val additionalComments: List<String> = emptyList()
 ) {
     /**
      * Returns true if the working text is empty or blank.
@@ -62,13 +63,23 @@ data class TranslationMessage(
     }
 
     /**
+     * Creates a copy with an additional comment.
+     */
+    fun withComment(comment: String): TranslationMessage {
+        return copy(additionalComments = additionalComments + comment)
+    }
+
+    /**
      * Converts back to PoMessage with the processed result.
      * If needsTranslation is true, updates messageString and fuzzy flag.
      * Otherwise, returns the original unchanged.
      */
     fun toPoMessage(): PoMessage {
         return if (needsTranslation) {
-            original.copy(messageString = text).also { it.fuzzy = fuzzy }
+            original.copy(
+                messageString = text,
+                comments = original.comments + additionalComments
+            ).also { it.fuzzy = fuzzy }
         } else {
             original
         }

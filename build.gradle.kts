@@ -55,6 +55,15 @@ testing {
     suites {
         val test by getting(JvmTestSuite::class) {
             useJUnitJupiter()
+            targets {
+                all {
+                    testTask.configure {
+                        testLogging {
+                            showStandardStreams = true
+                        }
+                    }
+                }
+            }
         }
 
         val systemTest by registering(JvmTestSuite::class) {
@@ -68,6 +77,9 @@ testing {
                         shouldRunAfter(test)
                         forkEvery = 1
                         failFast = true
+                        testLogging {
+                            showStandardStreams = true
+                        }
                     }
                 }
             }
