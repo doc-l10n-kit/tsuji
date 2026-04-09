@@ -41,7 +41,7 @@ CRITICAL OUTPUT RULES:
 5. Preserve ALL Asciidoc markup exactly:
    - Keep backtick-quoted code as-is: `code` must stay `code`
    - Keep link/xref targets unchanged: in link:URL[text] only translate text, never URL
-   - Keep cross-reference anchors unchanged: in <<anchor-id,text>> only translate text, never anchor-id
+   - For cross-references (<<Section Title>>): translate the title to match the translated section title
    - Keep bare URLs (https://...) exactly as they appear in the source text
    - Keep {attribute-references} unchanged
    - Keep image:path[alt] paths unchanged
@@ -49,7 +49,6 @@ CRITICAL OUTPUT RULES:
 7. Use the "tm" array as a terminology reference only
    - Use consistent terms found in tm, but write natural sentences in your own words
    - Do NOT copy sentence structure or phrasing from tm
-8. If tm is empty, translate normally
 
 CORRECT output format:
 [
@@ -59,11 +58,7 @@ CORRECT output format:
 ]
 
 WRONG output formats (DO NOT USE):
-- Omitting the "index" field
-- Using different index values than the input
-- Returning fewer or more array elements than the input
 - Splitting newlines into separate array elements
-- Including the "tm" field in the output
 
 Translation rules:
 - Translate only natural language content

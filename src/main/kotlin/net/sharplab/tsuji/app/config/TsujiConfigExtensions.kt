@@ -6,12 +6,11 @@ package net.sharplab.tsuji.app.config
 fun TsujiConfig.Glossary.toPromptText(): String {
     if (!enabled) return ""
 
-    val entriesList = entries.orElse(emptyList())
-    if (entriesList.isEmpty()) return ""
+    if (entries.isEmpty()) return ""
 
     return buildString {
         appendLine("TERMINOLOGY GLOSSARY:")
-        entriesList.forEach { entry ->
+        entries.forEach { entry ->
             appendLine("- \"${entry.term}\" → \"${entry.translation}\"")
         }
         appendLine()

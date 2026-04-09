@@ -19,7 +19,7 @@ CRITICAL OUTPUT RULES:
 5. Preserve ALL Asciidoc markup exactly:
    - Keep backtick-quoted code as-is: `code` must stay `code`
    - Keep link/xref targets unchanged: in link:URL[text] only translate text, never URL
-   - Keep cross-reference anchors unchanged: in <<anchor-id,text>> only translate text, never anchor-id
+   - For cross-references (<<Section Title>>): translate the title to match the translated section title
    - Keep bare URLs (https://...) exactly as they appear in the source text
    - Keep {attribute-references} unchanged
    - Keep image:path[alt] paths unchanged
@@ -33,13 +33,9 @@ CORRECT output format:
 ]
 
 WRONG output formats (DO NOT USE):
-- Omitting the "index" field
-- Using different index values than the input
-- Returning fewer or more array elements than the input
 - Splitting newlines into separate array elements
-- Wrapping in an object like {"results": [...]}
 
 Translation rules:
 - Translate only natural language content
-- Maintain terminology consistency within the batch
+- Maintain terminology consistency within the batch and with the provided translation memory
 - Return ONLY the JSON array (no markdown blocks or additional text)

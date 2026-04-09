@@ -2,7 +2,6 @@ package net.sharplab.tsuji.app.config
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import java.util.Optional
 
 class TsujiConfigExtensionsTest {
 
@@ -14,7 +13,7 @@ class TsujiConfigExtensionsTest {
 
     private class TestGlossary(
         override val enabled: Boolean,
-        override val entries: Optional<List<TsujiConfig.GlossaryEntry>>
+        override val entries: List<TsujiConfig.GlossaryEntry>
     ) : TsujiConfig.Glossary
 
     @Test
@@ -22,7 +21,7 @@ class TsujiConfigExtensionsTest {
         // Given
         val entry1 = TestGlossaryEntry("test term", "テスト用語")
         val entry2 = TestGlossaryEntry("another term", "別の用語")
-        val glossary = TestGlossary(true, Optional.of(listOf(entry1, entry2)))
+        val glossary = TestGlossary(true, listOf(entry1, entry2))
 
         // When
         val promptText = glossary.toPromptText()
@@ -36,19 +35,7 @@ class TsujiConfigExtensionsTest {
     @Test
     fun `toPromptText should return empty string when disabled`() {
         // Given
-        val glossary = TestGlossary(false, Optional.empty())
-
-        // When
-        val promptText = glossary.toPromptText()
-
-        // Then
-        assertThat(promptText).isEmpty()
-    }
-
-    @Test
-    fun `toPromptText should return empty string when no entries`() {
-        // Given
-        val glossary = TestGlossary(true, Optional.empty())
+        val glossary = TestGlossary(false, emptyList())
 
         // When
         val promptText = glossary.toPromptText()
@@ -60,7 +47,7 @@ class TsujiConfigExtensionsTest {
     @Test
     fun `toPromptText should return empty string when entries list is empty`() {
         // Given
-        val glossary = TestGlossary(true, Optional.of(emptyList()))
+        val glossary = TestGlossary(true, emptyList())
 
         // When
         val promptText = glossary.toPromptText()

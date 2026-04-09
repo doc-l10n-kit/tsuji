@@ -64,7 +64,10 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
             val body = doc.body()
 
             MarkupFeatures(
-                linkHrefs = body.select("a[href]").map { it.attr("href") }.toSet(),
+                linkHrefs = body.select("a[href]")
+                    .map { it.attr("href").substringBefore("#") }
+                    .filter { it.isNotEmpty() }
+                    .toSet(),
                 imageSrcs = body.select("img[src]").map { it.attr("src") }.toSet(),
                 emphasisCount = body.select("em").size,
                 strongCount = body.select("strong").size,

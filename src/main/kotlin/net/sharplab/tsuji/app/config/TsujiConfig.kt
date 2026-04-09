@@ -204,7 +204,8 @@ interface TsujiConfig {
         val enabled: Boolean
 
         @get:WithName("entries")
-        val entries: Optional<List<GlossaryEntry>>
+        @get:WithDefault("")
+        val entries: List<GlossaryEntry>
     }
 
     interface GlossaryEntry {
