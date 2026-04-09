@@ -16,6 +16,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
@@ -32,6 +33,9 @@ class GeminiRAGTranslationAiService {
 
     @Inject
     lateinit var vectorStoreDriver: VectorStoreDriver
+
+    @Inject
+    lateinit var config: TsujiConfig
 
     // Load prompt from resources
     private val translationSystemPrompt: String by lazy {
@@ -52,7 +56,10 @@ class GeminiRAGTranslationAiService {
 
     // Retrieve RAG context for a single text as structured translation memory entries
     private fun retrieveContextForText(text: String): List<TranslationMemoryEntry> {
-        val retriever = vectorStoreDriver.asContentRetriever()
+        val retriever = vectorStoreDriver.asContentRetriever(
+            maxResults = config.translator.gemini.rag.maxResults,
+            minScore = config.translator.gemini.rag.minScore
+        )
         val query = Query.from(text)
         val contents = retriever.retrieve(query)
 

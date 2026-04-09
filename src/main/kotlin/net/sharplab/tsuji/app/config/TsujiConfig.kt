@@ -128,6 +128,9 @@ interface TsujiConfig {
             @get:WithName("adaptive")
             val adaptive: Adaptive
 
+            @get:WithName("rag")
+            val rag: Rag
+
             interface Batch {
                 @get:WithName("max-texts-per-request")
                 @get:WithDefault("10")
@@ -158,6 +161,16 @@ interface TsujiConfig {
                 @get:WithName("max-retries")
                 @get:WithDefault("3")
                 val maxRetries: Int
+            }
+
+            interface Rag {
+                @get:WithName("max-results")
+                @get:WithDefault("3")
+                val maxResults: Int
+
+                @get:WithName("min-score")
+                @get:WithDefault("0.5")
+                val minScore: Double
             }
         }
     }

@@ -49,14 +49,14 @@ class LuceneVectorStoreDriver(
         logger.info("Lucene index is automatically persisted to disk")
     }
 
-    override fun asContentRetriever(maxResults: Int): ContentRetriever {
+    override fun asContentRetriever(maxResults: Int, minScore: Double): ContentRetriever {
         // Use EmbeddingStoreContentRetriever instead of LuceneContentRetriever
         // to avoid Lucene query parser errors with HTML tags and special characters
         return EmbeddingStoreContentRetriever.builder()
             .embeddingStore(embeddingStore)
             .embeddingModel(embeddingModel)
             .maxResults(maxResults)
-            .minScore(0.5)
+            .minScore(minScore)
             .build()
     }
 }
