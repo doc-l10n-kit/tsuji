@@ -1,13 +1,15 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.core.driver.translator.adaptive.GeminiBatchProvider
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
-import net.sharplab.tsuji.core.driver.translator.exception.*
+import net.sharplab.tsuji.core.driver.translator.exception.AsciidocMarkupValidationException
+import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
+import net.sharplab.tsuji.core.driver.translator.exception.ResponseParseException
+import net.sharplab.tsuji.core.driver.translator.exception.TranslationValidationException
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationAiService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.po.util.MessageClassifier
 import org.slf4j.LoggerFactory
@@ -21,12 +23,16 @@ class GeminiTranslationProcessor(
     private val geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
     private val initialTextsPerRequest: Int = 200,
     private val maxTextsPerRequest: Int = 200,
-    private val maxTextSizeBytes: Int = 700000,
     private val maxRetries: Int = 3,
-    private val parallelismController: AdaptiveParallelismController
+    private val parallelismController: AdaptiveParallelismController,
+    private val asciidocMarkupValidator: AsciidocMarkupValidator
 ) : MessageProcessor {
 
     private val logger = LoggerFactory.getLogger(GeminiTranslationProcessor::class.java)
+
+    companion object {
+        private const val MAX_MARKUP_RETRIES = 2
+    }
 
     override suspend fun process(
         messages: List<TranslationMessage>,
@@ -40,12 +46,11 @@ class GeminiTranslationProcessor(
         val jekyllIndices = mutableListOf<Int>()
         val normalIndices = mutableListOf<Int>()
         val fillIndices = mutableListOf<Int>()
-        val skipIndices = mutableListOf<Int>()
 
         messages.forEachIndexed { index, msg ->
             when {
-                !msg.needsTranslation -> skipIndices.add(index)
-                msg.isEmpty() -> skipIndices.add(index) // Skip empty text
+                !msg.needsTranslation -> {} // skip
+                msg.isEmpty() -> {} // skip
                 MessageClassifier.shouldFillWithMessageId(msg.original) -> fillIndices.add(index)
                 MessageClassifier.isJekyllFrontMatter(msg.original.messageId) -> jekyllIndices.add(index)
                 else -> normalIndices.add(index)
@@ -73,15 +78,14 @@ class GeminiTranslationProcessor(
 
         // Normal translation with adaptive batch processing
         if (normalIndices.isNotEmpty()) {
-            val normalTexts = normalIndices.map { messages[it].text }
+            val normalMessages = normalIndices.map { messages[it] }
 
-            logger.info("Translating ${normalTexts.size} texts (${context.srcLang} -> ${context.dstLang})")
+            logger.info("Translating ${normalMessages.size} texts (${context.srcLang} -> ${context.dstLang})")
             logger.debug("Current parallelism controller state: concurrency=${parallelismController.getCurrentConcurrency()}")
             val processStartTime = System.currentTimeMillis()
 
-            // Create batch provider and executor
             val batchProvider = GeminiBatchProvider(
-                items = normalTexts,
+                items = normalMessages,
                 initialLimit = initialTextsPerRequest,
                 minLimit = 1,
                 maxLimit = maxTextsPerRequest
@@ -92,68 +96,97 @@ class GeminiTranslationProcessor(
                 maxValidationRetries = 5
             )
 
-            logger.debug("Starting batch execution with parallelism control")
             val translated = executor.execute { batch ->
-                // Execute translation for this batch through parallelism controller
-                logger.debug("Batch of ${batch.size} texts entering parallelism controller")
                 parallelismController.execute {
-                    logger.debug("Batch of ${batch.size} texts executing translation")
-                    translateBatchWithValidation(batch, context)
+                    translateBatch(batch, context)
                 }
             }
 
-            translated.forEachIndexed { i, translatedText ->
-                val index = normalIndices[i]
-                result[index] = result[index]
-                    .withText(translatedText)
-                    .withFuzzy(true)
+            translated.forEachIndexed { i, translatedMsg ->
+                result[normalIndices[i]] = translatedMsg
             }
 
             val processElapsedTime = System.currentTimeMillis() - processStartTime
-            logger.info("Translation process completed in ${processElapsedTime}ms for ${normalTexts.size} texts (avg: ${processElapsedTime / normalTexts.size}ms/text)")
+            logger.info("Translation process completed in ${processElapsedTime}ms for ${normalMessages.size} texts (avg: ${processElapsedTime / normalMessages.size}ms/text)")
         }
 
         return result
     }
 
-    private suspend fun translateBatchWithValidation(
-        batch: List<String>,
+    private suspend fun translateBatch(
+        batch: List<TranslationMessage>,
+        context: TranslationContext
+    ): List<TranslationMessage> {
+        val translations = callTranslationApi(batch.map { it.text }, context)
+        var messages = batch.zip(translations).map { (msg, translated) ->
+            msg.withText(translated).withFuzzy(true)
+        }
+
+        if (!context.isAsciidoctor) {
+            return messages
+        }
+
+        repeat(MAX_MARKUP_RETRIES + 1) { attempt ->
+            try {
+                asciidocMarkupValidator.validate(messages)
+                return messages
+            } catch (e: AsciidocMarkupValidationException) {
+                if (attempt < MAX_MARKUP_RETRIES) {
+                    logger.info("Retrying ${e.brokenMessages.size} broken translation(s) (attempt ${attempt + 1}/$MAX_MARKUP_RETRIES)")
+                    messages = retranslateBroken(messages, e.brokenMessages, context)
+                } else {
+                    logger.warn("Asciidoc markup still broken in ${e.brokenMessages.size} translation(s), accepting anyway")
+                }
+            }
+        }
+
+        return messages
+    }
+
+    private suspend fun retranslateBroken(
+        messages: List<TranslationMessage>,
+        broken: List<TranslationMessage>,
+        context: TranslationContext
+    ): List<TranslationMessage> {
+        val retranslated = callTranslationApi(broken.map { it.original.messageId }, context)
+        val fixes = broken.zip(retranslated).associate { (msg, newText) -> msg.original.messageId to newText }
+        return messages.map { msg -> fixes[msg.original.messageId]?.let { msg.withText(it) } ?: msg }
+    }
+
+    private suspend fun callTranslationApi(
+        texts: List<String>,
         context: TranslationContext
     ): List<String> {
         return try {
             if (context.useRag) {
-                logger.debug("Batch of ${batch.size} texts using RAG batch translation")
-                geminiRAGTranslationAiService.translate(batch, context.srcLang, context.dstLang)
+                logger.debug("Batch of ${texts.size} texts using RAG batch translation")
+                geminiRAGTranslationAiService.translate(texts, context.srcLang, context.dstLang)
             } else {
-                logger.debug("Sending batch: ${batch.size} items")
+                logger.debug("Sending batch: ${texts.size} items")
 
                 val batchStartTime = System.currentTimeMillis()
-                val result = geminiTranslationAiService.translate(batch, context.srcLang, context.dstLang)
+                val result = geminiTranslationAiService.translate(texts, context.srcLang, context.dstLang)
                 val batchElapsedTime = System.currentTimeMillis() - batchStartTime
 
-                logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${batch.size})")
+                logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${texts.size})")
                 result
             }
 
         } catch (e: TranslationValidationException) {
-            // Re-throw validation exceptions as-is
             throw e
 
         } catch (e: Exception) {
-            // Detect rate limit errors
             if (e.message?.contains("429") == true ||
                 e.message?.contains("quota") == true ||
                 e.message?.contains("rate limit") == true) {
                 throw RateLimitException("Rate limit exceeded: ${e.message}")
             }
 
-            // Detect JSON parse errors (LLM returned invalid format)
             if (e is com.fasterxml.jackson.core.JsonProcessingException ||
                 e.message?.contains("JSON") == true) {
                 throw ResponseParseException("Failed to parse LLM response: ${e.message}", e)
             }
 
-            // Other errors: propagate as-is (will be treated as transport errors)
             throw e
         }
     }
@@ -161,8 +194,6 @@ class GeminiTranslationProcessor(
     /**
      * Translates Jekyll Front Matter format.
      * Only translates title and synopsis fields, preserving others.
-     *
-     * In the future, this could be improved to handle structured formats more flexibly using prompts.
      */
     private suspend fun translateJekyllFrontMatter(message: String, srcLang: String, dstLang: String, useRag: Boolean): String {
         val titleRegex = Regex("""^title:\s*(.*)$""", RegexOption.MULTILINE)
@@ -180,14 +211,12 @@ class GeminiTranslationProcessor(
 
         if (stringsToTranslate.isEmpty()) return message
 
-        // Translate title and synopsis as a batch
         val translated = if (useRag) {
             geminiRAGTranslationAiService.translate(stringsToTranslate, srcLang, dstLang)
         } else {
             geminiTranslationAiService.translate(stringsToTranslate, srcLang, dstLang)
         }
 
-        // Replace in the original message
         var translatedIndex = 0
         var replaced = message
         if (title.isNotEmpty()) {
@@ -200,5 +229,4 @@ class GeminiTranslationProcessor(
         }
         return replaced
     }
-
 }

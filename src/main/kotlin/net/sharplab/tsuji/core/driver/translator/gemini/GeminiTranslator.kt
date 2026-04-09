@@ -3,6 +3,7 @@ import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
+import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.core.driver.translator.processor.*
@@ -13,9 +14,9 @@ class GeminiTranslator(
     private val geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
     private val initialTextsPerRequest: Int = 200,
     private val maxTextsPerRequest: Int = 200,
-    private val maxTextSizeBytes: Int = 700000,
     private val maxRetries: Int = 3,
-    private val parallelismController: AdaptiveParallelismController
+    private val parallelismController: AdaptiveParallelismController,
+    private val asciidocMarkupValidator: AsciidocMarkupValidator
 ) : Translator {
 
     private val logger = LoggerFactory.getLogger(GeminiTranslator::class.java)
@@ -28,9 +29,9 @@ class GeminiTranslator(
             geminiRAGTranslationAiService,
             initialTextsPerRequest,
             maxTextsPerRequest,
-            maxTextSizeBytes,
             maxRetries,
-            parallelismController
+            parallelismController,
+            asciidocMarkupValidator
         )
     )
 

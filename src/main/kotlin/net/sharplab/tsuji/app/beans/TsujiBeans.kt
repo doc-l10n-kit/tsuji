@@ -27,6 +27,7 @@ import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationAiService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.driver.vectorstore.LuceneVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
@@ -169,12 +170,19 @@ class TsujiBeans() {
 
     @Produces
     @ApplicationScoped
+    fun asciidocMarkupValidator(asciidoctor: Asciidoctor): AsciidocMarkupValidator {
+        return AsciidocMarkupValidator(asciidoctor)
+    }
+
+    @Produces
+    @ApplicationScoped
     fun translator(
         tsujiConfig: TsujiConfig,
         asciidoctorPreProcessor: AsciidoctorPreProcessor,
         geminiTranslationAiService: GeminiTranslationAiService,
         geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
-        adaptiveParallelismController: AdaptiveParallelismController
+        adaptiveParallelismController: AdaptiveParallelismController,
+        asciidocMarkupValidator: AsciidocMarkupValidator
     ): Translator {
         return when (tsujiConfig.translator.type.lowercase()) {
             "deepl" -> {
@@ -193,9 +201,10 @@ class TsujiBeans() {
                     geminiRAGTranslationAiService,
                     tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
-                    tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
+
                     tsujiConfig.translator.gemini.adaptive.maxRetries,
-                    adaptiveParallelismController
+                    adaptiveParallelismController,
+                    asciidocMarkupValidator
                 )
             }
             else -> {
@@ -205,9 +214,10 @@ class TsujiBeans() {
                     geminiRAGTranslationAiService,
                     tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
-                    tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
+
                     tsujiConfig.translator.gemini.adaptive.maxRetries,
-                    adaptiveParallelismController
+                    adaptiveParallelismController,
+                    asciidocMarkupValidator
                 )
             }
         }

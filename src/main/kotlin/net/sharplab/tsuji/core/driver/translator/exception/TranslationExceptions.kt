@@ -36,6 +36,14 @@ class IndexMismatchException(
 ) : TranslationValidationException(message)
 
 /**
+ * Asciidoc markup (links, images, emphasis, etc.) in translations does not match source texts.
+ * Contains the broken TranslationMessages so the caller can retry just those.
+ */
+class AsciidocMarkupValidationException(
+    val brokenMessages: List<net.sharplab.tsuji.core.model.translation.TranslationMessage>
+) : TranslationValidationException("Asciidoc markup broken in ${brokenMessages.size} translation(s)")
+
+/**
  * Rate limit error from API.
  * This should reduce parallelism, not batch size.
  */
