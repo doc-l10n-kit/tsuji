@@ -68,4 +68,15 @@ class PoServiceImpl : PoService {
         }
         return po.copy(messages = updatedMessages)
     }
+
+    override fun createAllPurgedPo(po: Po): Po {
+        val updatedMessages = po.messages.map { msg ->
+            if (msg.messageString.isNotEmpty()) {
+                msg.copy(messageString = "").also { it.fuzzy = false }
+            } else {
+                msg
+            }
+        }
+        return po.copy(messages = updatedMessages)
+    }
 }

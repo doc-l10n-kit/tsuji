@@ -15,7 +15,14 @@ class PurgeFuzzyCommand(private val poAppService: PoAppService) : BaseCommand() 
     @CommandLine.Option(names = ["--po", "-p"], description = ["The PO file or directory to process"], required = true)
     lateinit var po: Path
 
+    @CommandLine.Option(names = ["--all", "-a"], description = ["Purge all translations including confirmed ones"], defaultValue = "false")
+    var all: Boolean = false
+
     override fun execute() {
-        poAppService.purgeFuzzy(po)
+        if (all) {
+            poAppService.purgeAll(po)
+        } else {
+            poAppService.purgeFuzzy(po)
+        }
     }
 }

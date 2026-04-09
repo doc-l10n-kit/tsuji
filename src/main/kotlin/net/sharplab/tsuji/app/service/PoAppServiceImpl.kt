@@ -66,6 +66,26 @@ class PoAppServiceImpl(
         }
     }
 
+    override fun purgeAll(poPath: Path) {
+        val paths = if (poPath.isDirectory()) {
+            logger.info("Purging all translations in directory: $poPath")
+            Files.walk(poPath).use { stream ->
+                stream.filter { it.extension == "po" }.toList()
+            }
+        } else {
+            logger.info("Purging all translations in file: $poPath")
+            listOf(poPath)
+        }
+
+        paths.forEach { path ->
+            logger.debug("Processing: $path")
+            val po = poDriver.load(path)
+            val purgedPo = poService.createAllPurgedPo(po)
+            poDriver.save(purgedPo, path)
+            poNormalizerService.normalize(path)
+        }
+    }
+
     override fun removeObsolete(poDir: Path, upstreamDir: Path) {
         logger.info("Removing obsolete PO files in $poDir based on $upstreamDir")
         Files.walk(poDir).use { stream ->

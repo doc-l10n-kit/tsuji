@@ -33,5 +33,12 @@ interface PoService {
      * Pure domain operation with no side effects.
      */
     fun createFuzzyPurgedPo(po: Po): Po
+
+    /**
+     * Creates a new Po with all messages purged.
+     * All messages will have their messageString cleared and fuzzy flag removed.
+     * Pure domain operation with no side effects.
+     */
+    fun createAllPurgedPo(po: Po): Po
 }
 

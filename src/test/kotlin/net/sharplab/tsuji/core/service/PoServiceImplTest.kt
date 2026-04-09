@@ -96,6 +96,26 @@ class PoServiceImplTest {
     }
 
     @Test
+    fun createAllPurgedPo_shouldClearAllMessages() {
+        // Given
+        val fuzzyMsg = createPoMessage("test", "テスト", fuzzy = true)
+        val normalMsg = createPoMessage("normal", "通常")
+        val emptyMsg = createPoMessage("empty", "")
+        val po = Po("ja", listOf(fuzzyMsg, normalMsg, emptyMsg))
+
+        // When
+        val result = target.createAllPurgedPo(po)
+
+        // Then
+        assertThat(result.messages).hasSize(3)
+        assertThat(result.messages[0].fuzzy).isFalse()
+        assertThat(result.messages[0].messageString).isEmpty()
+        assertThat(result.messages[1].fuzzy).isFalse()
+        assertThat(result.messages[1].messageString).isEmpty()
+        assertThat(result.messages[2].messageString).isEmpty()
+    }
+
+    @Test
     fun createFuzzyPurgedPo_shouldNotModifyOriginalPo() {
         // Given
         val fuzzyMsg = createPoMessage("test", "テスト", fuzzy = true)
