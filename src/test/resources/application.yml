@@ -1,0 +1,22 @@
+tsuji:
+  rag:
+    # Use build directory for RAG index during testing
+    index-path: "build/test/rag/index"
+
+  # Test glossary configuration
+  glossary:
+    enabled: true
+    entries:
+      - term: "test term"
+        translation: "テスト用語"
+      - term: "Quarkus extension"
+        translation: "Quarkusエクステンション"
+
+quarkus:
+  log:
+    level: INFO
+    category:
+      "io.quarkus":
+        level: INFO
+      "net.sharplab":
+        level: DEBUG

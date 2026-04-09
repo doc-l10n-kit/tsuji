@@ -191,6 +191,7 @@ class TsujiBeans() {
                 GeminiTranslator(
                     geminiTranslationAiService,
                     geminiRAGTranslationAiService,
+                    tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
                     tsujiConfig.translator.gemini.adaptive.maxRetries,
@@ -202,6 +203,7 @@ class TsujiBeans() {
                 GeminiTranslator(
                     geminiTranslationAiService,
                     geminiRAGTranslationAiService,
+                    tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextSizeBytes,
                     tsujiConfig.translator.gemini.adaptive.maxRetries,

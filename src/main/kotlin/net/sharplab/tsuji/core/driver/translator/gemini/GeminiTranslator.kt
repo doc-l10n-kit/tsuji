@@ -11,8 +11,9 @@ import org.slf4j.LoggerFactory
 class GeminiTranslator(
     private val geminiTranslationAiService: GeminiTranslationAiService,
     private val geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
-    private val maxTextsPerRequest: Int = 10,
-    private val maxTextSizeBytes: Int = 50000,
+    private val initialTextsPerRequest: Int = 200,
+    private val maxTextsPerRequest: Int = 200,
+    private val maxTextSizeBytes: Int = 700000,
     private val maxRetries: Int = 3,
     private val parallelismController: AdaptiveParallelismController
 ) : Translator {
@@ -25,6 +26,7 @@ class GeminiTranslator(
         GeminiTranslationProcessor(
             geminiTranslationAiService,
             geminiRAGTranslationAiService,
+            initialTextsPerRequest,
             maxTextsPerRequest,
             maxTextSizeBytes,
             maxRetries,

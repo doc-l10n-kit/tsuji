@@ -19,8 +19,9 @@ import org.slf4j.LoggerFactory
 class GeminiTranslationProcessor(
     private val geminiTranslationAiService: GeminiTranslationAiService,
     private val geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
-    private val maxTextsPerRequest: Int = 10,
-    private val maxTextSizeBytes: Int = 50000,
+    private val initialTextsPerRequest: Int = 200,
+    private val maxTextsPerRequest: Int = 200,
+    private val maxTextSizeBytes: Int = 700000,
     private val maxRetries: Int = 3,
     private val parallelismController: AdaptiveParallelismController
 ) : MessageProcessor {
@@ -81,7 +82,7 @@ class GeminiTranslationProcessor(
             // Create batch provider and executor
             val batchProvider = GeminiBatchProvider(
                 items = normalTexts,
-                initialLimit = maxTextsPerRequest,
+                initialLimit = initialTextsPerRequest,
                 minLimit = 1,
                 maxLimit = maxTextsPerRequest
             )

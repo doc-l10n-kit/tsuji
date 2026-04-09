@@ -1,0 +1,71 @@
+package net.sharplab.tsuji.app.config
+
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import java.util.Optional
+
+class TsujiConfigExtensionsTest {
+
+    // Simple test implementations of the interfaces
+    private class TestGlossaryEntry(
+        override val term: String,
+        override val translation: String
+    ) : TsujiConfig.GlossaryEntry
+
+    private class TestGlossary(
+        override val enabled: Boolean,
+        override val entries: Optional<List<TsujiConfig.GlossaryEntry>>
+    ) : TsujiConfig.Glossary
+
+    @Test
+    fun `toPromptText should format entries correctly`() {
+        // Given
+        val entry1 = TestGlossaryEntry("test term", "テスト用語")
+        val entry2 = TestGlossaryEntry("another term", "別の用語")
+        val glossary = TestGlossary(true, Optional.of(listOf(entry1, entry2)))
+
+        // When
+        val promptText = glossary.toPromptText()
+
+        // Then
+        assertThat(promptText).contains("TERMINOLOGY GLOSSARY:")
+        assertThat(promptText).contains("\"test term\" → \"テスト用語\"")
+        assertThat(promptText).contains("\"another term\" → \"別の用語\"")
+    }
+
+    @Test
+    fun `toPromptText should return empty string when disabled`() {
+        // Given
+        val glossary = TestGlossary(false, Optional.empty())
+
+        // When
+        val promptText = glossary.toPromptText()
+
+        // Then
+        assertThat(promptText).isEmpty()
+    }
+
+    @Test
+    fun `toPromptText should return empty string when no entries`() {
+        // Given
+        val glossary = TestGlossary(true, Optional.empty())
+
+        // When
+        val promptText = glossary.toPromptText()
+
+        // Then
+        assertThat(promptText).isEmpty()
+    }
+
+    @Test
+    fun `toPromptText should return empty string when entries list is empty`() {
+        // Given
+        val glossary = TestGlossary(true, Optional.of(emptyList()))
+
+        // When
+        val promptText = glossary.toPromptText()
+
+        // Then
+        assertThat(promptText).isEmpty()
+    }
+}

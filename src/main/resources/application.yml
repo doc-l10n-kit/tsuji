@@ -1,0 +1,75 @@
+tsuji:
+  rag:
+    index-path: "l10n/rag/index"
+
+  language:
+    from: "en"
+    to: "ja"
+
+  translator:
+    type: "gemini"
+
+    deepl:
+      # api-key: ""
+
+    gemini:
+      batch:
+        # Initial and maximum number of texts per batch request (default: 200)
+        # Set both to the same value to disable adaptive batch sizing
+        # Based on Gemini 3.1 Flash-Lite output limit (64K tokens) and safety margin
+        initial-texts-per-request: 200
+        max-texts-per-request: 200
+        # Maximum total text size in bytes per batch (default: 700000, ~684 KiB)
+        max-text-size-bytes: 700000
+
+      adaptive:
+        enabled: true
+        # Initial concurrency for parallel requests (default: 40)
+        initial-concurrency: 40
+        # Minimum concurrency (default: 1)
+        min-concurrency: 1
+        # Maximum concurrency (default: 60)
+        max-concurrency: 60
+        # Maximum retry attempts (default: 3)
+        max-retries: 3
+
+      rag:
+        max-results: 3
+        min-score: 0.5
+
+  jekyll:
+    cname: ""
+    surge-domain-suffix: ""
+
+# Quarkus configuration
+quarkus:
+  langchain4j:
+    ai:
+      gemini:
+        chat-model:
+          # Use Gemini 3.1 Flash Lite Preview for optimal speed, quality, and cost
+          model-id: "gemini-3.1-flash-lite-preview"
+        timeout: 60s
+        log-requests: false
+        log-responses: false
+
+  package:
+    jar:
+      type: uber-jar
+      add-runner-suffix: false
+
+  # Disable banner for CLI
+  banner:
+    enabled: false
+
+  # Logging Configuration
+  log:
+    # Root log level: WARN to suppress framework logs
+    level: WARN
+    console:
+      format: "%d{HH:mm:ss} %-5p [%c{2.}] %s%e%n"
+      stderr: true
+    category:
+      # Application logs (net.sharplab) show at INFO level
+      "net.sharplab":
+        level: INFO

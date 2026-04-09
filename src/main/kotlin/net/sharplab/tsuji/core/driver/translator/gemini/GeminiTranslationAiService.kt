@@ -15,6 +15,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.sharplab.tsuji.app.config.toPromptText
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 
@@ -28,6 +29,9 @@ class GeminiTranslationAiService {
     @Inject
     lateinit var chatModel: ChatModel
 
+    @Inject
+    lateinit var config: net.sharplab.tsuji.app.config.TsujiConfig
+
     // Load prompt from resources
     private val translationSystemPrompt: String by lazy {
         loadPrompt("prompts/translation-batch-system-prompt.txt")
@@ -40,9 +44,12 @@ class GeminiTranslationAiService {
     }
 
     private fun buildSystemPrompt(template: String, srcLang: String, dstLang: String): String {
+        val glossaryText = config.glossary.toPromptText()
+
         return template
             .replace("{srcLang}", srcLang)
             .replace("{dstLang}", dstLang)
+            .replace("{glossary}", glossaryText)
     }
 
     companion object {

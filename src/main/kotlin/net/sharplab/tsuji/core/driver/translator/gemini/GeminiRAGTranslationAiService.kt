@@ -17,6 +17,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.app.config.TsujiConfig
+import net.sharplab.tsuji.app.config.toPromptText
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
@@ -49,9 +50,12 @@ class GeminiRAGTranslationAiService {
     }
 
     private fun buildSystemPrompt(template: String, srcLang: String, dstLang: String): String {
+        val glossaryText = config.glossary.toPromptText()
+
         return template
             .replace("{srcLang}", srcLang)
             .replace("{dstLang}", dstLang)
+            .replace("{glossary}", glossaryText)
     }
 
     // Retrieve RAG context for a single text as structured translation memory entries

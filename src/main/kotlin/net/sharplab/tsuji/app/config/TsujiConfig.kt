@@ -132,12 +132,16 @@ interface TsujiConfig {
             val rag: Rag
 
             interface Batch {
+                @get:WithName("initial-texts-per-request")
+                @get:WithDefault("200")
+                val initialTextsPerRequest: Int
+
                 @get:WithName("max-texts-per-request")
-                @get:WithDefault("10")
+                @get:WithDefault("200")
                 val maxTextsPerRequest: Int
 
                 @get:WithName("max-text-size-bytes")
-                @get:WithDefault("50000")
+                @get:WithDefault("700000")
                 val maxTextSizeBytes: Int
             }
 
@@ -147,7 +151,7 @@ interface TsujiConfig {
                 val enabled: Boolean
 
                 @get:WithName("initial-concurrency")
-                @get:WithDefault("3")
+                @get:WithDefault("40")
                 val initialConcurrency: Int
 
                 @get:WithName("min-concurrency")
@@ -155,7 +159,7 @@ interface TsujiConfig {
                 val minConcurrency: Int
 
                 @get:WithName("max-concurrency")
-                @get:WithDefault("10")
+                @get:WithDefault("60")
                 val maxConcurrency: Int
 
                 @get:WithName("max-retries")
@@ -189,5 +193,25 @@ interface TsujiConfig {
             @get:WithName("email")
             val email: Optional<String>
         }
+    }
+
+    @get:WithName("glossary")
+    val glossary: Glossary
+
+    interface Glossary {
+        @get:WithName("enabled")
+        @get:WithDefault("false")
+        val enabled: Boolean
+
+        @get:WithName("entries")
+        val entries: Optional<List<GlossaryEntry>>
+    }
+
+    interface GlossaryEntry {
+        @get:WithName("term")
+        val term: String
+
+        @get:WithName("translation")
+        val translation: String
     }
 }

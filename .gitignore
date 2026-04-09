@@ -34,3 +34,4 @@ nbdist/
 log/
 l10n/
 CLAUDE.local.md
+.local/
