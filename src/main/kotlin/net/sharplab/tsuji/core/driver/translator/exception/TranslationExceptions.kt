@@ -27,17 +27,6 @@ class ResponseParseException(
 ) : TranslationValidationException(message, cause)
 
 /**
- * Response keys do not match request keys in indexed batch translation.
- * @deprecated Use IndexMismatchException for array-based batch translation.
- */
-@Deprecated("Use IndexMismatchException for array-based batch translation")
-class KeyMismatchException(
-    message: String,
-    val expectedKeys: Set<String>,
-    val actualKeys: Set<String>
-) : TranslationValidationException(message)
-
-/**
  * Response indices do not match expected indices in array-based batch translation.
  */
 class IndexMismatchException(

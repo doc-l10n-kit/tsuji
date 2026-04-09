@@ -121,18 +121,13 @@ class GeminiTranslationProcessor(
     ): List<String> {
         return try {
             if (context.useRag) {
-                // TODO: RAG batch support will be added in Phase 2
-                // For now, fall back to individual translation for RAG
-                batch.map { text ->
-                    withContext(Dispatchers.IO) {
-                        geminiRAGTranslationAiService.translate(text, context.srcLang, context.dstLang)
-                    }
-                }
+                logger.debug("Batch of ${batch.size} texts using RAG batch translation")
+                geminiRAGTranslationAiService.translate(batch, context.srcLang, context.dstLang)
             } else {
                 logger.debug("Sending batch: ${batch.size} items")
 
                 val batchStartTime = System.currentTimeMillis()
-                val result = geminiTranslationAiService.translateBatch(batch, context.srcLang, context.dstLang)
+                val result = geminiTranslationAiService.translate(batch, context.srcLang, context.dstLang)
                 val batchElapsedTime = System.currentTimeMillis() - batchStartTime
 
                 logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${batch.size})")
@@ -184,15 +179,11 @@ class GeminiTranslationProcessor(
 
         if (stringsToTranslate.isEmpty()) return message
 
-        // Translate title and synopsis individually
-        val translated = stringsToTranslate.map { text ->
-            if (useRag) {
-                withContext(Dispatchers.IO) {
-                    geminiRAGTranslationAiService.translate(text, srcLang, dstLang)
-                }
-            } else {
-                geminiTranslationAiService.translate(text, srcLang, dstLang)
-            }
+        // Translate title and synopsis as a batch
+        val translated = if (useRag) {
+            geminiRAGTranslationAiService.translate(stringsToTranslate, srcLang, dstLang)
+        } else {
+            geminiTranslationAiService.translate(stringsToTranslate, srcLang, dstLang)
         }
 
         // Replace in the original message

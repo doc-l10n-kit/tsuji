@@ -28,12 +28,8 @@ class GeminiTranslationAiService {
     @Inject
     lateinit var chatModel: ChatModel
 
-    // Load prompts from resources
+    // Load prompt from resources
     private val translationSystemPrompt: String by lazy {
-        loadPrompt("prompts/translation-system-prompt.txt")
-    }
-
-    private val translationBatchSystemPrompt: String by lazy {
         loadPrompt("prompts/translation-batch-system-prompt.txt")
     }
 
@@ -54,29 +50,12 @@ class GeminiTranslationAiService {
             object : com.fasterxml.jackson.core.type.TypeReference<List<BatchTranslationResponseItem>>() {}
     }
 
-    suspend fun translate(text: String, srcLang: String, dstLang: String): String {
-        val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
-        val userPrompt = "Translate this text: $text"
-
-        val request = ChatRequest.builder()
-            .messages(
-                SystemMessage.from(systemPrompt),
-                UserMessage.from(userPrompt)
-            )
-            .build()
-
-        val response = withContext(Dispatchers.IO) {
-            chatModel.chat(request)
-        }
-        return response.aiMessage().text()
-    }
-
-    suspend fun translateBatch(
+    suspend fun translate(
         texts: List<String>,
         srcLang: String,
         dstLang: String
     ): List<String> {
-        val systemPrompt = buildSystemPrompt(translationBatchSystemPrompt, srcLang, dstLang)
+        val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
         val requestJson = serializeBatchRequest(texts)
         val userPrompt = "Translate the following JSON array. Return a JSON array with the SAME indices:\n$requestJson"
 
