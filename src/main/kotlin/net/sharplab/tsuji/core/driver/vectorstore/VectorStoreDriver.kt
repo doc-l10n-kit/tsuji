@@ -9,4 +9,10 @@ interface VectorStoreDriver {
     fun addAll(segments: List<TextSegment>)
     fun save()
     fun asContentRetriever(maxResults: Int = 3, minScore: Double = 0.5): ContentRetriever
+
+    /**
+     * Update index with incremental changes - add new segments and delete removed ones.
+     * Segments are identified by their IDs (first element of pair).
+     */
+    fun updateIndexWithDiff(segmentsWithIds: List<Pair<String, TextSegment>>)
 }

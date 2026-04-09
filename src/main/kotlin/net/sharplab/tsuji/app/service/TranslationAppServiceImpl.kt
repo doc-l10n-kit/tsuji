@@ -36,29 +36,36 @@ class TranslationAppServiceImpl(
         configPath: Path?
     ) {
         runBlocking {
-            val targetDirectories = tsujiConfig.translation.targetDirectories
-
-            if (targetDirectories.isPresent && targetDirectories.get().isNotEmpty()) {
-                // Configuration-based processing: only process directories listed in config
-                val baseDir = Paths.get(tsujiConfig.po.baseDir)
-                val dirs = targetDirectories.get()
-
-                logger.info("Processing with configured target directories")
-                logger.info("Target directories: ${dirs.joinToString(", ")}")
-
-                dirs.forEach { targetDir ->
-                    val dirPath = baseDir.resolve(targetDir)
-                    if (dirPath.exists()) {
-                        translateRecursiveAsync(dirPath, source, target, isAsciidoctor, useRag)
-                    } else {
-                        logger.warn("Target directory does not exist, skipping: ${dirPath.absolutePathString()}")
-                    }
+            if (filePaths != null && filePaths.isNotEmpty()) {
+                // Explicit file paths provided via --po option - process only these files/directories
+                logger.info("Processing explicitly specified files/directories")
+                filePaths.forEach { filePath ->
+                    translateRecursiveAsync(filePath, source, target, isAsciidoctor, useRag)
                 }
             } else {
-                // Legacy behavior: process all specified paths or default base directory
-                val resolvedPaths = filePaths ?: listOf(Paths.get(tsujiConfig.po.baseDir))
-                resolvedPaths.forEach { filePath ->
-                    translateRecursiveAsync(filePath, source, target, isAsciidoctor, useRag)
+                val targetDirectories = tsujiConfig.translation.targetDirectories
+
+                if (targetDirectories.isPresent && targetDirectories.get().isNotEmpty()) {
+                    // Configuration-based processing: only process directories listed in config
+                    val baseDir = Paths.get(tsujiConfig.po.baseDir)
+                    val dirs = targetDirectories.get()
+
+                    logger.info("Processing with configured target directories")
+                    logger.info("Target directories: ${dirs.joinToString(", ")}")
+
+                    dirs.forEach { targetDir ->
+                        val dirPath = baseDir.resolve(targetDir)
+                        if (dirPath.exists()) {
+                            translateRecursiveAsync(dirPath, source, target, isAsciidoctor, useRag)
+                        } else {
+                            logger.warn("Target directory does not exist, skipping: ${dirPath.absolutePathString()}")
+                        }
+                    }
+                } else {
+                    // Default behavior: process base directory
+                    logger.info("Processing default base directory")
+                    val baseDir = Paths.get(tsujiConfig.po.baseDir)
+                    translateRecursiveAsync(baseDir, source, target, isAsciidoctor, useRag)
                 }
             }
         }

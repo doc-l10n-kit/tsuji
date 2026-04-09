@@ -40,9 +40,9 @@ CRITICAL OUTPUT RULES:
 4. Do NOT split texts at newlines - each input text is ONE unit
 5. Preserve ALL formatting (backticks, HTML, Asciidoc, newlines)
 6. In CJK, add space before link AND after ']' (e.g., "text https://url[link] (note)")
-7. Use the "tm" array for terminology and style consistency
-   - If similar original text exists in tm, follow the translation style of its translation
-   - Maintain consistent terminology across similar phrases
+7. Use the "tm" array as a terminology reference only
+   - Use consistent terms found in tm, but write natural sentences in your own words
+   - Do NOT copy sentence structure or phrasing from tm
 8. If tm is empty, translate normally
 
 CORRECT output format:

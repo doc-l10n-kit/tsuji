@@ -49,6 +49,8 @@ quarkus:
         chat-model:
           # Use Gemini 3.1 Flash Lite Preview for optimal speed, quality, and cost
           model-id: "gemini-3.1-flash-lite-preview"
+          # Set to model's maximum output tokens (no cost penalty, only charges for actual tokens generated)
+          max-output-tokens: 65536
         timeout: 60s
         log-requests: false
         log-responses: false
