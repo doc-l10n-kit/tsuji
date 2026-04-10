@@ -42,7 +42,7 @@ class XrefTitlePostProcessorTest {
     )
 
     @Test
-    fun `should replace xref title with translated title`() {
+    fun `should replace xref with section id and translated display text`() {
         runBlocking {
             val messages = listOf(
                 titleMsg("WebAuthn endpoints", "WebAuthnエンドポイント"),
@@ -54,12 +54,12 @@ class XrefTitlePostProcessorTest {
 
             val result = processor.process(messages, context())
 
-            assertThat(result[1].text).isEqualTo("詳細は <<WebAuthnエンドポイント>> を参照してください。")
+            assertThat(result[1].text).isEqualTo("詳細は <<webauthn-endpoints,WebAuthnエンドポイント>> を参照してください。")
         }
     }
 
     @Test
-    fun `should replace multiple xrefs`() {
+    fun `should handle multiple xrefs`() {
         runBlocking {
             val messages = listOf(
                 titleMsg("Obtain a registration challenge", "登録チャレンジの取得"),
@@ -72,12 +72,12 @@ class XrefTitlePostProcessorTest {
 
             val result = processor.process(messages, context())
 
-            assertThat(result[2].text).isEqualTo("まず <<登録チャレンジの取得>>、次に <<登録のトリガー>>。")
+            assertThat(result[2].text).isEqualTo("まず <<obtain-a-registration-challenge,登録チャレンジの取得>>、次に <<trigger-a-registration,登録のトリガー>>。")
         }
     }
 
     @Test
-    fun `should replace xref with display text`() {
+    fun `should not modify xref that already has display text`() {
         runBlocking {
             val messages = listOf(
                 titleMsg("configuration-reference", "設定リファレンス"),
@@ -89,7 +89,24 @@ class XrefTitlePostProcessorTest {
 
             val result = processor.process(messages, context())
 
-            assertThat(result[1].text).isEqualTo("<<設定リファレンス,セッションCookie>> を参照。")
+            assertThat(result[1].text).isEqualTo("<<configuration-reference,セッションCookie>> を参照。")
+        }
+    }
+
+    @Test
+    fun `should handle title with special characters`() {
+        runBlocking {
+            val messages = listOf(
+                titleMsg("Wiley & Sons, Inc.", "ワイリー＆サンズ社"),
+                bodyMsg(
+                    "See <<Wiley & Sons, Inc.>>.",
+                    "<<Wiley & Sons, Inc.>> を参照。"
+                )
+            )
+
+            val result = processor.process(messages, context())
+
+            assertThat(result[1].text).isEqualTo("<<wiley-sons-inc,ワイリー＆サンズ社>> を参照。")
         }
     }
 
@@ -108,7 +125,7 @@ class XrefTitlePostProcessorTest {
     }
 
     @Test
-    fun `should not replace when title is not translated`() {
+    fun `should not modify when title is not translated`() {
         runBlocking {
             val messages = listOf(
                 titleMsg("Logout", "Logout"),

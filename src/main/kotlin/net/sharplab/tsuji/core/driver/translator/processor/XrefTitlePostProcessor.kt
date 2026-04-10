@@ -5,12 +5,14 @@ import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.slf4j.LoggerFactory
 
 /**
- * Post-processor that replaces xref titles in translations with their translated equivalents.
+ * Post-processor that adds translated display text to xrefs while keeping the original anchor.
  *
- * In Asciidoc, `<<Section Title>>` links to a section by its title. After translation,
- * section titles change but xrefs may still reference the original English title.
- * This processor builds a title mapping from PO comments (`type: Title`) and replaces
- * `<<English Title>>` with `<<翻訳タイトル>>` so that xref links resolve correctly.
+ * Replaces `<<English Title>>` with `<<section-id,翻訳タイトル>>` so that:
+ * - The anchor resolves to the English-based section ID (preserved by jekyll-l10n)
+ * - The display text shows the translated section title
+ *
+ * Section IDs are generated following Asciidoctor's rules with idprefix="" and idseparator="-":
+ * lowercase, non-word chars removed, spaces/hyphens/periods replaced with "-".
  */
 class XrefTitlePostProcessor : MessageProcessor {
 
@@ -47,17 +49,25 @@ class XrefTitlePostProcessor : MessageProcessor {
     }
 
     /**
-     * Replaces `<<Original Title>>` with `<<Translated Title>>` in the text.
-     * Also handles `<<Original Title,display text>>` by replacing only the anchor part.
+     * Replaces `<<Original Title>>` with `<<section-id,Translated Title>>`.
      */
     private fun replaceXrefTitles(text: String, titleMap: Map<String, String>): String {
         var result = text
         for ((original, translated) in titleMap) {
-            // Replace <<Original Title>> (without display text)
-            result = result.replace("<<$original>>", "<<$translated>>")
-            // Replace <<Original Title,text>> (with display text) — replace only the anchor part
-            result = result.replace("<<$original,", "<<$translated,")
+            val sectionId = toSectionId(original)
+            result = result.replace("<<$original>>", "<<$sectionId,$translated>>")
         }
         return result
+    }
+
+    /**
+     * Converts a section title to an Asciidoctor auto-generated section ID.
+     * Follows Asciidoctor rules with idprefix="" and idseparator="-".
+     */
+    private fun toSectionId(title: String): String {
+        return title.lowercase()
+            .replace(Regex("[^\\w\\s.-]"), "")
+            .replace(Regex("[\\s.-]+"), "-")
+            .trim('-')
     }
 }

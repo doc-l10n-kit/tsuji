@@ -76,16 +76,17 @@ class TsujiBeans() {
     @Produces
     @Singleton
     fun asciidoctor(): Asciidoctor {
+        val asciidoctorLogger = LoggerFactory.getLogger("org.asciidoctor")
         val asciidoctor = Asciidoctor.Factory.create()
         asciidoctor.registerLogHandler { logRecord ->
             @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
             when (logRecord.severity) {
-                Severity.DEBUG -> logger.debug("{}: {}", logRecord.cursor, logRecord.message)
-                Severity.INFO -> logger.info("{}: {}", logRecord.cursor, logRecord.message)
-                Severity.WARN -> logger.warn("Asciidoc WARN: {}: {}", logRecord.cursor, logRecord.message)
-                Severity.ERROR -> logger.warn("Asciidoc ERROR: {}: {}", logRecord.cursor, logRecord.message)
-                Severity.FATAL -> logger.warn("Asciidoc FATAL: {}: {}", logRecord.cursor, logRecord.message)
-                Severity.UNKNOWN -> logger.warn("Asciidoc UNKNOWN: {}: {}", logRecord.cursor, logRecord.message)
+                Severity.DEBUG -> asciidoctorLogger.debug("{}: {}", logRecord.cursor, logRecord.message)
+                Severity.INFO -> asciidoctorLogger.info("{}: {}", logRecord.cursor, logRecord.message)
+                Severity.WARN -> asciidoctorLogger.warn("{}: {}", logRecord.cursor, logRecord.message)
+                Severity.ERROR -> asciidoctorLogger.error("{}: {}", logRecord.cursor, logRecord.message)
+                Severity.FATAL -> asciidoctorLogger.error("FATAL: {}: {}", logRecord.cursor, logRecord.message)
+                Severity.UNKNOWN -> asciidoctorLogger.warn("UNKNOWN: {}: {}", logRecord.cursor, logRecord.message)
             }
         }
         return asciidoctor
