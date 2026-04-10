@@ -23,7 +23,6 @@ class GeminiTranslator(
 
     // Processor pipeline - Gemini handles Asciidoc markup natively
     private val processors = listOf(
-        // Translation only - no Asciidoc preprocessing/postprocessing
         GeminiTranslationProcessor(
             geminiTranslationAiService,
             geminiRAGTranslationAiService,
@@ -32,7 +31,8 @@ class GeminiTranslator(
             maxRetries,
             parallelismController,
             asciidocMarkupValidator
-        )
+        ),
+        XrefTitlePostProcessor()
     )
 
     override suspend fun translate(po: Po, srcLang: String, dstLang: String, isAsciidoctor: Boolean, useRag: Boolean): Po {

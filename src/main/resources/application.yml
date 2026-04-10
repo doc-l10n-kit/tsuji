@@ -1,6 +1,8 @@
 tsuji:
   rag:
     index-path: "l10n/rag/index"
+    max-results: 3
+    min-score: 0.5
 
   language:
     from: "en"
@@ -10,20 +12,16 @@ tsuji:
     type: "gemini"
 
     deepl:
-      # api-key: ""
+      # key: ""
 
     gemini:
       batch:
         # Initial and maximum number of texts per batch request (default: 200)
         # Set both to the same value to disable adaptive batch sizing
-        # Based on Gemini 3.1 Flash-Lite output limit (64K tokens) and safety margin
         initial-texts-per-request: 200
         max-texts-per-request: 200
-        # Maximum total text size in bytes per batch (default: 700000, ~684 KiB)
-        max-text-size-bytes: 700000
 
       adaptive:
-        enabled: true
         # Initial concurrency for parallel requests (default: 40)
         initial-concurrency: 40
         # Minimum concurrency (default: 1)
@@ -32,10 +30,6 @@ tsuji:
         max-concurrency: 60
         # Maximum retry attempts (default: 3)
         max-retries: 3
-
-      rag:
-        max-results: 3
-        min-score: 0.5
 
   jekyll:
     cname: ""
@@ -46,9 +40,9 @@ quarkus:
   langchain4j:
     ai:
       gemini:
+        api-key: ${tsuji.translator.gemini.key:}
         chat-model:
-          # Use Gemini 3.1 Flash Lite Preview for optimal speed, quality, and cost
-          model-id: "gemini-3.1-flash-lite-preview"
+          model-id: ${tsuji.translator.gemini.model}
           # Set to model's maximum output tokens (no cost penalty, only charges for actual tokens generated)
           max-output-tokens: 65536
         timeout: 60s

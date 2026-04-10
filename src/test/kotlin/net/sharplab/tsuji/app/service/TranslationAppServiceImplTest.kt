@@ -28,11 +28,11 @@ class TranslationAppServiceImplTest {
         whenever(language.from).thenReturn("en")
         whenever(language.to).thenReturn("ja")
 
-        val translation: TsujiConfig.Translation = mock()
-        whenever(translation.targetDirectories).thenReturn(java.util.Optional.empty())
+        val translator: TsujiConfig.Translator = mock()
+        whenever(translator.targetDirectories).thenReturn(java.util.Optional.empty())
 
         whenever(tsujiConfig.language).thenReturn(language)
-        whenever(tsujiConfig.translation).thenReturn(translation)
+        whenever(tsujiConfig.translator).thenReturn(translator)
 
         target = TranslationAppServiceImpl(poTranslatorService, poDriver, gettextDriver, poNormalizerService, tsujiConfig)
     }

@@ -19,7 +19,7 @@ CRITICAL OUTPUT RULES:
 5. Preserve ALL Asciidoc markup exactly:
    - Keep backtick-quoted code as-is: `code` must stay `code`
    - Keep link/xref targets unchanged: in link:URL[text] only translate text, never URL
-   - For cross-references (<<Section Title>>): translate the title to match the translated section title
+   - Keep cross-reference anchors (<<...>>) unchanged
    - Keep bare URLs (https://...) exactly as they appear in the source text
    - Keep {attribute-references} unchanged
    - Keep image:path[alt] paths unchanged

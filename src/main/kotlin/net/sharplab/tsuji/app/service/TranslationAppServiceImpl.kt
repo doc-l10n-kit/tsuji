@@ -43,7 +43,7 @@ class TranslationAppServiceImpl(
                     translateRecursiveAsync(filePath, source, target, isAsciidoctor, useRag)
                 }
             } else {
-                val targetDirectories = tsujiConfig.translation.targetDirectories
+                val targetDirectories = tsujiConfig.translator.targetDirectories
 
                 if (targetDirectories.isPresent && targetDirectories.get().isNotEmpty()) {
                     // Configuration-based processing: only process directories listed in config

@@ -61,8 +61,8 @@ class GeminiRAGTranslationAiService {
     // Retrieve RAG context for a single text as structured translation memory entries
     private fun retrieveContextForText(text: String): List<TranslationMemoryEntry> {
         val retriever = vectorStoreDriver.asContentRetriever(
-            maxResults = config.translator.gemini.rag.maxResults,
-            minScore = config.translator.gemini.rag.minScore
+            maxResults = config.rag.maxResults,
+            minScore = config.rag.minScore
         )
         val query = Query.from(text)
         val contents = retriever.retrieve(query)

@@ -188,7 +188,7 @@ class TsujiBeans() {
             "deepl" -> {
                 logger.info("Using DeepL Translator")
                 DeepLTranslator(
-                    tsujiConfig.translator.deepl.apiKey.get(),
+                    tsujiConfig.translator.deepl.key.get(),
                     asciidoctorPreProcessor,
                     adaptiveParallelismController,
                     tsujiConfig.translator.gemini.adaptive.maxRetries

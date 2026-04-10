@@ -19,6 +19,14 @@ interface TsujiConfig {
         @get:WithName("index-path")
         @get:WithDefault("l10n/rag/index")
         val indexPath: String
+
+        @get:WithName("max-results")
+        @get:WithDefault("3")
+        val maxResults: Int
+
+        @get:WithName("min-score")
+        @get:WithDefault("0.5")
+        val minScore: Double
     }
 
     @get:WithName("po")
@@ -94,14 +102,6 @@ interface TsujiConfig {
         val to: String
     }
 
-    @get:WithName("translation")
-    val translation: Translation
-
-    interface Translation {
-        @get:WithName("target-directories")
-        val targetDirectories: Optional<List<String>>
-    }
-
     @get:WithName("translator")
     val translator: Translator
 
@@ -110,26 +110,33 @@ interface TsujiConfig {
         @get:WithDefault("deepl")
         val type: String
 
+        @get:WithName("target-directories")
+        val targetDirectories: Optional<List<String>>
+
         @get:WithName("deepl")
         val deepl: DeepL
 
         interface DeepL {
-            @get:WithName("api-key")
-            val apiKey: Optional<String>
+            @get:WithName("key")
+            val key: Optional<String>
         }
 
         @get:WithName("gemini")
         val gemini: Gemini
 
         interface Gemini {
+            @get:WithName("key")
+            val key: Optional<String>
+
+            @get:WithName("model")
+            @get:WithDefault("gemini-2.5-flash")
+            val model: String
+
             @get:WithName("batch")
             val batch: Batch
 
             @get:WithName("adaptive")
             val adaptive: Adaptive
-
-            @get:WithName("rag")
-            val rag: Rag
 
             interface Batch {
                 @get:WithName("initial-texts-per-request")
@@ -167,15 +174,6 @@ interface TsujiConfig {
                 val maxRetries: Int
             }
 
-            interface Rag {
-                @get:WithName("max-results")
-                @get:WithDefault("3")
-                val maxResults: Int
-
-                @get:WithName("min-score")
-                @get:WithDefault("0.5")
-                val minScore: Double
-            }
         }
     }
 
