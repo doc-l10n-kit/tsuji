@@ -2,8 +2,6 @@
 
 [![CI](https://github.com/doc-l10n-kit/tsuji/actions/workflows/ci.yml/badge.svg)](https://github.com/doc-l10n-kit/tsuji/actions/workflows/ci.yml)
 
-Version: 0.5.21-SNAPSHOT
-
 **tsuji** is a localization toolkit designed to assist in translating technical documentation, specifically for quarkus.io. By leveraging the **LangChain4j** framework, it enables high-quality, consistent translations through LLMs with Retrieval-Augmented Generation (RAG) directly integrated into the gettext PO file workflow.
 
 ## What is "tsuji"?
@@ -14,19 +12,75 @@ They were not merely translators of language. They served as a **"Gateway of Kno
 
 ## Key Features
 
-- **LangChain4j Integration**: Built on top of LangChain4j, providing a robust and flexible architecture for LLM interactions. While it defaults to Google Gemini, it is designed with the extensibility of the LangChain4j ecosystem in mind.
-- **RAG-Enhanced Translation**: Automatically retrieves relevant translation context from your existing TMX (Translation Memory eXchange) files using vector search, ensuring terminology consistency without manual model training.
-- **Markup Protection**: Specifically designed for AsciiDoc; it protects links, images, and inline markup during the LLM translation process using AsciidoctorJ.
-- **PO File Management**: Comprehensive tools for normalizing PO files, purging fuzzy messages, and generating word-count based translation statistics.
+- **Dual Translator Support**: Choose between **Google Gemini** (via LangChain4j) and **DeepL** as the translation engine. Each uses a different markup protection strategy optimized for its capabilities.
+- **RAG-Enhanced Translation**: Automatically retrieves relevant translation context from your existing TMX (Translation Memory eXchange) files using Lucene vector search, ensuring terminology consistency without manual model training.
+- **Adaptive Parallelism**: Two-level AIMD (Additive Increase / Multiplicative Decrease) control automatically adjusts both API request concurrency and batch size in response to rate limits, maximizing throughput while respecting API constraints.
+- **AsciiDoc Markup Protection**: Gemini translates AsciiDoc natively with post-translation validation and retry via AsciidoctorJ + jsoup. DeepL uses an HTML round-trip pipeline (AsciiDoc → HTML → translate → HTML → AsciiDoc) with 11 specialized message processors.
+- **Structured Batch Translation**: Sends multiple texts per LLM request using JSON Schema-constrained output, with index-based validation to ensure correct mapping between source and translated texts.
+- **Glossary Support**: Define terminology mappings in configuration to inject into translation prompts for consistent term usage.
+- **PO File Management**: Comprehensive tools for normalizing, purging, updating, and applying PO files, plus word-count-based translation statistics.
+- **TMX Operations**: Generate Translation Memory from PO files (confirmed or fuzzy translations) and apply TMX translations back to PO files.
 - **Jekyll Integration**: Seamlessly handles PO extraction, build processes, and previews for translated Jekyll sites.
 
 ## Project Structure
 
-This is a multi-module Gradle project consisting of:
+This is a multi-module Gradle project:
 
-- **tsuji (root)**: The main CLI application for PO file management, statistical analysis, and machine translation powered by LangChain4j.
-- **[tsuji-po](./tsuji-po)**: A Kotlin library for handling PO (Portable Object) files, built with jgettext.
-- **[tsuji-tmx](./tsuji-tmx)**: A Kotlin library for handling TMX (Translation Memory eXchange) files, built with Jackson.
+```
+tsuji (root)         — Main CLI application (Kotlin / Quarkus / PicocLI)
+├── tsuji-po         — PO file domain model and I/O library (jgettext)
+└── tsuji-tmx        — TMX file domain model and I/O library (Jackson XML)
+```
+
+The root module follows a 3-layer architecture:
+
+- **App Service Layer** — Use case orchestration and workflow control
+- **Core Service Layer** — Pure domain logic (statistics, translation eligibility, TMX generation)
+- **Core Driver Layer** — External integrations (LLM APIs, vector store, file I/O, external processes)
+
+## CLI Commands
+
+### PO File Operations (`po`)
+
+| Command | Description |
+|---|---|
+| `po machine-translate` | Translate PO files using LLM or DeepL |
+| `po normalize` | Normalize PO file syntax via `msgcat` |
+| `po update` | Update PO files from source documents via `po4a` |
+| `po apply` | Generate translated documents from PO via `po4a` |
+| `po apply-tmx` | Apply TMX translations to PO files (confirmed) |
+| `po apply-fuzzy-tmx` | Apply TMX translations to PO files (fuzzy) |
+| `po remove-obsolete` | Remove obsolete (#~) entries |
+| `po purge-fuzzy` | Clear translations of fuzzy messages |
+| `po purge-all` | Clear all translations |
+| `po update-po-stats` | Calculate translation progress statistics |
+
+### TMX Operations (`tmx`)
+
+| Command | Description |
+|---|---|
+| `tmx generate` | Generate TMX from PO files (CONFIRMED or FUZZY mode) |
+
+### RAG Operations (`rag`)
+
+| Command | Description |
+|---|---|
+| `rag index` | Build or update vector index from TMX files |
+
+### Jekyll Operations (`jekyll`)
+
+| Command | Description |
+|---|---|
+| `jekyll extract` | Extract PO files from Jekyll source |
+| `jekyll build` | Build translated Jekyll site |
+| `jekyll serve` | Preview translated site locally |
+| `jekyll update-stats` | Update site-wide translation statistics |
+
+### Configuration (`config`)
+
+| Command | Description |
+|---|---|
+| `config get` | Display current configuration |
 
 ## Getting Started
 
@@ -36,7 +90,7 @@ This is a multi-module Gradle project consisting of:
 - **Gettext**: Required for PO file operations (e.g., `msgcat`).
 - **Po4a**: Required for converting between original sources and PO files.
 - **Git**: Required for retrieving commit timestamps for synchronization status.
-- **LLM API Key**: Default implementation uses Google Gemini (set via `QUARKUS_LANGCHAIN4J_GEMINI_API_KEY`).
+- **LLM API Key**: Default implementation uses Google Gemini (set via `QUARKUS_LANGCHAIN4J_GEMINI_API_KEY`). For DeepL, set `TSUJI_TRANSLATOR_DEEPL_API_KEY`.
 
 ### Building
 
@@ -68,20 +122,6 @@ java -jar build/tsuji.jar <command> [options]
 ## Documentation
 
 - **[Design Document](./design-doc.md)**: Detailed overview of the architecture and core components (Japanese).
-
-## Real-world Usage
-
-tsuji is actively used in production for translating the Quarkus website:
-
-- **Project**: [ja.quarkus.io](https://github.com/quarkusio/ja.quarkus.io)
-- **Workflow**: Fully automated translation pipeline with GitHub Actions
-  - Weekly upstream synchronization
-  - Translation memory application
-  - DeepL API machine translation
-  - Daily builds and GitHub Pages deployment
-- **Configuration**: See [config/application.yaml](https://github.com/quarkusio/ja.quarkus.io/blob/main/config/application.yaml) for a complete example
-
-This serves as a comprehensive reference implementation of tsuji's capabilities.
 
 ## License
 
