@@ -13,11 +13,10 @@ jackson = "2.21.1"
 jackson3 = "3.1.1"
 jackson-annotations = "2.21"
 langchain4j-community = "1.11.0-beta19"
-quarkus-langchain4j-bom-version = "3.34.2"
 
 [libraries]
 quarkus-bom = { group = "io.quarkus", name = "quarkus-bom", version.ref = "quarkus" }
-quarkus-langchain4j-bom = { group = "io.quarkus.platform", name = "quarkus-langchain4j-bom", version.ref = "quarkus-langchain4j-bom-version" }
+quarkus-langchain4j-bom = { group = "io.quarkus.platform", name = "quarkus-langchain4j-bom", version.ref = "quarkus" }
 quarkus-langchain4j-ai-gemini = { group = "io.quarkiverse.langchain4j", name = "quarkus-langchain4j-ai-gemini" }
 langchain4j-community-lucene = { group = "dev.langchain4j", name = "langchain4j-community-lucene", version.ref = "langchain4j-community" }
 langchain4j-embeddings-all-minilm-l6-v2-q = { group = "dev.langchain4j", name = "langchain4j-embeddings-all-minilm-l6-v2-q" }
