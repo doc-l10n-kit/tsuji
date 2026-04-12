@@ -21,10 +21,10 @@ interface JekyllDriver {
     /**
      * Builds the Jekyll site.
      */
-    fun build(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String> = emptyList(), translate: Boolean = true)
+    fun build(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String> = emptyList(), translate: Boolean = true, acceptMt: String? = null)
 
     /**
      * Serves the Jekyll site.
      */
-    fun serve(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String> = emptyList(), translate: Boolean = true)
+    fun serve(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String> = emptyList(), translate: Boolean = true, acceptMt: String? = null)
 }

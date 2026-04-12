@@ -47,7 +47,7 @@ class JekyllDriverImpl(
         )
     }
 
-    override fun build(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String>, translate: Boolean) {
+    override fun build(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String>, translate: Boolean, acceptMt: String?) {
         val configsList = mutableListOf("_config.yml")
         val env = mutableMapOf<String, String>()
 
@@ -63,6 +63,9 @@ class JekyllDriverImpl(
 
             env["L10N_MODE"] = "translate"
             env["L10N_PO_BASE_DIR"] = poBaseDir.toAbsolutePath().toString()
+            if (acceptMt != null) {
+                env["ACCEPT_MT"] = acceptMt
+            }
         }
 
         configsList.addAll(additionalConfigs)
@@ -79,7 +82,7 @@ class JekyllDriverImpl(
         deleteCNAMEFile(destinationDir)
     }
 
-    override fun serve(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String>, translate: Boolean) {
+    override fun serve(jekyllSourceDir: Path, poBaseDir: Path, destinationDir: Path, siteLanguageCode: String, additionalConfigs: List<String>, translate: Boolean, acceptMt: String?) {
         val configsList = mutableListOf("_config.yml")
         val env = mutableMapOf<String, String>()
 
@@ -95,6 +98,9 @@ class JekyllDriverImpl(
 
             env["L10N_MODE"] = "translate"
             env["L10N_PO_BASE_DIR"] = poBaseDir.toAbsolutePath().toString()
+            if (acceptMt != null) {
+                env["ACCEPT_MT"] = acceptMt
+            }
         }
 
         configsList.addAll(additionalConfigs)

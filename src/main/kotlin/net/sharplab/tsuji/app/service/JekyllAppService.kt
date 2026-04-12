@@ -3,9 +3,9 @@ package net.sharplab.tsuji.app.service
 import java.nio.file.Path
 
 interface JekyllAppService {
-    fun build(translate: Boolean = true, additionalConfigs: List<String>? = null)
+    fun build(translate: Boolean = true, additionalConfigs: List<String>? = null, acceptMt: String? = null)
 
-    fun serve(translate: Boolean = true, additionalConfigs: List<String>? = null)
+    fun serve(translate: Boolean = true, additionalConfigs: List<String>? = null, acceptMt: String? = null)
 
     fun updateOverrideFilesStats(overrideDir: Path, upstreamDir: Path, output: Path)
 

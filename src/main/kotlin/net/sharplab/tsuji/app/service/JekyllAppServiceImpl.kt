@@ -22,7 +22,7 @@ class JekyllAppServiceImpl(
 
     private val logger = LoggerFactory.getLogger(JekyllAppServiceImpl::class.java)
 
-    override fun build(translate: Boolean, additionalConfigs: List<String>?) {
+    override fun build(translate: Boolean, additionalConfigs: List<String>?, acceptMt: String?) {
         val resolvedPoBaseDir = Paths.get(tsujiConfig.po.baseDir)
         val resolvedDestinationDir = Paths.get(tsujiConfig.jekyll.destinationDir)
         val resolvedLanguage = tsujiConfig.language.to
@@ -38,11 +38,11 @@ class JekyllAppServiceImpl(
                 jekyllDriver.applyOverrides(Paths.get(tsujiConfig.jekyll.overrideDir), workDir)
                 poAppService.applyPoToDirectory(workDir, resolvedPoBaseDir)
             }
-            jekyllDriver.build(workDir, resolvedPoBaseDir, resolvedDestinationDir, resolvedLanguage, resolvedConfigs, translate)
+            jekyllDriver.build(workDir, resolvedPoBaseDir, resolvedDestinationDir, resolvedLanguage, resolvedConfigs, translate, acceptMt)
         }
     }
 
-    override fun serve(translate: Boolean, additionalConfigs: List<String>?) {
+    override fun serve(translate: Boolean, additionalConfigs: List<String>?, acceptMt: String?) {
         val resolvedPoBaseDir = Paths.get(tsujiConfig.po.baseDir)
         val resolvedDestinationDir = Paths.get(tsujiConfig.jekyll.destinationDir)
         val resolvedLanguage = tsujiConfig.language.to
@@ -58,7 +58,7 @@ class JekyllAppServiceImpl(
                 jekyllDriver.applyOverrides(Paths.get(tsujiConfig.jekyll.overrideDir), workDir)
                 poAppService.applyPoToDirectory(workDir, resolvedPoBaseDir)
             }
-            jekyllDriver.serve(workDir, resolvedPoBaseDir, resolvedDestinationDir, resolvedLanguage, resolvedConfigs, translate)
+            jekyllDriver.serve(workDir, resolvedPoBaseDir, resolvedDestinationDir, resolvedLanguage, resolvedConfigs, translate, acceptMt)
         }
     }
 

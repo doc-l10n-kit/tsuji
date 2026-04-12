@@ -17,7 +17,10 @@ class JekyllServeCommand(private val jekyllAppService: JekyllAppService) : BaseC
     @CommandLine.Option(names = ["--additional-configs", "-c"], description = ["Additional Jekyll configuration files"])
     var additionalConfigs: List<String>? = null
 
+    @CommandLine.Option(names = ["--accept-mt"], description = ["Comma-separated list of MT engines whose fuzzy translations should be accepted (e.g., gemini,deepl)"])
+    var acceptMt: String? = null
+
     override fun execute() {
-        jekyllAppService.serve(translate = translate, additionalConfigs = additionalConfigs)
+        jekyllAppService.serve(translate = translate, additionalConfigs = additionalConfigs, acceptMt = acceptMt)
     }
 }
