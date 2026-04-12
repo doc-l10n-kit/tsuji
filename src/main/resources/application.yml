@@ -45,7 +45,7 @@ quarkus:
           model-id: ${tsuji.translator.gemini.model}
           # Set to model's maximum output tokens (no cost penalty, only charges for actual tokens generated)
           max-output-tokens: 65536
-        timeout: 60s
+        timeout: 300s
         log-requests: false
         log-responses: false
 
