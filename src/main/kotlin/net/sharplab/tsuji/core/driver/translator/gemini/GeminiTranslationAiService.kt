@@ -32,12 +32,13 @@ class GeminiTranslationAiService {
     @Inject
     lateinit var config: net.sharplab.tsuji.app.config.TsujiConfig
 
-    // Load prompt from resources
     private val translationSystemPrompt: String by lazy {
-        loadPrompt("prompts/translation-batch-system-prompt.txt")
+        config.translator.gemini.prompts.batchSystemPrompt
+            .map { path -> java.io.File(path).readText() }
+            .orElseGet { loadClasspathPrompt("prompts/translation-batch-system-prompt.txt") }
     }
 
-    private fun loadPrompt(resourcePath: String): String {
+    private fun loadClasspathPrompt(resourcePath: String): String {
         return javaClass.classLoader.getResourceAsStream(resourcePath)?.use {
             InputStreamReader(it).readText()
         } ?: throw IllegalStateException("Failed to load prompt from $resourcePath")

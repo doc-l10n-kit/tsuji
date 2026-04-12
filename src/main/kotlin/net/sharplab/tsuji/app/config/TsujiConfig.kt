@@ -142,6 +142,17 @@ interface TsujiConfig {
             @get:WithName("adaptive")
             val adaptive: Adaptive
 
+            @get:WithName("prompts")
+            val prompts: Prompts
+
+            interface Prompts {
+                @get:WithName("batch-system-prompt")
+                val batchSystemPrompt: Optional<String>
+
+                @get:WithName("rag-batch-system-prompt")
+                val ragBatchSystemPrompt: Optional<String>
+            }
+
             interface Batch {
                 @get:WithName("initial-texts-per-request")
                 @get:WithDefault("200")
