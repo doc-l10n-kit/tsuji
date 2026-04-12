@@ -2,7 +2,7 @@
 
 ## 1. プロジェクト概要
 
-tsuji は、技術ドキュメント（主に quarkus.io）の翻訳を支援するローカリゼーションツールキットです。gettext PO ファイルを介して、LLM（Google Gemini）または機械翻訳 API（DeepL）による翻訳と、既存の翻訳メモリ（TMX）を活用した RAG（検索拡張生成）を組み合わせ、一貫性の高い翻訳プロセスを提供します。
+tsuji は、[quarkus.io](https://quarkus.io) ドキュメントサイトの翻訳のために設計されたローカリゼーションツールキットです。gettext PO ファイルを介して、LLM（Google Gemini）または機械翻訳 API（DeepL）による翻訳と、既存の翻訳メモリ（TMX）を活用した RAG（検索拡張生成）を組み合わせ、一貫性の高い翻訳プロセスを提供します。
 
 **技術スタック**: Kotlin / Quarkus / LangChain4j / PicocLI / JDK 21
 
