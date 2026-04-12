@@ -35,7 +35,7 @@ class GeminiTranslationAiService {
     private val translationSystemPrompt: String by lazy {
         config.translator.gemini.prompts.batchSystemPrompt
             .map { path -> java.io.File(path).readText() }
-            .orElseGet { loadClasspathPrompt("prompts/translation-batch-system-prompt.txt") }
+            .orElseGet { loadClasspathPrompt("prompts/translation-system-prompt.txt") }
     }
 
     private fun loadClasspathPrompt(resourcePath: String): String {
