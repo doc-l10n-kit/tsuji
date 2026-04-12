@@ -39,8 +39,7 @@ data class TranslationMessage(
      * Whether this message needs translation.
      * Set at initialization, checked by all processors to skip already-translated messages.
      */
-    val needsTranslation: Boolean = false,
-    val additionalComments: List<String> = emptyList()
+    val needsTranslation: Boolean = false
 ) {
     /**
      * Returns true if the working text is empty or blank.
@@ -66,7 +65,15 @@ data class TranslationMessage(
      * Creates a copy with an additional comment.
      */
     fun withComment(comment: String): TranslationMessage {
-        return copy(additionalComments = additionalComments + comment)
+        return copy(original = original.copy(comments = original.comments + comment))
+    }
+
+    /**
+     * Sets the machine translation engine comment, replacing any existing mt: comment.
+     */
+    fun withMtEngine(engine: String): TranslationMessage {
+        val updatedComments = original.comments.filterNot { it.startsWith("mt:") } + "mt: $engine"
+        return copy(original = original.copy(comments = updatedComments))
     }
 
     /**
@@ -76,10 +83,7 @@ data class TranslationMessage(
      */
     fun toPoMessage(): PoMessage {
         return if (needsTranslation) {
-            original.copy(
-                messageString = text,
-                comments = original.comments + additionalComments
-            ).also { it.fuzzy = fuzzy }
+            original.copy(messageString = text).also { it.fuzzy = fuzzy }
         } else {
             original
         }

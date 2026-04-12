@@ -74,6 +74,7 @@ class GeminiTranslationProcessor(
             result[index] = result[index]
                 .withText(translated)
                 .withFuzzy(true)
+                .withMtEngine("gemini")
         }
 
         // Normal translation with adaptive batch processing
@@ -119,7 +120,7 @@ class GeminiTranslationProcessor(
     ): List<TranslationMessage> {
         val translations = callTranslationApi(batch.map { it.text }, context)
         var messages = batch.zip(translations).map { (msg, translated) ->
-            msg.withText(translated).withFuzzy(true)
+            msg.withText(translated).withFuzzy(true).withMtEngine("gemini")
         }
 
         if (!context.isAsciidoctor) {

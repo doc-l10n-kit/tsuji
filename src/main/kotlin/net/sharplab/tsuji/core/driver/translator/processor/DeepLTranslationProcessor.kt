@@ -74,6 +74,7 @@ class DeepLTranslationProcessor(
             result[index] = result[index]
                 .withText(translated)
                 .withFuzzy(true)
+                .withMtEngine("deepl")
         }
 
         // Normal translation (batch processing with retry)
@@ -117,6 +118,7 @@ class DeepLTranslationProcessor(
                 result[index] = result[index]
                     .withText(translatedText)
                     .withFuzzy(true)
+                    .withMtEngine("deepl")
             }
         }
 
