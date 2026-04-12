@@ -67,6 +67,10 @@ interface TsujiConfig {
         @get:WithName("surge-domain-suffix")
         val surgeDomainSuffix: Optional<String>
 
+        @get:WithName("jekyll-l10n-branch")
+        @get:WithDefault("main")
+        val jekyllL10nBranch: String
+
         @get:WithName("extract")
         val extract: Extract
 

@@ -6,7 +6,10 @@ import java.nio.file.StandardCopyOption
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.*
 
-class JekyllDriverImpl(private val externalProcessDriver: ExternalProcessDriver) : JekyllDriver {
+class JekyllDriverImpl(
+    private val externalProcessDriver: ExternalProcessDriver,
+    private val jekyllL10nBranch: String = "main"
+) : JekyllDriver {
 
     private val asciidoctorL10nRepo = "https://github.com/doc-l10n-kit/asciidoctor-l10n"
     private val jekyllL10nRepo = "https://github.com/doc-l10n-kit/jekyll-l10n"
@@ -143,7 +146,7 @@ class JekyllDriverImpl(private val externalProcessDriver: ExternalProcessDriver)
 
         if (!output.contains("jekyll-l10n")) {
             externalProcessDriver.execute(
-                command = listOf("bundle", "add", "jekyll-l10n", "--group", "jekyll_plugins", "--git", gitRepo, "--branch", "main"),
+                command = listOf("bundle", "add", "jekyll-l10n", "--group", "jekyll_plugins", "--git", gitRepo, "--branch", jekyllL10nBranch),
                 directory = jekyllSourceDir,
                 timeoutValue = 10,
                 timeoutUnit = TimeUnit.MINUTES

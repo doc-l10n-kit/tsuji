@@ -122,8 +122,8 @@ class TsujiBeans() {
     }
 
     @Produces
-    fun jekyllDriver(externalProcessDriver: ExternalProcessDriver) : JekyllDriver {
-        return JekyllDriverImpl(externalProcessDriver)
+    fun jekyllDriver(externalProcessDriver: ExternalProcessDriver, tsujiConfig: TsujiConfig) : JekyllDriver {
+        return JekyllDriverImpl(externalProcessDriver, tsujiConfig.jekyll.jekyllL10nBranch)
     }
 
     @Produces
