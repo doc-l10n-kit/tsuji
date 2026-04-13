@@ -11,7 +11,11 @@ fun TsujiConfig.Glossary.toPromptText(): String {
     return buildString {
         appendLine("TERMINOLOGY GLOSSARY:")
         entries.forEach { entry ->
-            appendLine("- \"${entry.term}\" → \"${entry.translation}\"")
+            if (entry.context.isNotEmpty()) {
+                appendLine("- \"${entry.term}\" → \"${entry.translation}\" (${entry.context})")
+            } else {
+                appendLine("- \"${entry.term}\" → \"${entry.translation}\"")
+            }
         }
         appendLine()
     }

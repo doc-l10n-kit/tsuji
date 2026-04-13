@@ -8,7 +8,8 @@ class TsujiConfigExtensionsTest {
     // Simple test implementations of the interfaces
     private class TestGlossaryEntry(
         override val term: String,
-        override val translation: String
+        override val translation: String,
+        override val context: String = ""
     ) : TsujiConfig.GlossaryEntry
 
     private class TestGlossary(
@@ -30,6 +31,22 @@ class TsujiConfigExtensionsTest {
         assertThat(promptText).contains("TERMINOLOGY GLOSSARY:")
         assertThat(promptText).contains("\"test term\" → \"テスト用語\"")
         assertThat(promptText).contains("\"another term\" → \"別の用語\"")
+    }
+
+    @Test
+    fun `toPromptText should include context when provided`() {
+        // Given
+        val entry1 = TestGlossaryEntry("dialect", "Dialect", "Hibernate ORM")
+        val entry2 = TestGlossaryEntry("extension", "エクステンション")
+        val glossary = TestGlossary(true, listOf(entry1, entry2))
+
+        // When
+        val promptText = glossary.toPromptText()
+
+        // Then
+        assertThat(promptText).contains("\"dialect\" → \"Dialect\" (Hibernate ORM)")
+        assertThat(promptText).contains("\"extension\" → \"エクステンション\"")
+        assertThat(promptText).doesNotContain("\"extension\" → \"エクステンション\" (")
     }
 
     @Test

@@ -230,5 +230,9 @@ interface TsujiConfig {
 
         @get:WithName("translation")
         val translation: String
+
+        @get:WithName("context")
+        @get:WithDefault("")
+        val context: String
     }
 }
