@@ -15,7 +15,7 @@ tsuji:
       # key: ""
 
     gemini:
-      thinking-level: LOW
+      # thinking-level: LOW
 
       batch:
         # Initial and maximum number of texts per batch request (default: 200)
@@ -47,6 +47,8 @@ quarkus:
           model-id: ${tsuji.translator.gemini.model}
           # Set to model's maximum output tokens (no cost penalty, only charges for actual tokens generated)
           max-output-tokens: 65536
+          thinking:
+            thinking-budget: 8192
         timeout: 300s
         log-requests: false
         log-responses: false

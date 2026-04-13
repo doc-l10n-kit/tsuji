@@ -10,7 +10,6 @@ import dev.langchain4j.model.chat.request.ResponseFormatType
 import dev.langchain4j.model.chat.request.json.JsonArraySchema
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema
 import dev.langchain4j.model.chat.request.json.JsonSchema
-import io.quarkus.runtime.Startup
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +19,6 @@ import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 
 @ApplicationScoped
-@Startup
 class GeminiTranslationAiService {
 
     private val logger = LoggerFactory.getLogger(GeminiTranslationAiService::class.java)

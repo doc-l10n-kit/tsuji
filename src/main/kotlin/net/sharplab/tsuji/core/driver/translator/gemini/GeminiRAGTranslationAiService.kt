@@ -11,7 +11,6 @@ import dev.langchain4j.model.chat.request.json.JsonArraySchema
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema
 import dev.langchain4j.model.chat.request.json.JsonSchema
 import dev.langchain4j.rag.query.Query
-import io.quarkus.runtime.Startup
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +22,6 @@ import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 
 @ApplicationScoped
-@Startup
 class GeminiRAGTranslationAiService {
 
     private val logger = LoggerFactory.getLogger(GeminiRAGTranslationAiService::class.java)

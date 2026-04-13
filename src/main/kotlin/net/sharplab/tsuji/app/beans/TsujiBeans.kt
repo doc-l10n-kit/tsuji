@@ -8,6 +8,7 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.context.Dependent
 import jakarta.enterprise.inject.Disposes
+import jakarta.enterprise.inject.Instance
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
 import net.sharplab.tsuji.app.config.TsujiConfig
@@ -63,26 +64,31 @@ class TsujiBeans() {
     @ApplicationScoped
     fun chatModel(
         tsujiConfig: TsujiConfig,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.api-key") apiKey: String,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.api-key") apiKey: Optional<String>,
         @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.model-id") modelId: String,
         @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.max-output-tokens") maxOutputTokens: Int,
         @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.timeout") timeout: Duration,
         @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-requests") logRequests: Boolean,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-responses") logResponses: Boolean
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-responses") logResponses: Boolean,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.thinking.thinking-budget") thinkingBudget: java.util.OptionalInt
     ): ChatModel {
+        val resolvedApiKey = apiKey.orElseThrow {
+            IllegalStateException("Gemini API key is not configured. Set tsuji.translator.gemini.key or quarkus.langchain4j.ai.gemini.api-key.")
+        }
+
         val builder = GoogleAiGeminiChatModel.builder()
-            .apiKey(apiKey)
+            .apiKey(resolvedApiKey)
             .modelName(modelId)
             .maxOutputTokens(maxOutputTokens)
             .timeout(timeout)
             .logRequests(logRequests)
             .logResponses(logResponses)
 
-        tsujiConfig.translator.gemini.thinkingLevel.ifPresent { level ->
-            logger.info("Using Gemini thinking level: $level")
+        thinkingBudget.ifPresent { budget ->
+            logger.info("Using Gemini thinking budget: $budget")
             builder.thinkingConfig(
                 GeminiThinkingConfig.builder()
-                    .thinkingLevel(level)
+                    .thinkingBudget(budget)
                     .includeThoughts(false)
                     .build()
             )
@@ -218,8 +224,8 @@ class TsujiBeans() {
     fun translator(
         tsujiConfig: TsujiConfig,
         asciidoctorPreProcessor: AsciidoctorPreProcessor,
-        geminiTranslationAiService: GeminiTranslationAiService,
-        geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
+        geminiTranslationAiServiceInstance: Instance<GeminiTranslationAiService>,
+        geminiRAGTranslationAiServiceInstance: Instance<GeminiRAGTranslationAiService>,
         adaptiveParallelismController: AdaptiveParallelismController,
         asciidocMarkupValidator: AsciidocMarkupValidator
     ): Translator {
@@ -236,8 +242,8 @@ class TsujiBeans() {
             "gemini" -> {
                 logger.info("Using Gemini Translator")
                 GeminiTranslator(
-                    geminiTranslationAiService,
-                    geminiRAGTranslationAiService,
+                    geminiTranslationAiServiceInstance.get(),
+                    geminiRAGTranslationAiServiceInstance.get(),
                     tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
 
@@ -249,8 +255,8 @@ class TsujiBeans() {
             else -> {
                 logger.warn("Unknown translator type: ${tsujiConfig.translator.type}, defaulting to Gemini")
                 GeminiTranslator(
-                    geminiTranslationAiService,
-                    geminiRAGTranslationAiService,
+                    geminiTranslationAiServiceInstance.get(),
+                    geminiRAGTranslationAiServiceInstance.get(),
                     tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
 
