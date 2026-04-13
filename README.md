@@ -18,9 +18,12 @@ They were not merely translators of language. They served as a **"Gateway of Kno
 - **AsciiDoc Markup Protection**: Gemini translates AsciiDoc natively with post-translation validation and retry via AsciidoctorJ + jsoup. DeepL uses an HTML round-trip pipeline (AsciiDoc → HTML → translate → HTML → AsciiDoc) with 11 specialized message processors.
 - **Structured Batch Translation**: Sends multiple texts per LLM request using JSON Schema-constrained output, with index-based validation to ensure correct mapping between source and translated texts.
 - **Glossary Support**: Define terminology mappings in configuration to inject into translation prompts for consistent term usage.
+- **Customizable System Prompts**: Override built-in translation prompts with external files for project-specific tuning.
+- **MT Engine Tracking**: Machine-translated messages are tagged with `mt: gemini` or `mt: deepl` comments, enabling selective acceptance of fuzzy MT translations during site builds.
+- **Gemini Thinking Level Control**: Configure Gemini's reasoning depth (MINIMAL/LOW/MEDIUM/HIGH) to balance translation quality and speed.
 - **PO File Management**: Comprehensive tools for normalizing, purging, updating, and applying PO files, plus word-count-based translation statistics.
 - **TMX Operations**: Generate Translation Memory from PO files (confirmed or fuzzy translations) and apply TMX translations back to PO files.
-- **Jekyll Integration**: Seamlessly handles PO extraction, build processes, and previews for translated Jekyll sites.
+- **Jekyll Integration**: Seamlessly handles PO extraction, build processes, and previews for translated Jekyll sites, with selective acceptance of machine translations.
 
 ## Project Structure
 
@@ -42,51 +45,175 @@ The root module follows a 3-layer architecture:
 
 ### PO File Operations (`po`)
 
-| Command | Description |
-|---|---|
-| `po machine-translate` | Translate PO files using LLM or DeepL |
-| `po normalize` | Normalize PO file syntax via `msgcat` |
-| `po update` | Update PO files from source documents via `po4a` |
-| `po apply` | Generate translated documents from PO via `po4a` |
-| `po apply-tmx` | Apply TMX translations to PO files (confirmed) |
-| `po apply-fuzzy-tmx` | Apply TMX translations to PO files (fuzzy) |
-| `po remove-obsolete` | Remove obsolete (#~) entries |
-| `po purge-fuzzy` | Clear translations of fuzzy messages |
-| `po purge-all` | Clear all translations |
-| `po update-po-stats` | Calculate translation progress statistics |
+#### `po machine-translate`
+
+Translate PO files using LLM or DeepL.
+
+```
+Options:
+  -p, --po <path>         PO file or directory to translate (repeatable)
+  --source <lang>         Source language (default: from config)
+  --target <lang>         Target language (default: from config)
+  --isAsciidoc            Enable AsciiDoc inline markup processing
+  --rag                   Enable RAG (Retrieval-Augmented Generation)
+```
+
+#### `po purge`
+
+Purge translations in PO file(s). By default only fuzzy; use `--all` for all.
+
+```
+Options:
+  -p, --po <path>         PO file or directory to process (required)
+  -a, --all               Purge all translations including confirmed ones
+```
+
+#### `po normalize`
+
+Normalize PO file syntax via `msgcat`.
+
+```
+Options:
+  -p, --po <path>         PO file or directory to normalize (required)
+```
+
+#### `po update`
+
+Update PO file from master file using `po4a`.
+
+```
+Options:
+  -p, --po <path>         PO file (required)
+  -m, --master <path>     Master file (required)
+  -f, --format <format>   File format (markdown, yaml, xhtml, etc.)
+```
+
+#### `po apply`
+
+Generate translated document from PO via `po4a`.
+
+```
+Options:
+  -p, --po <path>         PO file (required)
+  -m, --master <path>     Master file (required)
+  -l, --localized <path>  Output localized file path (required)
+  -f, --format <format>   File format (markdown, yaml, xhtml, etc.)
+```
+
+#### `po apply-tmx`
+
+Apply TMX translations to PO files (confirmed).
+
+```
+Options:
+  -p, --po <path>         PO file or directory
+  -t, --tmx <path>        TMX file (required)
+```
+
+#### `po apply-fuzzy-tmx`
+
+Apply TMX translations to PO files (fuzzy).
+
+```
+Options:
+  -p, --po <path>         PO file or directory
+  -t, --tmx <path>        Fuzzy TMX file (required)
+```
+
+#### `po remove-obsolete`
+
+Remove obsolete PO files that no longer have corresponding upstream files.
+
+```
+Options:
+  -p, --po <path>         PO directory to clean up (required)
+  -u, --upstream <path>   Upstream directory for reference (required)
+```
+
+#### `po update-stats`
+
+Calculate and output translation progress statistics.
+
+```
+Options:
+  -p, --po <path>         PO directories to analyze (repeatable)
+  -o, --output <path>     Output CSV file path
+```
 
 ### TMX Operations (`tmx`)
 
-| Command | Description |
-|---|---|
-| `tmx generate` | Generate TMX from PO files (CONFIRMED or FUZZY mode) |
+#### `tmx generate`
+
+Generate TMX from PO files.
+
+```
+Options:
+  -t, --tmx <path>        Output TMX file path (required)
+  -p, --po <path>         Directory containing PO files
+  --mode <mode>           Generation mode: CONFIRMED or FUZZY
+```
 
 ### RAG Operations (`rag`)
 
-| Command | Description |
-|---|---|
-| `rag index` | Build or update vector index from TMX files |
+#### `rag index`
+
+Build or update vector index from TMX files.
+
+```
+Options:
+  --tmx <path>            TMX file path (required)
+```
 
 ### Jekyll Operations (`jekyll`)
 
-| Command | Description |
-|---|---|
-| `jekyll extract` | Extract PO files from Jekyll source |
-| `jekyll build` | Build translated Jekyll site |
-| `jekyll serve` | Preview translated site locally |
-| `jekyll update-stats` | Update site-wide translation statistics |
+#### `jekyll build`
+
+Build the translated Jekyll site.
+
+```
+Options:
+  --[no-]translate              Apply translation (default: true)
+  --accept-mt <engines>         Comma-separated list of MT engines whose fuzzy
+                                translations should be accepted (e.g., gemini,deepl)
+  -c, --additional-configs      Additional Jekyll configuration files (repeatable)
+```
+
+#### `jekyll serve`
+
+Preview the translated site locally.
+
+```
+Options:
+  --[no-]translate              Apply translation (default: true)
+  --accept-mt <engines>         Comma-separated list of MT engines whose fuzzy
+                                translations should be accepted (e.g., gemini,deepl)
+  -c, --additional-configs      Additional Jekyll configuration files (repeatable)
+```
+
+#### `jekyll extract`
+
+Extract PO files from Jekyll source.
+
+#### `jekyll update-stats`
+
+Update all Jekyll-related statistics (PO translation stats and override file stats).
 
 ### Configuration (`config`)
 
-| Command | Description |
-|---|---|
-| `config get` | Display current configuration |
+#### `config get`
+
+Display the value of a configuration property.
+
+```
+Options:
+  <key>                   Configuration key (e.g., tsuji.version, tsuji.git.user.name)
+```
 
 ## Configuration
 
 tsuji uses [Quarkus SmallRye Config](https://quarkus.io/guides/config-reference) for configuration. All properties can be set via:
 
-- **`application.yml`** in the working directory or classpath
+- **`application.yml`** (or `application.yaml`) in the working directory or classpath
 - **Environment variables** (e.g., `tsuji.translator.type` → `TSUJI_TRANSLATOR_TYPE`)
 - **System properties** (e.g., `-Dtsuji.translator.type=gemini`)
 
@@ -104,8 +231,14 @@ tsuji uses [Quarkus SmallRye Config](https://quarkus.io/guides/config-reference)
 | `tsuji.translator.type` | `deepl` | Translation engine to use: `gemini` or `deepl` |
 | `tsuji.translator.target-directories` | *(none)* | List of subdirectories under `tsuji.po.base-dir` to translate. If omitted, the entire base directory is processed |
 | `tsuji.translator.deepl.key` | *(none)* | DeepL API key. Can also be set via `TSUJI_TRANSLATOR_DEEPL_KEY` |
+
+#### Gemini Settings
+
+| Property | Default | Description |
+|---|---|---|
 | `tsuji.translator.gemini.key` | *(none)* | Gemini API key. Can also be set via `QUARKUS_LANGCHAIN4J_GEMINI_API_KEY` |
 | `tsuji.translator.gemini.model` | `gemini-2.5-flash` | Gemini model ID |
+| `tsuji.translator.gemini.thinking-level` | *(none)* | Gemini thinking level: `MINIMAL`, `LOW`, `MEDIUM`, or `HIGH`. If omitted, uses the model's default behavior |
 
 #### Gemini Batch Settings
 
@@ -128,6 +261,28 @@ Controls the adaptive parallelism for API requests (AIMD algorithm).
 | `tsuji.translator.gemini.adaptive.min-concurrency` | `1` | Minimum concurrency (floor for AIMD decrease) |
 | `tsuji.translator.gemini.adaptive.max-concurrency` | `60` | Maximum concurrency (ceiling for AIMD increase) |
 | `tsuji.translator.gemini.adaptive.max-retries` | `3` | Maximum retry attempts per batch on error |
+
+#### Gemini System Prompts
+
+Override the built-in translation prompts with external files for project-specific tuning.
+
+| Property | Default | Description |
+|---|---|---|
+| `tsuji.translator.gemini.prompts.batch-system-prompt` | *(none)* | File path to a custom system prompt for batch translation. If omitted, uses the built-in prompt |
+| `tsuji.translator.gemini.prompts.rag-batch-system-prompt` | *(none)* | File path to a custom system prompt for RAG batch translation. If omitted, uses the built-in prompt |
+
+#### Quarkus LangChain4j Settings
+
+Standard Gemini API settings managed by the Quarkus LangChain4j extension:
+
+| Property | Default | Description |
+|---|---|---|
+| `quarkus.langchain4j.ai.gemini.api-key` | *(none)* | Gemini API key (typically set via `${tsuji.translator.gemini.key:}`) |
+| `quarkus.langchain4j.ai.gemini.chat-model.model-id` | *(none)* | Model ID (typically set via `${tsuji.translator.gemini.model}`) |
+| `quarkus.langchain4j.ai.gemini.chat-model.max-output-tokens` | `65536` | Maximum output tokens per response |
+| `quarkus.langchain4j.ai.gemini.timeout` | `300s` | API request timeout |
+| `quarkus.langchain4j.ai.gemini.log-requests` | `false` | Log API requests |
+| `quarkus.langchain4j.ai.gemini.log-responses` | `false` | Log API responses |
 
 ### RAG (Retrieval-Augmented Generation)
 
@@ -196,6 +351,7 @@ tsuji:
   translator:
     type: "gemini"
     gemini:
+      thinking-level: LOW
       batch:
         initial-texts-per-request: 200
         max-texts-per-request: 200
