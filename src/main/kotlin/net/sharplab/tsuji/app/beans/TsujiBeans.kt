@@ -232,8 +232,11 @@ class TsujiBeans() {
         return when (tsujiConfig.translator.type.lowercase()) {
             "deepl" -> {
                 logger.info("Using DeepL Translator")
+                val deeplKey = tsujiConfig.translator.deepl.key.orElseThrow {
+                    IllegalStateException("DeepL API key is not configured. Set tsuji.translator.deepl.key.")
+                }
                 DeepLTranslator(
-                    tsujiConfig.translator.deepl.key.get(),
+                    deeplKey,
                     asciidoctorPreProcessor,
                     adaptiveParallelismController,
                     tsujiConfig.translator.gemini.adaptive.maxRetries
