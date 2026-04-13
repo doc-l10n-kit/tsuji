@@ -1,13 +1,19 @@
 package net.sharplab.tsuji.app.beans
 
+import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.embedding.EmbeddingModel
 import dev.langchain4j.model.embedding.onnx.allminilml6v2q.AllMiniLmL6V2QuantizedEmbeddingModel
+import dev.langchain4j.model.googleai.GeminiThinkingConfig
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.context.Dependent
 import jakarta.enterprise.inject.Disposes
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
 import net.sharplab.tsuji.app.config.TsujiConfig
+import org.eclipse.microprofile.config.inject.ConfigProperty
+import java.time.Duration
+import java.util.Optional
 import net.sharplab.tsuji.core.driver.adoc.AsciidocDriver
 import net.sharplab.tsuji.core.driver.adoc.AsciidocDriverImpl
 import net.sharplab.tsuji.core.driver.common.ExternalProcessDriver
@@ -52,6 +58,38 @@ import org.slf4j.LoggerFactory
 class TsujiBeans() {
 
     private val logger = LoggerFactory.getLogger(TsujiBeans::class.java)
+
+    @Produces
+    @ApplicationScoped
+    fun chatModel(
+        tsujiConfig: TsujiConfig,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.api-key") apiKey: String,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.model-id") modelId: String,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.max-output-tokens") maxOutputTokens: Int,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.timeout") timeout: Duration,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-requests") logRequests: Boolean,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-responses") logResponses: Boolean
+    ): ChatModel {
+        val builder = GoogleAiGeminiChatModel.builder()
+            .apiKey(apiKey)
+            .modelName(modelId)
+            .maxOutputTokens(maxOutputTokens)
+            .timeout(timeout)
+            .logRequests(logRequests)
+            .logResponses(logResponses)
+
+        tsujiConfig.translator.gemini.thinkingLevel.ifPresent { level ->
+            logger.info("Using Gemini thinking level: $level")
+            builder.thinkingConfig(
+                GeminiThinkingConfig.builder()
+                    .thinkingLevel(level)
+                    .includeThoughts(false)
+                    .build()
+            )
+        }
+
+        return builder.build()
+    }
 
     @Produces
     fun poService(): PoService {

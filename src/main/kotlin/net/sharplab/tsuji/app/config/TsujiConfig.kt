@@ -136,6 +136,9 @@ interface TsujiConfig {
             @get:WithDefault("gemini-2.5-flash")
             val model: String
 
+            @get:WithName("thinking-level")
+            val thinkingLevel: Optional<String>
+
             @get:WithName("batch")
             val batch: Batch
 
