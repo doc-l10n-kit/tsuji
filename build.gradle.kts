@@ -111,8 +111,8 @@ dependencies {
     implementation(libs.quarkus.config.yaml)
 
     // Kotlin Coroutines for adaptive parallelism control
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.10.2")
 
     implementation(libs.asciidoctorj)
     implementation(libs.jsoup)
