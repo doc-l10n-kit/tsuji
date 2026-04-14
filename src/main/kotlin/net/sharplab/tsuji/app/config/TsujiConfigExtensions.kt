@@ -11,8 +11,8 @@ fun TsujiConfig.Glossary.toPromptText(): String {
     return buildString {
         appendLine("TERMINOLOGY GLOSSARY:")
         entries.forEach { entry ->
-            if (entry.context.isNotEmpty()) {
-                appendLine("- \"${entry.term}\" → \"${entry.translation}\" (${entry.context})")
+            if (entry.context.isPresent) {
+                appendLine("- \"${entry.term}\" → \"${entry.translation}\" (${entry.context.get()})")
             } else {
                 appendLine("- \"${entry.term}\" → \"${entry.translation}\"")
             }

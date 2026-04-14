@@ -2,6 +2,7 @@ package net.sharplab.tsuji.app.config
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.util.Optional
 
 class TsujiConfigExtensionsTest {
 
@@ -9,7 +10,7 @@ class TsujiConfigExtensionsTest {
     private class TestGlossaryEntry(
         override val term: String,
         override val translation: String,
-        override val context: String = ""
+        override val context: Optional<String> = Optional.empty()
     ) : TsujiConfig.GlossaryEntry
 
     private class TestGlossary(
@@ -36,7 +37,7 @@ class TsujiConfigExtensionsTest {
     @Test
     fun `toPromptText should include context when provided`() {
         // Given
-        val entry1 = TestGlossaryEntry("dialect", "Dialect", "Hibernate ORM")
+        val entry1 = TestGlossaryEntry("dialect", "Dialect", Optional.of("Hibernate ORM"))
         val entry2 = TestGlossaryEntry("extension", "エクステンション")
         val glossary = TestGlossary(true, listOf(entry1, entry2))
 
