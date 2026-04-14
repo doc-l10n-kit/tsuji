@@ -78,6 +78,41 @@ class PoServiceImplTest {
     }
 
     @Test
+    fun createUnfuzziedPo_shouldRemoveFuzzyFlagAndPreserveTranslation() {
+        // Given
+        val fuzzyMsg = createPoMessage("test", "テスト", fuzzy = true)
+        val normalMsg = createPoMessage("normal", "通常")
+        val emptyMsg = createPoMessage("empty", "", fuzzy = true)
+        val po = Po("ja", listOf(fuzzyMsg, normalMsg, emptyMsg))
+
+        // When
+        val result = target.createUnfuzziedPo(po)
+
+        // Then
+        assertThat(result.messages).hasSize(3)
+        assertThat(result.messages[0].fuzzy).isFalse()
+        assertThat(result.messages[0].messageString).isEqualTo("テスト")
+        assertThat(result.messages[1].fuzzy).isFalse()
+        assertThat(result.messages[1].messageString).isEqualTo("通常")
+        assertThat(result.messages[2].fuzzy).isFalse()
+        assertThat(result.messages[2].messageString).isEmpty()
+    }
+
+    @Test
+    fun createUnfuzziedPo_shouldNotModifyOriginalPo() {
+        // Given
+        val fuzzyMsg = createPoMessage("test", "テスト", fuzzy = true)
+        val po = Po("ja", listOf(fuzzyMsg))
+
+        // When
+        target.createUnfuzziedPo(po)
+
+        // Then - Original should remain unchanged
+        assertThat(po.messages[0].fuzzy).isTrue()
+        assertThat(po.messages[0].messageString).isEqualTo("テスト")
+    }
+
+    @Test
     fun createFuzzyPurgedPo_shouldClearFuzzyFlagAndEmptyMessage() {
         // Given
         val fuzzyMsg = createPoMessage("test", "テスト", fuzzy = true)

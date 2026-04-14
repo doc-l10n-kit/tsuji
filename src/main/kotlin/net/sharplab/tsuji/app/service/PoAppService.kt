@@ -4,6 +4,7 @@ import java.nio.file.Path
 
 interface PoAppService {
     fun normalize(poPath: Path)
+    fun unfuzzy(poPath: Path)
     fun purgeFuzzy(poPath: Path)
     fun purgeAll(poPath: Path)
     fun removeObsolete(poDir: Path, upstreamDir: Path)

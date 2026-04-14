@@ -35,6 +35,12 @@ interface PoService {
     fun createFuzzyPurgedPo(po: Po): Po
 
     /**
+     * Creates a new Po with fuzzy flags removed but translations preserved.
+     * Pure domain operation with no side effects.
+     */
+    fun createUnfuzziedPo(po: Po): Po
+
+    /**
      * Creates a new Po with all messages purged.
      * All messages will have their messageString cleared and fuzzy flag removed.
      * Pure domain operation with no side effects.

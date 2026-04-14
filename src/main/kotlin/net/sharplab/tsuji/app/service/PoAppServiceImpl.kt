@@ -46,6 +46,26 @@ class PoAppServiceImpl(
         }
     }
 
+    override fun unfuzzy(poPath: Path) {
+        val paths = if (poPath.isDirectory()) {
+            logger.info("Removing fuzzy flags in directory: $poPath")
+            Files.walk(poPath).use { stream ->
+                stream.filter { it.extension == "po" }.toList()
+            }
+        } else {
+            logger.info("Removing fuzzy flags in file: $poPath")
+            listOf(poPath)
+        }
+
+        paths.forEach { path ->
+            logger.debug("Processing: $path")
+            val po = poDriver.load(path)
+            val unfuzziedPo = poService.createUnfuzziedPo(po)
+            poDriver.save(unfuzziedPo, path)
+            poNormalizerService.normalize(path)
+        }
+    }
+
     override fun purgeFuzzy(poPath: Path) {
         val paths = if (poPath.isDirectory()) {
             logger.info("Purging fuzzy messages in directory: $poPath")

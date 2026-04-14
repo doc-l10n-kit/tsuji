@@ -10,6 +10,7 @@ import net.sharplab.tsuji.app.cli.po.MachineTranslateCommand
 import net.sharplab.tsuji.app.cli.po.NormalizeCommand
 import net.sharplab.tsuji.app.cli.po.PurgeCommand
 import net.sharplab.tsuji.app.cli.po.RemoveObsoleteCommand
+import net.sharplab.tsuji.app.cli.po.UnfuzzyCommand
 import net.sharplab.tsuji.app.cli.po.UpdateCommand
 import net.sharplab.tsuji.app.cli.po.UpdatePoStatsCommand
 
@@ -22,6 +23,7 @@ import net.sharplab.tsuji.app.cli.po.UpdatePoStatsCommand
     subcommands = [
         NormalizeCommand::class,
         PurgeCommand::class,
+        UnfuzzyCommand::class,
         RemoveObsoleteCommand::class,
         UpdateCommand::class,
         ApplyCommand::class,
