@@ -10,25 +10,19 @@ import dev.langchain4j.model.chat.request.ResponseFormatType
 import dev.langchain4j.model.chat.request.json.JsonArraySchema
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema
 import dev.langchain4j.model.chat.request.json.JsonSchema
-import jakarta.enterprise.context.ApplicationScoped
-import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.app.config.toPromptText
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 
-@ApplicationScoped
-class GeminiTranslationAiService {
+class GeminiTranslationAiService(
+    private val chatModel: ChatModel,
+    private val config: net.sharplab.tsuji.app.config.TsujiConfig
+) {
 
     private val logger = LoggerFactory.getLogger(GeminiTranslationAiService::class.java)
     private val mapper = jacksonObjectMapper()
-
-    @Inject
-    lateinit var chatModel: ChatModel
-
-    @Inject
-    lateinit var config: net.sharplab.tsuji.app.config.TsujiConfig
 
     private val translationSystemPrompt: String by lazy {
         config.translator.gemini.prompts.batchSystemPrompt
@@ -99,7 +93,10 @@ class GeminiTranslationAiService {
 
     private fun parseBatchResponse(responseJson: String): List<BatchTranslationResponseItem> {
         return try {
-            mapper.readValue(responseJson, BATCH_RESPONSE_TYPE_REF)
+            // Response is wrapped: {"translations": [...]}
+            val tree = mapper.readTree(responseJson)
+            val translationsNode = tree.get("translations") ?: throw IllegalStateException("Missing 'translations' field in response")
+            mapper.readValue(translationsNode.toString(), BATCH_RESPONSE_TYPE_REF)
         } catch (e: Exception) {
             logger.error("Failed to parse batch translation response: $responseJson", e)
             throw e
@@ -122,9 +119,8 @@ class GeminiTranslationAiService {
     }
 
     /**
-     * Creates a fixed JSON Schema for array-based batch translation.
-     * The schema defines the structure of each array element, not the array length.
-     * This prevents the LLM from splitting texts at newlines or returning wrong indices.
+     * Creates a JSON Schema for batch translation.
+     * Uses a unified structure compatible with both Gemini and OpenAI.
      */
     private fun createBatchResponseSchema(): ResponseFormat {
         // Define the schema for each array element: {"index": Int, "translation": String}
@@ -140,9 +136,15 @@ class GeminiTranslationAiService {
             .description("Array of translation results")
             .build()
 
+        // Wrap the array in an object for unified structure
+        val rootSchema = JsonObjectSchema.builder()
+            .addProperty("translations", arraySchema)
+            .required(listOf("translations"))
+            .build()
+
         val jsonSchema = JsonSchema.builder()
             .name("BatchTranslationResponse")
-            .rootElement(arraySchema)
+            .rootElement(rootSchema)
             .build()
 
         return ResponseFormat.builder()

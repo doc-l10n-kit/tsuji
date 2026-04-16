@@ -102,6 +102,7 @@ dependencies {
     implementation(platform(libs.quarkus.bom))
     implementation(platform(libs.quarkus.langchain4j.bom))
     implementation(libs.quarkus.langchain4j.ai.gemini)
+    implementation(libs.quarkus.langchain4j.openai)
     implementation(libs.langchain4j.community.lucene)
     implementation(libs.langchain4j.embeddings.all.minilm.l6.v2.q)
 

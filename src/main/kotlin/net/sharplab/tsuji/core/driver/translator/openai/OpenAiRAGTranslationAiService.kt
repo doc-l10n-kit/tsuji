@@ -1,4 +1,4 @@
-package net.sharplab.tsuji.core.driver.translator.gemini
+package net.sharplab.tsuji.core.driver.translator.openai
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import dev.langchain4j.data.message.SystemMessage
@@ -15,21 +15,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.app.config.toPromptText
+import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationResponseItem
+import net.sharplab.tsuji.core.driver.translator.gemini.RAGBatchTranslationRequestItem
+import net.sharplab.tsuji.core.driver.translator.gemini.TranslationMemoryEntry
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 
-class GeminiRAGTranslationAiService(
+class OpenAiRAGTranslationAiService(
     private val chatModel: ChatModel,
     private val vectorStoreDriver: VectorStoreDriver,
     private val config: TsujiConfig
 ) {
 
-    private val logger = LoggerFactory.getLogger(GeminiRAGTranslationAiService::class.java)
+    private val logger = LoggerFactory.getLogger(OpenAiRAGTranslationAiService::class.java)
     private val mapper = jacksonObjectMapper()
 
     private val translationSystemPrompt: String by lazy {
-        config.translator.gemini.prompts.ragBatchSystemPrompt
+        config.translator.openai.prompts.ragBatchSystemPrompt
             .map { path -> java.io.File(path).readText() }
             .orElseGet { loadClasspathPrompt("prompts/translation-rag-system-prompt.txt") }
     }
@@ -116,7 +119,7 @@ class GeminiRAGTranslationAiService(
 
     private fun parseBatchResponse(responseJson: String): List<BatchTranslationResponseItem> {
         return try {
-            // Response is wrapped: {"translations": [...]}
+            // OpenAI returns wrapped response: {"translations": [...]}
             val tree = mapper.readTree(responseJson)
             val translationsNode = tree.get("translations") ?: throw IllegalStateException("Missing 'translations' field in response")
             mapper.readValue(translationsNode.toString(), BATCH_RESPONSE_TYPE_REF)
@@ -152,7 +155,7 @@ class GeminiRAGTranslationAiService(
             .description("Array of translation results")
             .build()
 
-        // Wrap the array in an object for unified structure
+        // Wrap the array in an object (OpenAI requirement)
         val rootSchema = JsonObjectSchema.builder()
             .addProperty("translations", arraySchema)
             .required(listOf("translations"))

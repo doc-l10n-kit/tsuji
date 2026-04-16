@@ -193,6 +193,75 @@ interface TsujiConfig {
             }
 
         }
+
+        @get:WithName("openai")
+        val openai: OpenAi
+
+        interface OpenAi {
+            @get:WithName("key")
+            val key: Optional<String>
+
+            @get:WithName("model")
+            @get:WithDefault("gpt-4o-mini")
+            val model: String
+
+            @get:WithName("mt-tag")
+            val mtTag: Optional<String>
+
+            @get:WithName("batch")
+            val batch: Batch
+
+            @get:WithName("adaptive")
+            val adaptive: Adaptive
+
+            @get:WithName("prompts")
+            val prompts: Prompts
+
+            interface Prompts {
+                @get:WithName("batch-system-prompt")
+                val batchSystemPrompt: Optional<String>
+
+                @get:WithName("rag-batch-system-prompt")
+                val ragBatchSystemPrompt: Optional<String>
+            }
+
+            interface Batch {
+                @get:WithName("initial-texts-per-request")
+                @get:WithDefault("200")
+                val initialTextsPerRequest: Int
+
+                @get:WithName("max-texts-per-request")
+                @get:WithDefault("200")
+                val maxTextsPerRequest: Int
+
+                @get:WithName("max-text-size-bytes")
+                @get:WithDefault("700000")
+                val maxTextSizeBytes: Int
+            }
+
+            interface Adaptive {
+                @get:WithName("enabled")
+                @get:WithDefault("true")
+                val enabled: Boolean
+
+                @get:WithName("initial-concurrency")
+                @get:WithDefault("40")
+                val initialConcurrency: Int
+
+                @get:WithName("min-concurrency")
+                @get:WithDefault("1")
+                val minConcurrency: Int
+
+                @get:WithName("max-concurrency")
+                @get:WithDefault("60")
+                val maxConcurrency: Int
+
+                @get:WithName("max-retries")
+                @get:WithDefault("3")
+                val maxRetries: Int
+            }
+
+        }
     }
 
     @get:WithName("git")

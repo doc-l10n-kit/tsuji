@@ -18,6 +18,7 @@ langchain4j-community = "1.13.0-beta23"
 quarkus-bom = { group = "io.quarkus", name = "quarkus-bom", version.ref = "quarkus" }
 quarkus-langchain4j-bom = { group = "io.quarkus.platform", name = "quarkus-langchain4j-bom", version.ref = "quarkus" }
 quarkus-langchain4j-ai-gemini = { group = "io.quarkiverse.langchain4j", name = "quarkus-langchain4j-ai-gemini" }
+quarkus-langchain4j-openai = { group = "io.quarkiverse.langchain4j", name = "quarkus-langchain4j-openai" }
 langchain4j-community-lucene = { group = "dev.langchain4j", name = "langchain4j-community-lucene", version.ref = "langchain4j-community" }
 langchain4j-embeddings-all-minilm-l6-v2-q = { group = "dev.langchain4j", name = "langchain4j-embeddings-all-minilm-l6-v2-q" }
 
