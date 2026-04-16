@@ -33,6 +33,19 @@ tsuji:
         # Maximum retry attempts (default: 3)
         max-retries: 3
 
+    openai:
+      # mt-tag: "openai"  # Can be set to "gemini" when using OpenAI-compatible Gemini proxy
+
+      batch:
+        initial-texts-per-request: 200
+        max-texts-per-request: 200
+
+      adaptive:
+        initial-concurrency: 40
+        min-concurrency: 1
+        max-concurrency: 60
+        max-retries: 3
+
   jekyll:
     cname: ""
     surge-domain-suffix: ""
@@ -52,6 +65,16 @@ quarkus:
         timeout: 300s
         log-requests: false
         log-responses: false
+
+    openai:
+      api-key: ${tsuji.translator.openai.key:}
+      chat-model:
+        model-name: ${tsuji.translator.openai.model}
+        max-tokens: 65536
+      timeout: 300s
+      log-requests: false
+      log-responses: false
+      # base-url: ""  # Can be overridden via environment variable for custom endpoints
 
   package:
     jar:

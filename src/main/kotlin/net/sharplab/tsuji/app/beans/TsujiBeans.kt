@@ -5,10 +5,10 @@ import dev.langchain4j.model.embedding.EmbeddingModel
 import dev.langchain4j.model.embedding.onnx.allminilml6v2q.AllMiniLmL6V2QuantizedEmbeddingModel
 import dev.langchain4j.model.googleai.GeminiThinkingConfig
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel
+import dev.langchain4j.model.openai.OpenAiChatModel
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.context.Dependent
 import jakarta.enterprise.inject.Disposes
-import jakarta.enterprise.inject.Instance
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
 import net.sharplab.tsuji.app.config.TsujiConfig
@@ -34,6 +34,9 @@ import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationAiService
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.openai.OpenAiTranslator
+import net.sharplab.tsuji.core.driver.translator.openai.OpenAiTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.openai.OpenAiRAGTranslationAiService
 import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.driver.vectorstore.LuceneVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
@@ -60,9 +63,7 @@ class TsujiBeans() {
 
     private val logger = LoggerFactory.getLogger(TsujiBeans::class.java)
 
-    @Produces
-    @ApplicationScoped
-    fun chatModel(
+    private fun createGeminiChatModel(
         tsujiConfig: TsujiConfig,
         @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.api-key") apiKey: Optional<String>,
         @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.model-id") modelId: String,
@@ -92,6 +93,37 @@ class TsujiBeans() {
                     .includeThoughts(false)
                     .build()
             )
+        }
+
+        return builder.build()
+    }
+
+    private fun createOpenAiChatModel(
+        tsujiConfig: TsujiConfig,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.api-key") apiKey: Optional<String>,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.chat-model.model-name") modelName: String,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.chat-model.max-tokens") maxTokens: Int,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.timeout") timeout: Duration,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.base-url") baseUrl: Optional<String>,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.log-requests") logRequests: Boolean,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.log-responses") logResponses: Boolean
+    ): ChatModel {
+        val resolvedApiKey = apiKey.orElseThrow {
+            IllegalStateException("OpenAI API key is not configured. Set tsuji.translator.openai.key or quarkus.langchain4j.openai.api-key.")
+        }
+
+        val builder = OpenAiChatModel.builder()
+            .apiKey(resolvedApiKey)
+            .modelName(modelName)
+            .maxTokens(maxTokens)
+            .timeout(timeout)
+            .logRequests(logRequests)
+            .logResponses(logResponses)
+
+        // Custom base-url support (for company proxy endpoints)
+        baseUrl.ifPresent { url ->
+            logger.info("Using custom OpenAI base URL: $url")
+            builder.baseUrl(url)
         }
 
         return builder.build()
@@ -224,10 +256,23 @@ class TsujiBeans() {
     fun translator(
         tsujiConfig: TsujiConfig,
         asciidoctorPreProcessor: AsciidoctorPreProcessor,
-        geminiTranslationAiServiceInstance: Instance<GeminiTranslationAiService>,
-        geminiRAGTranslationAiServiceInstance: Instance<GeminiRAGTranslationAiService>,
+        vectorStoreDriver: VectorStoreDriver,
         adaptiveParallelismController: AdaptiveParallelismController,
-        asciidocMarkupValidator: AsciidocMarkupValidator
+        asciidocMarkupValidator: AsciidocMarkupValidator,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.api-key") geminiApiKey: Optional<String>,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.model-id") geminiModelId: String,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.max-output-tokens") geminiMaxOutputTokens: Int,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.timeout") geminiTimeout: Duration,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-requests") geminiLogRequests: Boolean,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-responses") geminiLogResponses: Boolean,
+        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.thinking.thinking-budget") geminiThinkingBudget: java.util.OptionalInt,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.api-key") openAiApiKey: Optional<String>,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.chat-model.model-name") openAiModelName: String,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.chat-model.max-tokens") openAiMaxTokens: Int,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.timeout") openAiTimeout: Duration,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.base-url") openAiBaseUrl: Optional<String>,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.log-requests") openAiLogRequests: Boolean,
+        @ConfigProperty(name = "quarkus.langchain4j.openai.log-responses") openAiLogResponses: Boolean
     ): Translator {
         return when (tsujiConfig.translator.type.lowercase()) {
             "deepl" -> {
@@ -244,28 +289,60 @@ class TsujiBeans() {
             }
             "gemini" -> {
                 logger.info("Using Gemini Translator")
+                val chatModel = createGeminiChatModel(
+                    tsujiConfig,
+                    geminiApiKey,
+                    geminiModelId,
+                    geminiMaxOutputTokens,
+                    geminiTimeout,
+                    geminiLogRequests,
+                    geminiLogResponses,
+                    geminiThinkingBudget
+                )
+                val geminiTranslationAiService = GeminiTranslationAiService(chatModel, tsujiConfig)
+                val geminiRAGTranslationAiService = GeminiRAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig)
+
                 GeminiTranslator(
-                    geminiTranslationAiServiceInstance.get(),
-                    geminiRAGTranslationAiServiceInstance.get(),
+                    geminiTranslationAiService,
+                    geminiRAGTranslationAiService,
                     tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
-
                     tsujiConfig.translator.gemini.adaptive.maxRetries,
                     adaptiveParallelismController,
                     asciidocMarkupValidator
                 )
             }
-            else -> {
-                logger.warn("Unknown translator type: ${tsujiConfig.translator.type}, defaulting to Gemini")
-                GeminiTranslator(
-                    geminiTranslationAiServiceInstance.get(),
-                    geminiRAGTranslationAiServiceInstance.get(),
-                    tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
-                    tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
+            "openai" -> {
+                logger.info("Using OpenAI Translator")
+                val chatModel = createOpenAiChatModel(
+                    tsujiConfig,
+                    openAiApiKey,
+                    openAiModelName,
+                    openAiMaxTokens,
+                    openAiTimeout,
+                    openAiBaseUrl,
+                    openAiLogRequests,
+                    openAiLogResponses
+                )
+                val openAiTranslationAiService = OpenAiTranslationAiService(chatModel, tsujiConfig)
+                val openAiRAGTranslationAiService = OpenAiRAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig)
 
-                    tsujiConfig.translator.gemini.adaptive.maxRetries,
+                val mtTag = tsujiConfig.translator.openai.mtTag.orElse(null)
+                OpenAiTranslator(
+                    openAiTranslationAiService,
+                    openAiRAGTranslationAiService,
+                    mtTag,
+                    tsujiConfig.translator.openai.batch.initialTextsPerRequest,
+                    tsujiConfig.translator.openai.batch.maxTextsPerRequest,
+                    tsujiConfig.translator.openai.adaptive.maxRetries,
                     adaptiveParallelismController,
                     asciidocMarkupValidator
+                )
+            }
+            else -> {
+                throw IllegalArgumentException(
+                    "Unknown translator type: ${tsujiConfig.translator.type}. " +
+                    "Supported types: deepl, gemini, openai"
                 )
             }
         }
