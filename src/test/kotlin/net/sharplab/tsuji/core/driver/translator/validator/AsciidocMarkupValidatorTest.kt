@@ -91,7 +91,7 @@ class AsciidocMarkupValidatorTest {
             ))
         }.isInstanceOf(AsciidocMarkupValidationException::class.java)
             .satisfies({ e ->
-                assertThat((e as AsciidocMarkupValidationException).brokenMessages).hasSize(1)
+                assertThat((e as AsciidocMarkupValidationException).brokenTranslations).hasSize(1)
             })
     }
 
@@ -123,8 +123,8 @@ class AsciidocMarkupValidatorTest {
         }.isInstanceOf(AsciidocMarkupValidationException::class.java)
             .satisfies({ e ->
                 val ex = e as AsciidocMarkupValidationException
-                assertThat(ex.brokenMessages).hasSize(1)
-                assertThat(ex.brokenMessages[0].original.messageId).contains("broken.com")
+                assertThat(ex.brokenTranslations).hasSize(1)
+                assertThat(ex.brokenTranslations[0].message.original.messageId).contains("broken.com")
             })
     }
 
@@ -144,7 +144,7 @@ class AsciidocMarkupValidatorTest {
         }.isInstanceOf(AsciidocMarkupValidationException::class.java)
             .satisfies({ e ->
                 val ex = e as AsciidocMarkupValidationException
-                assertThat(ex.brokenMessages).hasSize(1)
+                assertThat(ex.brokenTranslations).hasSize(1)
             })
     }
 

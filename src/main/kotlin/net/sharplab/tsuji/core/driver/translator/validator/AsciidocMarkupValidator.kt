@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.validator
 
 import net.sharplab.tsuji.core.driver.translator.exception.AsciidocMarkupValidationException
+import net.sharplab.tsuji.core.driver.translator.exception.BrokenTranslation
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.asciidoctor.Asciidoctor
 import org.asciidoctor.Options
@@ -33,22 +34,22 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
      * @throws AsciidocMarkupValidationException if any markup is broken
      */
     fun validate(messages: List<TranslationMessage>) {
-        val broken = messages.filter { msg ->
+        val brokenTranslations = messages.mapNotNull { msg ->
             val sourceFeatures = extractMarkupFeatures(msg.original.messageId)
-            if (sourceFeatures.isEmpty()) return@filter false
+            if (sourceFeatures.isEmpty()) return@mapNotNull null
 
             val translatedFeatures = extractMarkupFeatures(msg.text)
-            val issues = compareFeatures(sourceFeatures, translatedFeatures)
-            if (issues.isNotEmpty()) {
-                logger.warn("Broken Asciidoc markup in translation of '${msg.original.messageId.take(60)}...': $issues")
-                true
+            val note = buildValidationNote(sourceFeatures, translatedFeatures)
+            if (note != null) {
+                logger.warn("Broken Asciidoc markup in translation of '${msg.original.messageId.take(60)}...'")
+                BrokenTranslation(msg, note)
             } else {
-                false
+                null
             }
         }
 
-        if (broken.isNotEmpty()) {
-            throw AsciidocMarkupValidationException(broken)
+        if (brokenTranslations.isNotEmpty()) {
+            throw AsciidocMarkupValidationException(brokenTranslations)
         }
     }
 
@@ -85,24 +86,38 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
         return document.convert()
     }
 
-    private fun compareFeatures(source: MarkupFeatures, translated: MarkupFeatures): List<String> {
-        val issues = mutableListOf<String>()
+    /**
+     * Builds a validation note if markup features don't match.
+     * Returns null if everything matches.
+     */
+    private fun buildValidationNote(source: MarkupFeatures, translated: MarkupFeatures): String? {
+        val notes = mutableListOf<String>()
 
-        val missingLinks = source.linkHrefs - translated.linkHrefs
-        if (missingLinks.isNotEmpty()) issues.add("missing links: $missingLinks")
+        if (source.codeCount != translated.codeCount) {
+            notes.add("This text contains ${source.codeCount} backtick pair(s) for inline code markup. " +
+                    "Ensure your translation preserves exactly ${source.codeCount} backtick pair(s) with proper spacing in CJK text.")
+        }
 
-        val missingImages = source.imageSrcs - translated.imageSrcs
-        if (missingImages.isNotEmpty()) issues.add("missing images: $missingImages")
+        if (source.strongCount != translated.strongCount) {
+            notes.add("This text contains ${source.strongCount} bold markup (*text*). " +
+                    "Preserve exactly ${source.strongCount} bold markup(s) with proper spacing in CJK text.")
+        }
 
-        if (source.emphasisCount != translated.emphasisCount)
-            issues.add("emphasis count: ${source.emphasisCount} → ${translated.emphasisCount}")
+        if (source.emphasisCount != translated.emphasisCount) {
+            notes.add("This text contains ${source.emphasisCount} italic markup (_text_). " +
+                    "Preserve exactly ${source.emphasisCount} italic markup(s) with proper spacing in CJK text.")
+        }
 
-        if (source.strongCount != translated.strongCount)
-            issues.add("strong count: ${source.strongCount} → ${translated.strongCount}")
+        if (source.linkHrefs.size != translated.linkHrefs.size) {
+            notes.add("This text contains ${source.linkHrefs.size} link(s). " +
+                    "Preserve all link URLs unchanged in your translation.")
+        }
 
-        if (source.codeCount != translated.codeCount)
-            issues.add("code count: ${source.codeCount} → ${translated.codeCount}")
+        if (source.imageSrcs.size != translated.imageSrcs.size) {
+            notes.add("This text contains ${source.imageSrcs.size} image(s). " +
+                    "Preserve all image paths unchanged in your translation.")
+        }
 
-        return issues
+        return if (notes.isEmpty()) null else notes.joinToString(" ")
     }
 }
