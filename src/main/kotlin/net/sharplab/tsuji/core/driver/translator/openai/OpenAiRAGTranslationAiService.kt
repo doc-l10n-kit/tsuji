@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.app.config.toPromptText
+import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequestItem
 import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationResponseItem
 import net.sharplab.tsuji.core.driver.translator.gemini.RAGBatchTranslationRequestItem
 import net.sharplab.tsuji.core.driver.translator.gemini.TranslationMemoryEntry
@@ -78,15 +79,26 @@ class OpenAiRAGTranslationAiService(
         srcLang: String,
         dstLang: String
     ): List<String> {
+        val items = texts.mapIndexed { index, text ->
+            BatchTranslationRequestItem(index, text)
+        }
+        return translateWithNotes(items, srcLang, dstLang)
+    }
+
+    internal suspend fun translateWithNotes(
+        items: List<BatchTranslationRequestItem>,
+        srcLang: String,
+        dstLang: String
+    ): List<String> {
         val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
 
         // Retrieve RAG context for each text individually
-        val requestItems = texts.mapIndexed { index, text ->
-            val ragContext = retrieveContextForText(text)
-            RAGBatchTranslationRequestItem(index, text, ragContext)
+        val indexedItems = items.map { item ->
+            val ragContext = retrieveContextForText(item.text)
+            RAGBatchTranslationRequestItem(item.index, item.text, ragContext, item.note)
         }
 
-        val requestJson = mapper.writeValueAsString(requestItems)
+        val requestJson = mapper.writeValueAsString(indexedItems)
         val userPrompt = "Translate the following JSON array. Each item has a 'tm' field with relevant translation memory. Return a JSON array with the SAME indices:\n$requestJson"
 
         val chatRequest = ChatRequest.builder()
@@ -97,7 +109,7 @@ class OpenAiRAGTranslationAiService(
             .responseFormat(createBatchResponseSchema())
             .build()
 
-        logger.debug("Sending RAG batch translation request (batch size: ${texts.size})")
+        logger.debug("Sending RAG batch translation request (batch size: ${items.size})")
 
         val apiStartTime = System.currentTimeMillis()
         val response = withContext(Dispatchers.IO) {
@@ -105,10 +117,10 @@ class OpenAiRAGTranslationAiService(
         }
         val apiElapsedTime = System.currentTimeMillis() - apiStartTime
 
-        logger.debug("RAG batch API call completed in ${apiElapsedTime}ms (batch size: ${texts.size})")
+        logger.debug("RAG batch API call completed in ${apiElapsedTime}ms (batch size: ${items.size})")
 
         val batchResponse = parseBatchResponse(response.aiMessage().text())
-        validateIndices(texts.indices.toSet(), batchResponse)
+        validateIndices(items.map { it.index }.toSet(), batchResponse)
         return toTranslations(batchResponse)
     }
 

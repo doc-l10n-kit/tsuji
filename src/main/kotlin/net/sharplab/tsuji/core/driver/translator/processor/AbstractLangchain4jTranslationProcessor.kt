@@ -7,6 +7,7 @@ import net.sharplab.tsuji.core.driver.translator.exception.AsciidocMarkupValidat
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.core.driver.translator.exception.ResponseParseException
 import net.sharplab.tsuji.core.driver.translator.exception.TranslationValidationException
+import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequestItem
 import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
@@ -44,10 +45,18 @@ abstract class AbstractLangchain4jTranslationProcessor(
     ): BatchProvider<TranslationMessage>
 
     /**
-     * Calls the translation API (with or without RAG).
+     * Calls the translation API (with or without RAG) for normal translation.
      */
     protected abstract suspend fun callTranslationApi(
         texts: List<String>,
+        context: TranslationContext
+    ): List<String>
+
+    /**
+     * Calls the translation API with notes for retry with validation guidance.
+     */
+    protected abstract suspend fun callTranslationApiWithNotes(
+        items: List<BatchTranslationRequestItem>,
         context: TranslationContext
     ): List<String>
 
@@ -135,7 +144,8 @@ abstract class AbstractLangchain4jTranslationProcessor(
         batch: List<TranslationMessage>,
         context: TranslationContext
     ): List<TranslationMessage> {
-        val translations = callTranslationApi(batch.map { it.text }, context)
+        val texts = batch.map { it.text }
+        val translations = callTranslationApi(texts, context)
         var messages = batch.zip(translations).map { (msg, translated) ->
             msg.withText(translated).withFuzzy(true).withMtEngine(mtTag)
         }
@@ -150,11 +160,11 @@ abstract class AbstractLangchain4jTranslationProcessor(
                 return messages
             } catch (e: AsciidocMarkupValidationException) {
                 if (attempt < MAX_MARKUP_RETRIES) {
-                    logger.info("Retrying ${e.brokenMessages.size} broken translation(s) (attempt ${attempt + 1}/$MAX_MARKUP_RETRIES)")
-                    messages = retranslateBroken(messages, e.brokenMessages, context)
+                    logger.info("Retrying ${e.brokenTranslations.size} broken translation(s) (attempt ${attempt + 1}/$MAX_MARKUP_RETRIES)")
+                    messages = retranslateBroken(messages, e.brokenTranslations, context)
                 } else {
-                    logger.warn("Asciidoc markup still broken in ${e.brokenMessages.size} translation(s), accepting anyway")
-                    val brokenIds = e.brokenMessages.map { it.original.messageId }.toSet()
+                    logger.warn("Asciidoc markup still broken in ${e.brokenTranslations.size} translation(s), accepting anyway")
+                    val brokenIds = e.brokenTranslations.map { it.message.original.messageId }.toSet()
                     messages = messages.map { msg ->
                         if (msg.original.messageId in brokenIds) {
                             msg.withComment("WARNING: Asciidoc markup may be broken in this translation")
@@ -171,11 +181,21 @@ abstract class AbstractLangchain4jTranslationProcessor(
 
     private suspend fun retranslateBroken(
         messages: List<TranslationMessage>,
-        broken: List<TranslationMessage>,
+        brokenTranslations: List<net.sharplab.tsuji.core.driver.translator.exception.BrokenTranslation>,
         context: TranslationContext
     ): List<TranslationMessage> {
-        val retranslated = callTranslationApi(broken.map { it.original.messageId }, context)
-        val fixes = broken.zip(retranslated).associate { (msg, newText) -> msg.original.messageId to newText }
+        val items = brokenTranslations.mapIndexed { index, broken ->
+            BatchTranslationRequestItem(
+                index = index,
+                text = broken.message.original.messageId,
+                note = broken.note
+            )
+        }
+
+        val retranslated = callTranslationApiWithNotes(items, context)
+        val fixes = brokenTranslations.zip(retranslated).associate { (broken, newText) ->
+            broken.message.original.messageId to newText
+        }
         return messages.map { msg -> fixes[msg.original.messageId]?.let { msg.withText(it) } ?: msg }
     }
 
@@ -193,13 +213,13 @@ abstract class AbstractLangchain4jTranslationProcessor(
         val title = titleMatch?.groupValues?.get(1)?.trim() ?: ""
         val synopsis = synopsisMatch?.groupValues?.get(1)?.trim() ?: ""
 
-        val stringsToTranslate = mutableListOf<String>()
-        if (title.isNotEmpty()) stringsToTranslate.add(title)
-        if (synopsis.isNotEmpty()) stringsToTranslate.add(synopsis)
+        val texts = mutableListOf<String>()
+        if (title.isNotEmpty()) texts.add(title)
+        if (synopsis.isNotEmpty()) texts.add(synopsis)
 
-        if (stringsToTranslate.isEmpty()) return message
+        if (texts.isEmpty()) return message
 
-        val translated = callTranslationApi(stringsToTranslate, context)
+        val translated = callTranslationApi(texts, context)
 
         var translatedIndex = 0
         var replaced = message

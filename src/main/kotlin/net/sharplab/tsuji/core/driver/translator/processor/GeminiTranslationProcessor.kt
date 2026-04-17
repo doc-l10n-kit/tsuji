@@ -70,4 +70,27 @@ class GeminiTranslationProcessor(
             handleTranslationException(e)
         }
     }
+
+    override suspend fun callTranslationApiWithNotes(
+        items: List<net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequestItem>,
+        context: TranslationContext
+    ): List<String> {
+        return try {
+            if (context.useRag) {
+                logger.debug("Batch of ${items.size} texts using RAG batch translation with notes")
+                geminiRAGTranslationAiService.translateWithNotes(items, context.srcLang, context.dstLang)
+            } else {
+                logger.debug("Sending batch: ${items.size} items with notes")
+
+                val batchStartTime = System.currentTimeMillis()
+                val result = geminiTranslationAiService.translateWithNotes(items, context.srcLang, context.dstLang)
+                val batchElapsedTime = System.currentTimeMillis() - batchStartTime
+
+                logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${items.size})")
+                result
+            }
+        } catch (e: Exception) {
+            handleTranslationException(e)
+        }
+    }
 }
