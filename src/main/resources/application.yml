@@ -55,7 +55,7 @@ quarkus:
   langchain4j:
     ai:
       gemini:
-        api-key: ${tsuji.translator.gemini.key:}
+        api-key: ${tsuji.translator.gemini.key}
         chat-model:
           model-id: ${tsuji.translator.gemini.model}
           # Set to model's maximum output tokens (no cost penalty, only charges for actual tokens generated)
@@ -67,7 +67,7 @@ quarkus:
         log-responses: false
 
     openai:
-      api-key: ${tsuji.translator.openai.key:}
+      api-key: ${tsuji.translator.openai.key}
       chat-model:
         model-name: ${tsuji.translator.openai.model}
         max-tokens: 65536
