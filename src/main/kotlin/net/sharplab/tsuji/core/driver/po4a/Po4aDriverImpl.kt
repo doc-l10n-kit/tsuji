@@ -42,6 +42,7 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
         val command = getExecutable("po4a-updatepo")
         val args = mutableListOf(
             command,
+            "--no-deprecation",
             "--msgmerge-opt", "--no-fuzzy-matching",
             "--master-charset", "UTF-8",
             "-f", format
@@ -70,6 +71,7 @@ class Po4aDriverImpl(private val externalProcessDriver: ExternalProcessDriver) :
         val command = getExecutable("po4a-translate")
         val args = mutableListOf(
             command,
+            "--no-deprecation",
             "--master-charset", "UTF-8",
             "--localized-charset", "UTF-8",
             "-f", format,
