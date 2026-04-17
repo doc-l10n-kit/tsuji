@@ -1,6 +1,9 @@
 package net.sharplab.tsuji.core.driver.translator.validator
 
 import net.sharplab.tsuji.core.driver.translator.exception.AsciidocMarkupValidationException
+import net.sharplab.tsuji.core.driver.translator.exception.BrokenTranslation
+import net.sharplab.tsuji.core.driver.translator.exception.MarkupType
+import net.sharplab.tsuji.core.driver.translator.exception.ValidationError
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.asciidoctor.Asciidoctor
 import org.asciidoctor.Options
@@ -33,22 +36,23 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
      * @throws AsciidocMarkupValidationException if any markup is broken
      */
     fun validate(messages: List<TranslationMessage>) {
-        val broken = messages.filter { msg ->
+        val brokenTranslations = messages.mapNotNull { msg ->
             val sourceFeatures = extractMarkupFeatures(msg.original.messageId)
-            if (sourceFeatures.isEmpty()) return@filter false
+            if (sourceFeatures.isEmpty()) return@mapNotNull null
 
             val translatedFeatures = extractMarkupFeatures(msg.text)
-            val issues = compareFeatures(sourceFeatures, translatedFeatures)
-            if (issues.isNotEmpty()) {
-                logger.warn("Broken Asciidoc markup in translation of '${msg.original.messageId.take(60)}...': $issues")
-                true
+            val errors = compareFeatures(sourceFeatures, translatedFeatures)
+            if (errors.isNotEmpty()) {
+                val errorSummary = errors.joinToString(", ") { "${it.type}: ${it.expectedCount} → ${it.actualCount}" }
+                logger.warn("Broken Asciidoc markup in translation of '${msg.original.messageId.take(60)}...': $errorSummary")
+                BrokenTranslation(msg, errors)
             } else {
-                false
+                null
             }
         }
 
-        if (broken.isNotEmpty()) {
-            throw AsciidocMarkupValidationException(broken)
+        if (brokenTranslations.isNotEmpty()) {
+            throw AsciidocMarkupValidationException(brokenTranslations)
         }
     }
 
@@ -85,24 +89,29 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
         return document.convert()
     }
 
-    private fun compareFeatures(source: MarkupFeatures, translated: MarkupFeatures): List<String> {
-        val issues = mutableListOf<String>()
+    private fun compareFeatures(source: MarkupFeatures, translated: MarkupFeatures): List<ValidationError> {
+        val errors = mutableListOf<ValidationError>()
 
-        val missingLinks = source.linkHrefs - translated.linkHrefs
-        if (missingLinks.isNotEmpty()) issues.add("missing links: $missingLinks")
+        if (source.linkHrefs.size != translated.linkHrefs.size) {
+            errors.add(ValidationError(MarkupType.LINK, source.linkHrefs.size, translated.linkHrefs.size))
+        }
 
-        val missingImages = source.imageSrcs - translated.imageSrcs
-        if (missingImages.isNotEmpty()) issues.add("missing images: $missingImages")
+        if (source.imageSrcs.size != translated.imageSrcs.size) {
+            errors.add(ValidationError(MarkupType.IMAGE, source.imageSrcs.size, translated.imageSrcs.size))
+        }
 
-        if (source.emphasisCount != translated.emphasisCount)
-            issues.add("emphasis count: ${source.emphasisCount} → ${translated.emphasisCount}")
+        if (source.emphasisCount != translated.emphasisCount) {
+            errors.add(ValidationError(MarkupType.EMPHASIS, source.emphasisCount, translated.emphasisCount))
+        }
 
-        if (source.strongCount != translated.strongCount)
-            issues.add("strong count: ${source.strongCount} → ${translated.strongCount}")
+        if (source.strongCount != translated.strongCount) {
+            errors.add(ValidationError(MarkupType.STRONG, source.strongCount, translated.strongCount))
+        }
 
-        if (source.codeCount != translated.codeCount)
-            issues.add("code count: ${source.codeCount} → ${translated.codeCount}")
+        if (source.codeCount != translated.codeCount) {
+            errors.add(ValidationError(MarkupType.CODE, source.codeCount, translated.codeCount))
+        }
 
-        return issues
+        return errors
     }
 }

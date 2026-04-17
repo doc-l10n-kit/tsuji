@@ -50,17 +50,18 @@ class GeminiTranslationProcessor(
 
     override suspend fun callTranslationApi(
         texts: List<String>,
-        context: TranslationContext
+        context: TranslationContext,
+        instructions: Map<Int, String>
     ): List<String> {
         return try {
             if (context.useRag) {
                 logger.debug("Batch of ${texts.size} texts using RAG batch translation")
-                geminiRAGTranslationAiService.translate(texts, context.srcLang, context.dstLang)
+                geminiRAGTranslationAiService.translate(texts, context.srcLang, context.dstLang, instructions)
             } else {
                 logger.debug("Sending batch: ${texts.size} items")
 
                 val batchStartTime = System.currentTimeMillis()
-                val result = geminiTranslationAiService.translate(texts, context.srcLang, context.dstLang)
+                val result = geminiTranslationAiService.translate(texts, context.srcLang, context.dstLang, instructions)
                 val batchElapsedTime = System.currentTimeMillis() - batchStartTime
 
                 logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${texts.size})")

@@ -55,10 +55,11 @@ class OpenAiTranslationAiService(
     suspend fun translate(
         texts: List<String>,
         srcLang: String,
-        dstLang: String
+        dstLang: String,
+        instructions: Map<Int, String> = emptyMap()
     ): List<String> {
         val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
-        val requestJson = serializeBatchRequest(texts)
+        val requestJson = serializeBatchRequest(texts, instructions)
         val userPrompt = "Translate the following JSON array. Return a JSON array with the SAME indices:\n$requestJson"
 
         val chatRequest = ChatRequest.builder()
@@ -86,9 +87,9 @@ class OpenAiTranslationAiService(
         return toTranslations(batchResponse)
     }
 
-    private fun serializeBatchRequest(texts: List<String>): String {
+    private fun serializeBatchRequest(texts: List<String>, instructions: Map<Int, String> = emptyMap()): String {
         val items = texts.mapIndexed { index, text ->
-            BatchTranslationRequestItem(index, text)
+            BatchTranslationRequestItem(index, text, instructions[index])
         }
         return mapper.writeValueAsString(items)
     }

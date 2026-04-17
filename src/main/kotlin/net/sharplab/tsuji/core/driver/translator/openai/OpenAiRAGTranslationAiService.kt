@@ -76,14 +76,15 @@ class OpenAiRAGTranslationAiService(
     suspend fun translate(
         texts: List<String>,
         srcLang: String,
-        dstLang: String
+        dstLang: String,
+        instructions: Map<Int, String> = emptyMap()
     ): List<String> {
         val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
 
         // Retrieve RAG context for each text individually
         val requestItems = texts.mapIndexed { index, text ->
             val ragContext = retrieveContextForText(text)
-            RAGBatchTranslationRequestItem(index, text, ragContext)
+            RAGBatchTranslationRequestItem(index, text, ragContext, instructions[index])
         }
 
         val requestJson = mapper.writeValueAsString(requestItems)

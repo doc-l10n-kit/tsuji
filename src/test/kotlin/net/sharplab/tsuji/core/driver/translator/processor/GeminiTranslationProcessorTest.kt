@@ -77,7 +77,7 @@ internal class GeminiTranslationProcessorTest {
         val mockRAGService = mock<GeminiRAGTranslationAiService>()
 
         val translations = listOf("rag-translated")
-        runBlocking { whenever(mockRAGService.translate(any(), any(), any())).thenReturn(translations) }
+        runBlocking { whenever(mockRAGService.translate(any(), any(), any(), any())).thenReturn(translations) }
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController(), asciidocMarkupValidator = mock<AsciidocMarkupValidator>())
         val message = createMessage("Test text")
@@ -95,7 +95,8 @@ internal class GeminiTranslationProcessorTest {
                     texts.size == 1 && texts[0] == "Test text"
                 },
                 eq("en"),
-                eq("ja")
+                eq("ja"),
+                any()
             )
         }
         verifyNoInteractions(mockTranslationService)
@@ -169,7 +170,7 @@ internal class GeminiTranslationProcessorTest {
 
         // Mock batch translation for title and synopsis
         val translations = listOf("Hello!", "World!")
-        runBlocking { whenever(mockTranslationService.translate(any(), eq("en"), eq("ja"))).thenReturn(translations) }
+        runBlocking { whenever(mockTranslationService.translate(any(), eq("en"), eq("ja"), any())).thenReturn(translations) }
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController(), asciidocMarkupValidator = mock<AsciidocMarkupValidator>())
 
@@ -208,7 +209,8 @@ author: me"""
                     texts.size == 2 && texts[0] == "Hello" && texts[1] == "World"
                 },
                 eq("en"),
-                eq("ja")
+                eq("ja"),
+                any()
             )
         }
         verifyNoMoreInteractions(mockTranslationService)
@@ -223,7 +225,7 @@ author: me"""
         val mockRAGService = mock<GeminiRAGTranslationAiService>()
 
         val translations = listOf("translated 1", "translated 2", "translated 3")
-        runBlocking { whenever(mockTranslationService.translate(any(), any(), any())).thenReturn(translations) }
+        runBlocking { whenever(mockTranslationService.translate(any(), any(), any(), any())).thenReturn(translations) }
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController(), asciidocMarkupValidator = mock<AsciidocMarkupValidator>())
         val messages = listOf(
@@ -239,7 +241,7 @@ author: me"""
         // Then
         assertThat(result).hasSize(3)
         // translate method should be called once
-        runBlocking { verify(mockTranslationService, times(1)).translate(any(), eq("en"), eq("ja")) }
+        runBlocking { verify(mockTranslationService, times(1)).translate(any(), eq("en"), eq("ja"), any()) }
 
         assertThat(result[0].text).isEqualTo("translated 1")
         assertThat(result[1].text).isEqualTo("translated 2")
@@ -256,7 +258,7 @@ author: me"""
         val mockRAGService = mock<GeminiRAGTranslationAiService>()
 
         val translations = listOf("translated with {variable}")
-        runBlocking { whenever(mockTranslationService.translate(any(), any(), any())).thenReturn(translations) }
+        runBlocking { whenever(mockTranslationService.translate(any(), any(), any(), any())).thenReturn(translations) }
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController(), asciidocMarkupValidator = mock<AsciidocMarkupValidator>())
         val message = createMessage("Test {variable} here")
@@ -273,7 +275,8 @@ author: me"""
                     texts.size == 1 && texts[0] == "Test {variable} here"
                 },
                 eq("en"),
-                eq("ja")
+                eq("ja"),
+                any()
             )
         }
         assertThat(result[0].text).isEqualTo("translated with {variable}")
@@ -286,7 +289,7 @@ author: me"""
         val mockRAGService = mock<GeminiRAGTranslationAiService>()
 
         val translations = listOf("RAG translated 1", "RAG translated 2", "RAG translated 3")
-        runBlocking { whenever(mockRAGService.translate(any(), any(), any())).thenReturn(translations) }
+        runBlocking { whenever(mockRAGService.translate(any(), any(), any(), any())).thenReturn(translations) }
 
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController(), asciidocMarkupValidator = mock<AsciidocMarkupValidator>())
         val messages = listOf(
@@ -302,7 +305,7 @@ author: me"""
         // Then
         assertThat(result).hasSize(3)
         // RAG translate method should be called once
-        runBlocking { verify(mockRAGService, times(1)).translate(any(), eq("en"), eq("ja")) }
+        runBlocking { verify(mockRAGService, times(1)).translate(any(), eq("en"), eq("ja"), any()) }
 
         assertThat(result[0].text).isEqualTo("RAG translated 1")
         assertThat(result[1].text).isEqualTo("RAG translated 2")
