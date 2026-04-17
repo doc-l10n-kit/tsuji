@@ -21,10 +21,22 @@ class MachineTranslateCommand(private val translationAppService: TranslationAppS
     @CommandLine.Option(order = 3, names = ["--target"], description = ["target language"])
     private var target: String? = null
 
-    @CommandLine.Option(order = 4, names = ["--isAsciidoc"], description = ["enable or disable asciidoc inline markup processing"])
+    @CommandLine.Option(
+        order = 4,
+        names = ["--isAsciidoc"],
+        negatable = true,
+        fallbackValue = "true",
+        description = ["enable or disable asciidoc inline markup processing (default: true, use --no-isAsciidoc to disable)"]
+    )
     private var asciidoc = true
 
-    @CommandLine.Option(order = 5, names = ["--rag"], description = ["enable or disable RAG (Retrieval-Augmented Generation)"], defaultValue = "true")
+    @CommandLine.Option(
+        order = 5,
+        names = ["--rag"],
+        negatable = true,
+        fallbackValue = "true",
+        description = ["enable or disable RAG (Retrieval-Augmented Generation) (default: true, use --no-rag to disable)"]
+    )
     private var rag = true
 
     @CommandLine.Option(order = 9, names = ["--help", "-h"], description = ["print help"], usageHelp = true)
