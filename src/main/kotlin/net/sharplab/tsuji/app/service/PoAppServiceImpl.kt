@@ -208,6 +208,12 @@ class PoAppServiceImpl(
             if (masterFile.exists()) {
                 val format = po4aDriver.determineFormat(masterFile)
 
+                // Skip AsciiDoc here because it will be handled by Jekyll plugin
+                if (format == "asciidoc") {
+                    logger.debug("Skipping AsciiDoc file $masterFile: will be handled by Jekyll plugin")
+                    return@forEach
+                }
+
                 if (format != null) {
                     logger.info("Applying translation to $masterFile using $poFile (format: $format)")
                     po4aDriver.translate(masterFile, poFile, masterFile, format, workDir)
