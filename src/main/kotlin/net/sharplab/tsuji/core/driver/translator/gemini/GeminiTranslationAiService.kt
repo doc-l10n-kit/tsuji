@@ -55,8 +55,19 @@ class GeminiTranslationAiService(
         srcLang: String,
         dstLang: String
     ): List<String> {
+        val items = texts.mapIndexed { index, text ->
+            BatchTranslationRequestItem(index, text)
+        }
+        return translateWithNotes(items, srcLang, dstLang)
+    }
+
+    internal suspend fun translateWithNotes(
+        items: List<BatchTranslationRequestItem>,
+        srcLang: String,
+        dstLang: String
+    ): List<String> {
         val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
-        val requestJson = serializeBatchRequest(texts)
+        val requestJson = mapper.writeValueAsString(items)
         val userPrompt = "Translate the following JSON array. Return a JSON array with the SAME indices:\n$requestJson"
 
         val chatRequest = ChatRequest.builder()
@@ -67,7 +78,7 @@ class GeminiTranslationAiService(
             .responseFormat(createBatchResponseSchema())
             .build()
 
-        logger.debug("Sending batch translation request with array-based schema (batch size: ${texts.size})")
+        logger.debug("Sending batch translation request with array-based schema (batch size: ${items.size})")
 
         val apiStartTime = System.currentTimeMillis()
         val response = withContext(Dispatchers.IO) {
@@ -75,20 +86,13 @@ class GeminiTranslationAiService(
         }
         val apiElapsedTime = System.currentTimeMillis() - apiStartTime
 
-        logger.debug("API call completed in ${apiElapsedTime}ms (batch size: ${texts.size})")
+        logger.debug("API call completed in ${apiElapsedTime}ms (batch size: ${items.size})")
 
         val batchResponse = parseBatchResponse(response.aiMessage().text())
 
-        validateIndices(texts.indices.toSet(), batchResponse)
+        validateIndices(items.map { it.index }.toSet(), batchResponse)
 
         return toTranslations(batchResponse)
-    }
-
-    private fun serializeBatchRequest(texts: List<String>): String {
-        val items = texts.mapIndexed { index, text ->
-            BatchTranslationRequestItem(index, text)
-        }
-        return mapper.writeValueAsString(items)
     }
 
     private fun parseBatchResponse(responseJson: String): List<BatchTranslationResponseItem> {
