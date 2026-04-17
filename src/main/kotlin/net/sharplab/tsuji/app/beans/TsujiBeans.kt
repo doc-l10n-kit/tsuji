@@ -59,23 +59,57 @@ import org.asciidoctor.log.Severity
 import org.slf4j.LoggerFactory
 
 @Dependent
-class TsujiBeans() {
+class TsujiBeans(
+    private val config: org.eclipse.microprofile.config.Config
+) {
 
     private val logger = LoggerFactory.getLogger(TsujiBeans::class.java)
 
-    private fun createGeminiChatModel(
-        tsujiConfig: TsujiConfig,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.api-key") apiKey: Optional<String>,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.model-id") modelId: String,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.max-output-tokens") maxOutputTokens: Int,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.timeout") timeout: Duration,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-requests") logRequests: Boolean,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-responses") logResponses: Boolean,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.thinking.thinking-budget") thinkingBudget: java.util.OptionalInt
-    ): ChatModel {
-        val resolvedApiKey = apiKey.orElseThrow {
-            IllegalStateException("Gemini API key is not configured. Set tsuji.translator.gemini.key or quarkus.langchain4j.ai.gemini.api-key.")
-        }
+    companion object {
+        // OpenAI property names
+        private const val QUARKUS_LANGCHAIN4J_OPENAI_API_KEY = "quarkus.langchain4j.openai.api-key"
+        private const val QUARKUS_LANGCHAIN4J_OPENAI_MODEL_NAME = "quarkus.langchain4j.openai.chat-model.model-name"
+        private const val QUARKUS_LANGCHAIN4J_OPENAI_BASE_URL = "quarkus.langchain4j.openai.base-url"
+        private const val QUARKUS_LANGCHAIN4J_OPENAI_TIMEOUT = "quarkus.langchain4j.openai.timeout"
+        private const val QUARKUS_LANGCHAIN4J_OPENAI_MAX_COMPLETION_TOKENS = "quarkus.langchain4j.openai.chat-model.max-completion-tokens"
+        private const val QUARKUS_LANGCHAIN4J_OPENAI_LOG_REQUESTS = "quarkus.langchain4j.openai.log-requests"
+        private const val QUARKUS_LANGCHAIN4J_OPENAI_LOG_RESPONSES = "quarkus.langchain4j.openai.log-responses"
+
+        // Gemini property names
+        private const val QUARKUS_LANGCHAIN4J_GEMINI_API_KEY = "quarkus.langchain4j.ai.gemini.api-key"
+        private const val QUARKUS_LANGCHAIN4J_GEMINI_MODEL_ID = "quarkus.langchain4j.ai.gemini.chat-model.model-id"
+        private const val QUARKUS_LANGCHAIN4J_GEMINI_MAX_OUTPUT_TOKENS = "quarkus.langchain4j.ai.gemini.chat-model.max-output-tokens"
+        private const val QUARKUS_LANGCHAIN4J_GEMINI_TIMEOUT = "quarkus.langchain4j.ai.gemini.timeout"
+        private const val QUARKUS_LANGCHAIN4J_GEMINI_LOG_REQUESTS = "quarkus.langchain4j.ai.gemini.log-requests"
+        private const val QUARKUS_LANGCHAIN4J_GEMINI_LOG_RESPONSES = "quarkus.langchain4j.ai.gemini.log-responses"
+        private const val QUARKUS_LANGCHAIN4J_GEMINI_THINKING_BUDGET = "quarkus.langchain4j.ai.gemini.chat-model.thinking.thinking-budget"
+    }
+
+    private fun createGeminiChatModel(tsujiConfig: TsujiConfig): ChatModel {
+        // API key: quarkus.langchain4j.* > tsuji.translator.*
+        val resolvedApiKey = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_API_KEY, String::class.java)
+            .or { tsujiConfig.translator.gemini.key }
+            .orElseThrow {
+                IllegalStateException(
+                    "Gemini API key is not configured. " +
+                    "Set property '$QUARKUS_LANGCHAIN4J_GEMINI_API_KEY' or 'tsuji.translator.gemini.key'"
+                )
+            }
+
+        // Model ID: quarkus.langchain4j.* > tsuji.translator.* (default: "gemini-2.5-flash")
+        val modelId = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_MODEL_ID, String::class.java)
+            .orElse(tsujiConfig.translator.gemini.model)
+
+        // Other properties with defaults
+        val maxOutputTokens = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_MAX_OUTPUT_TOKENS, Int::class.java)
+            .orElse(65536)
+        val timeout = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_TIMEOUT, Duration::class.java)
+            .orElse(Duration.ofSeconds(300))
+        val logRequests = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_LOG_REQUESTS, Boolean::class.java)
+            .orElse(false)
+        val logResponses = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_LOG_RESPONSES, Boolean::class.java)
+            .orElse(false)
+        val thinkingBudget = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_THINKING_BUDGET, Int::class.java)
 
         val builder = GoogleAiGeminiChatModel.builder()
             .apiKey(resolvedApiKey)
@@ -98,24 +132,36 @@ class TsujiBeans() {
         return builder.build()
     }
 
-    private fun createOpenAiChatModel(
-        tsujiConfig: TsujiConfig,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.api-key") apiKey: Optional<String>,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.chat-model.model-name") modelName: String,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.chat-model.max-tokens") maxTokens: Int,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.timeout") timeout: Duration,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.base-url") baseUrl: Optional<String>,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.log-requests") logRequests: Boolean,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.log-responses") logResponses: Boolean
-    ): ChatModel {
-        val resolvedApiKey = apiKey.orElseThrow {
-            IllegalStateException("OpenAI API key is not configured. Set tsuji.translator.openai.key or quarkus.langchain4j.openai.api-key.")
-        }
+    private fun createOpenAiChatModel(tsujiConfig: TsujiConfig): ChatModel {
+        // API key: quarkus.langchain4j.* > tsuji.translator.*
+        val resolvedApiKey = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_API_KEY, String::class.java)
+            .or { tsujiConfig.translator.openai.key }
+            .orElseThrow {
+                IllegalStateException(
+                    "OpenAI API key is not configured. " +
+                    "Set property '$QUARKUS_LANGCHAIN4J_OPENAI_API_KEY' or 'tsuji.translator.openai.key'"
+                )
+            }
+
+        // Model name: quarkus.langchain4j.* > tsuji.translator.* (default: "gpt-4o-mini")
+        val modelName = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_MODEL_NAME, String::class.java)
+            .orElse(tsujiConfig.translator.openai.model)
+
+        // Other properties with defaults
+        val maxCompletionTokens = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_MAX_COMPLETION_TOKENS, Int::class.java)
+            .orElse(65536)
+        val timeout = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_TIMEOUT, Duration::class.java)
+            .orElse(Duration.ofSeconds(300))
+        val baseUrl = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_BASE_URL, String::class.java)
+        val logRequests = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_LOG_REQUESTS, Boolean::class.java)
+            .orElse(false)
+        val logResponses = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_LOG_RESPONSES, Boolean::class.java)
+            .orElse(false)
 
         val builder = OpenAiChatModel.builder()
             .apiKey(resolvedApiKey)
             .modelName(modelName)
-            .maxTokens(maxTokens)
+            .maxCompletionTokens(maxCompletionTokens)
             .timeout(timeout)
             .logRequests(logRequests)
             .logResponses(logResponses)
@@ -258,21 +304,7 @@ class TsujiBeans() {
         asciidoctorPreProcessor: AsciidoctorPreProcessor,
         vectorStoreDriver: VectorStoreDriver,
         adaptiveParallelismController: AdaptiveParallelismController,
-        asciidocMarkupValidator: AsciidocMarkupValidator,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.api-key") geminiApiKey: Optional<String>,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.model-id") geminiModelId: String,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.max-output-tokens") geminiMaxOutputTokens: Int,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.timeout") geminiTimeout: Duration,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-requests") geminiLogRequests: Boolean,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.log-responses") geminiLogResponses: Boolean,
-        @ConfigProperty(name = "quarkus.langchain4j.ai.gemini.chat-model.thinking.thinking-budget") geminiThinkingBudget: java.util.OptionalInt,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.api-key") openAiApiKey: Optional<String>,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.chat-model.model-name") openAiModelName: String,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.chat-model.max-tokens") openAiMaxTokens: Int,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.timeout") openAiTimeout: Duration,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.base-url") openAiBaseUrl: Optional<String>,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.log-requests") openAiLogRequests: Boolean,
-        @ConfigProperty(name = "quarkus.langchain4j.openai.log-responses") openAiLogResponses: Boolean
+        asciidocMarkupValidator: AsciidocMarkupValidator
     ): Translator {
         return when (tsujiConfig.translator.type.lowercase()) {
             "deepl" -> {
@@ -289,16 +321,7 @@ class TsujiBeans() {
             }
             "gemini" -> {
                 logger.info("Using Gemini Translator")
-                val chatModel = createGeminiChatModel(
-                    tsujiConfig,
-                    geminiApiKey,
-                    geminiModelId,
-                    geminiMaxOutputTokens,
-                    geminiTimeout,
-                    geminiLogRequests,
-                    geminiLogResponses,
-                    geminiThinkingBudget
-                )
+                val chatModel = createGeminiChatModel(tsujiConfig)
                 val geminiTranslationAiService = GeminiTranslationAiService(chatModel, tsujiConfig)
                 val geminiRAGTranslationAiService = GeminiRAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig)
 
@@ -314,16 +337,7 @@ class TsujiBeans() {
             }
             "openai" -> {
                 logger.info("Using OpenAI Translator")
-                val chatModel = createOpenAiChatModel(
-                    tsujiConfig,
-                    openAiApiKey,
-                    openAiModelName,
-                    openAiMaxTokens,
-                    openAiTimeout,
-                    openAiBaseUrl,
-                    openAiLogRequests,
-                    openAiLogResponses
-                )
+                val chatModel = createOpenAiChatModel(tsujiConfig)
                 val openAiTranslationAiService = OpenAiTranslationAiService(chatModel, tsujiConfig)
                 val openAiRAGTranslationAiService = OpenAiRAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig)
 
