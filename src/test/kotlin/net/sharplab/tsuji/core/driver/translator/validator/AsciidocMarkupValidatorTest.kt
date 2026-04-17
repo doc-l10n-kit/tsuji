@@ -127,4 +127,52 @@ class AsciidocMarkupValidatorTest {
                 assertThat(ex.brokenMessages[0].original.messageId).contains("broken.com")
             })
     }
+
+    // --- Backtick spacing tests (Issue #1160) ---
+
+    @Test
+    fun `validate should detect missing space after backtick with Japanese text`() {
+        // When backtick is immediately followed by Japanese text without space,
+        // Asciidoc parser treats it as literal backtick, not inline code
+        assertThatThrownBy {
+            validator.validate(listOf(
+                msg(
+                    "`curl` command for `/secured/roles-allowed`",
+                    "`/secured/roles-allowed`に対する`curl`コマンド"
+                )
+            ))
+        }.isInstanceOf(AsciidocMarkupValidationException::class.java)
+            .satisfies({ e ->
+                val ex = e as AsciidocMarkupValidationException
+                assertThat(ex.brokenMessages).hasSize(1)
+            })
+    }
+
+    @Test
+    fun `validate should pass when backtick has proper spacing with Japanese text`() {
+        assertThatCode {
+            validator.validate(listOf(
+                msg(
+                    "`curl` command for `/secured/roles-allowed`",
+                    "`/secured/roles-allowed` に対する `curl` コマンド"
+                )
+            ))
+        }.doesNotThrowAnyException()
+    }
+
+    @Test
+    fun `extractMarkupFeatures should detect code blocks with proper spacing`() {
+        val goodTranslation = "`/secured/roles-allowed` に対する `curl` コマンド"
+        val features = validator.extractMarkupFeatures(goodTranslation)
+        assertThat(features.codeCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `extractMarkupFeatures should not recognize backticks without spacing as code`() {
+        val badTranslation = "`/secured/roles-allowed`に対する`curl`コマンド"
+        val features = validator.extractMarkupFeatures(badTranslation)
+        // If spacing is missing, Asciidoc parser treats backticks as literal characters
+        // So code count should be 0 or less than expected
+        assertThat(features.codeCount).isLessThan(2)
+    }
 }
