@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.app.service
 
 import net.sharplab.tsuji.app.config.TsujiConfig
+import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.driver.gettext.GettextDriver
 import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
 import net.sharplab.tsuji.core.driver.po.PoDriver
@@ -47,61 +48,33 @@ class PoAppServiceImpl(
     }
 
     override fun unfuzzy(poPath: Path) {
-        val paths = if (poPath.isDirectory()) {
-            logger.info("Removing fuzzy flags in directory: $poPath")
-            Files.walk(poPath).use { stream ->
-                stream.filter { it.extension == "po" }.toList()
-            }
-        } else {
-            logger.info("Removing fuzzy flags in file: $poPath")
-            listOf(poPath)
-        }
-
-        paths.forEach { path ->
-            logger.debug("Processing: $path")
-            val po = poDriver.load(path)
-            val unfuzziedPo = poService.createUnfuzziedPo(po)
-            poDriver.save(unfuzziedPo, path)
-            poNormalizerService.normalize(path)
-        }
+        processPoFiles(poPath, "Removing fuzzy flags", poService::createUnfuzziedPo)
     }
 
     override fun purgeFuzzy(poPath: Path) {
-        val paths = if (poPath.isDirectory()) {
-            logger.info("Purging fuzzy messages in directory: $poPath")
-            Files.walk(poPath).use { stream ->
-                stream.filter { it.extension == "po" }.toList()
-            }
-        } else {
-            logger.info("Purging fuzzy messages in file: $poPath")
-            listOf(poPath)
-        }
-
-        paths.forEach { path ->
-            logger.debug("Processing: $path")
-            val po = poDriver.load(path)
-            val purgedPo = poService.createFuzzyPurgedPo(po)
-            poDriver.save(purgedPo, path)
-            poNormalizerService.normalize(path)
-        }
+        processPoFiles(poPath, "Purging fuzzy messages", poService::createFuzzyPurgedPo)
     }
 
     override fun purgeAll(poPath: Path) {
+        processPoFiles(poPath, "Purging all translations", poService::createAllPurgedPo)
+    }
+
+    private fun processPoFiles(poPath: Path, description: String, operation: (Po) -> Po) {
         val paths = if (poPath.isDirectory()) {
-            logger.info("Purging all translations in directory: $poPath")
+            logger.info("$description in directory: $poPath")
             Files.walk(poPath).use { stream ->
                 stream.filter { it.extension == "po" }.toList()
             }
         } else {
-            logger.info("Purging all translations in file: $poPath")
+            logger.info("$description in file: $poPath")
             listOf(poPath)
         }
 
         paths.forEach { path ->
             logger.debug("Processing: $path")
             val po = poDriver.load(path)
-            val purgedPo = poService.createAllPurgedPo(po)
-            poDriver.save(purgedPo, path)
+            val modifiedPo = operation(po)
+            poDriver.save(modifiedPo, path)
             poNormalizerService.normalize(path)
         }
     }
