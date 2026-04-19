@@ -15,8 +15,6 @@ import net.sharplab.tsuji.app.config.TsujiConfig
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import java.time.Duration
 import java.util.Optional
-import net.sharplab.tsuji.core.driver.adoc.AsciidocDriver
-import net.sharplab.tsuji.core.driver.adoc.AsciidocDriverImpl
 import net.sharplab.tsuji.core.driver.common.ExternalProcessDriver
 import net.sharplab.tsuji.core.driver.common.ExternalProcessDriverImpl
 import net.sharplab.tsuji.core.driver.gettext.GettextDriver
@@ -216,11 +214,6 @@ class TsujiBeans(
 
     fun shutdownAsciidoctor(@Disposes asciidoctor: Asciidoctor) {
         asciidoctor.shutdown()
-    }
-
-    @Produces
-    fun asciidocDriver(asciidoctor: Asciidoctor): AsciidocDriver {
-        return AsciidocDriverImpl(asciidoctor)
     }
 
     @Produces
