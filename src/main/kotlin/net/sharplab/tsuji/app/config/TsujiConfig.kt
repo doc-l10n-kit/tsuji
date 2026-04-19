@@ -117,6 +117,27 @@ interface TsujiConfig {
         @get:WithName("target-directories")
         val targetDirectories: Optional<List<String>>
 
+        @get:WithName("adaptive")
+        val adaptive: Adaptive
+
+        interface Adaptive {
+            @get:WithName("initial-concurrency")
+            @get:WithDefault("40")
+            val initialConcurrency: Int
+
+            @get:WithName("min-concurrency")
+            @get:WithDefault("1")
+            val minConcurrency: Int
+
+            @get:WithName("max-concurrency")
+            @get:WithDefault("60")
+            val maxConcurrency: Int
+
+            @get:WithName("max-retries")
+            @get:WithDefault("3")
+            val maxRetries: Int
+        }
+
         @get:WithName("deepl")
         val deepl: DeepL
 
@@ -139,9 +160,6 @@ interface TsujiConfig {
             @get:WithName("batch")
             val batch: Batch
 
-            @get:WithName("adaptive")
-            val adaptive: Adaptive
-
             @get:WithName("prompts")
             val prompts: Prompts
 
@@ -161,24 +179,6 @@ interface TsujiConfig {
                 @get:WithName("max-texts-per-request")
                 @get:WithDefault("200")
                 val maxTextsPerRequest: Int
-            }
-
-            interface Adaptive {
-                @get:WithName("initial-concurrency")
-                @get:WithDefault("40")
-                val initialConcurrency: Int
-
-                @get:WithName("min-concurrency")
-                @get:WithDefault("1")
-                val minConcurrency: Int
-
-                @get:WithName("max-concurrency")
-                @get:WithDefault("60")
-                val maxConcurrency: Int
-
-                @get:WithName("max-retries")
-                @get:WithDefault("3")
-                val maxRetries: Int
             }
 
         }
@@ -200,9 +200,6 @@ interface TsujiConfig {
             @get:WithName("batch")
             val batch: Batch
 
-            @get:WithName("adaptive")
-            val adaptive: Adaptive
-
             @get:WithName("prompts")
             val prompts: Prompts
 
@@ -222,24 +219,6 @@ interface TsujiConfig {
                 @get:WithName("max-texts-per-request")
                 @get:WithDefault("200")
                 val maxTextsPerRequest: Int
-            }
-
-            interface Adaptive {
-                @get:WithName("initial-concurrency")
-                @get:WithDefault("40")
-                val initialConcurrency: Int
-
-                @get:WithName("min-concurrency")
-                @get:WithDefault("1")
-                val minConcurrency: Int
-
-                @get:WithName("max-concurrency")
-                @get:WithDefault("60")
-                val maxConcurrency: Int
-
-                @get:WithName("max-retries")
-                @get:WithDefault("3")
-                val maxRetries: Int
             }
 
         }

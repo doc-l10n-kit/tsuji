@@ -228,9 +228,20 @@ tsuji uses [Quarkus SmallRye Config](https://quarkus.io/guides/config-reference)
 
 | Property | Default | Description |
 |---|---|---|
-| `tsuji.translator.type` | `deepl` | Translation engine to use: `gemini` or `deepl` |
+| `tsuji.translator.type` | `deepl` | Translation engine to use: `gemini`, `openai`, or `deepl` |
 | `tsuji.translator.target-directories` | *(none)* | List of subdirectories under `tsuji.po.base-dir` to translate. If omitted, the entire base directory is processed |
 | `tsuji.translator.deepl.key` | *(none)* | DeepL API key. Can also be set via `TSUJI_TRANSLATOR_DEEPL_KEY` |
+
+#### Adaptive Concurrency
+
+Controls the adaptive parallelism for API requests (AIMD algorithm). Shared across all translator types.
+
+| Property | Default | Description |
+|---|---|---|
+| `tsuji.translator.adaptive.initial-concurrency` | `40` | Initial number of parallel API requests |
+| `tsuji.translator.adaptive.min-concurrency` | `1` | Minimum concurrency (floor for AIMD decrease) |
+| `tsuji.translator.adaptive.max-concurrency` | `60` | Maximum concurrency (ceiling for AIMD increase) |
+| `tsuji.translator.adaptive.max-retries` | `3` | Maximum retry attempts per batch on error |
 
 #### Gemini Settings
 
@@ -238,7 +249,6 @@ tsuji uses [Quarkus SmallRye Config](https://quarkus.io/guides/config-reference)
 |---|---|---|
 | `tsuji.translator.gemini.key` | *(none)* | Gemini API key. Can also be set via `QUARKUS_LANGCHAIN4J_GEMINI_API_KEY` |
 | `tsuji.translator.gemini.model` | `gemini-2.5-flash` | Gemini model ID |
-| `tsuji.translator.gemini.thinking-level` | *(none)* | Gemini thinking level: `MINIMAL`, `LOW`, `MEDIUM`, or `HIGH`. If omitted, uses the model's default behavior |
 
 #### Gemini Batch Settings
 
@@ -248,19 +258,6 @@ Controls how many texts are sent per LLM request.
 |---|---|---|
 | `tsuji.translator.gemini.batch.initial-texts-per-request` | `200` | Initial number of texts per batch request |
 | `tsuji.translator.gemini.batch.max-texts-per-request` | `200` | Maximum number of texts per batch request |
-| `tsuji.translator.gemini.batch.max-text-size-bytes` | `700000` | Maximum total text size in bytes per batch request |
-
-#### Gemini Adaptive Concurrency
-
-Controls the adaptive parallelism for API requests (AIMD algorithm).
-
-| Property | Default | Description |
-|---|---|---|
-| `tsuji.translator.gemini.adaptive.enabled` | `true` | Enable adaptive concurrency control |
-| `tsuji.translator.gemini.adaptive.initial-concurrency` | `40` | Initial number of parallel API requests |
-| `tsuji.translator.gemini.adaptive.min-concurrency` | `1` | Minimum concurrency (floor for AIMD decrease) |
-| `tsuji.translator.gemini.adaptive.max-concurrency` | `60` | Maximum concurrency (ceiling for AIMD increase) |
-| `tsuji.translator.gemini.adaptive.max-retries` | `3` | Maximum retry attempts per batch on error |
 
 #### Gemini System Prompts
 
@@ -350,15 +347,14 @@ tsuji:
 
   translator:
     type: "gemini"
+    adaptive:
+      initial-concurrency: 40
+      max-concurrency: 60
+      max-retries: 3
     gemini:
-      thinking-level: LOW
       batch:
         initial-texts-per-request: 200
         max-texts-per-request: 200
-      adaptive:
-        initial-concurrency: 40
-        max-concurrency: 60
-        max-retries: 3
 
   rag:
     index-path: "l10n/rag/index"
