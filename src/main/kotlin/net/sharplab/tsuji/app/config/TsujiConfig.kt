@@ -161,10 +161,6 @@ interface TsujiConfig {
                 @get:WithName("max-texts-per-request")
                 @get:WithDefault("200")
                 val maxTextsPerRequest: Int
-
-                @get:WithName("max-text-size-bytes")
-                @get:WithDefault("700000")
-                val maxTextSizeBytes: Int
             }
 
             interface Adaptive {
@@ -230,10 +226,6 @@ interface TsujiConfig {
                 @get:WithName("max-texts-per-request")
                 @get:WithDefault("200")
                 val maxTextsPerRequest: Int
-
-                @get:WithName("max-text-size-bytes")
-                @get:WithDefault("700000")
-                val maxTextSizeBytes: Int
             }
 
             interface Adaptive {
