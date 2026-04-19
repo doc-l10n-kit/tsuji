@@ -30,11 +30,9 @@ import net.sharplab.tsuji.core.driver.tmx.TmxDriverImpl
 import net.sharplab.tsuji.core.driver.translator.Translator
 import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslator
 import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslator
-import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationAiService
-import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationAiService
 import net.sharplab.tsuji.core.driver.translator.openai.OpenAiTranslator
-import net.sharplab.tsuji.core.driver.translator.openai.OpenAiTranslationAiService
-import net.sharplab.tsuji.core.driver.translator.openai.OpenAiRAGTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.service.RAGTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.service.TranslationAiService
 import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.driver.vectorstore.LuceneVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
@@ -315,12 +313,12 @@ class TsujiBeans(
             "gemini" -> {
                 logger.info("Using Gemini Translator")
                 val chatModel = createGeminiChatModel(tsujiConfig)
-                val geminiTranslationAiService = GeminiTranslationAiService(chatModel, tsujiConfig)
-                val geminiRAGTranslationAiService = GeminiRAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig)
+                val translationAiService = TranslationAiService(chatModel, tsujiConfig, tsujiConfig.translator.gemini.prompts.batchSystemPrompt)
+                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, tsujiConfig.translator.gemini.prompts.ragBatchSystemPrompt)
 
                 GeminiTranslator(
-                    geminiTranslationAiService,
-                    geminiRAGTranslationAiService,
+                    translationAiService,
+                    ragTranslationAiService,
                     tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
                     tsujiConfig.translator.adaptive.maxRetries,
@@ -331,13 +329,13 @@ class TsujiBeans(
             "openai" -> {
                 logger.info("Using OpenAI Translator")
                 val chatModel = createOpenAiChatModel(tsujiConfig)
-                val openAiTranslationAiService = OpenAiTranslationAiService(chatModel, tsujiConfig)
-                val openAiRAGTranslationAiService = OpenAiRAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig)
+                val translationAiService = TranslationAiService(chatModel, tsujiConfig, tsujiConfig.translator.openai.prompts.batchSystemPrompt)
+                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, tsujiConfig.translator.openai.prompts.ragBatchSystemPrompt)
 
                 val mtTag = tsujiConfig.translator.openai.mtTag.orElse(null)
                 OpenAiTranslator(
-                    openAiTranslationAiService,
-                    openAiRAGTranslationAiService,
+                    translationAiService,
+                    ragTranslationAiService,
                     mtTag,
                     tsujiConfig.translator.openai.batch.initialTextsPerRequest,
                     tsujiConfig.translator.openai.batch.maxTextsPerRequest,

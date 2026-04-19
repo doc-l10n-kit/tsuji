@@ -1,4 +1,4 @@
-package net.sharplab.tsuji.core.driver.translator.openai
+package net.sharplab.tsuji.core.driver.translator.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import dev.langchain4j.data.message.SystemMessage
@@ -10,33 +10,34 @@ import dev.langchain4j.model.chat.request.ResponseFormatType
 import dev.langchain4j.model.chat.request.json.JsonArraySchema
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema
 import dev.langchain4j.model.chat.request.json.JsonSchema
-import dev.langchain4j.rag.query.Query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.app.config.toPromptText
 import net.sharplab.tsuji.core.driver.translator.exception.IndexMismatchException
-import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequestItem
-import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationResponseItem
-import net.sharplab.tsuji.core.driver.translator.gemini.RAGBatchTranslationRequestItem
-import net.sharplab.tsuji.core.driver.translator.gemini.TranslationMemoryEntry
-import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
+import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationRequestItem
+import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationResponseItem
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
+import java.util.Optional
 
-class OpenAiRAGTranslationAiService(
+/**
+ * LLM-based batch translation service.
+ * Handles batch translation with JSON schema validation, prompt templating, and index verification.
+ */
+class TranslationAiService(
     private val chatModel: ChatModel,
-    private val vectorStoreDriver: VectorStoreDriver,
-    private val config: TsujiConfig
+    private val config: TsujiConfig,
+    customPromptPath: Optional<String>
 ) {
 
-    private val logger = LoggerFactory.getLogger(OpenAiRAGTranslationAiService::class.java)
+    private val logger = LoggerFactory.getLogger(TranslationAiService::class.java)
     private val mapper = jacksonObjectMapper()
 
     private val translationSystemPrompt: String by lazy {
-        config.translator.openai.prompts.ragBatchSystemPrompt
+        customPromptPath
             .map { path -> java.io.File(path).readText() }
-            .orElseGet { loadClasspathPrompt("prompts/translation-rag-system-prompt.txt") }
+            .orElseGet { loadClasspathPrompt("prompts/translation-system-prompt.txt") }
     }
 
     private fun loadClasspathPrompt(resourcePath: String): String {
@@ -54,25 +55,9 @@ class OpenAiRAGTranslationAiService(
             .replace("{glossary}", glossaryText)
     }
 
-    // Retrieve RAG context for a single text as structured translation memory entries
-    private fun retrieveContextForText(text: String): List<TranslationMemoryEntry> {
-        val retriever = vectorStoreDriver.asContentRetriever(
-            maxResults = config.rag.maxResults,
-            minScore = config.rag.minScore
-        )
-        val query = Query.from(text)
-        val contents = retriever.retrieve(query)
-
-        return contents.mapNotNull { content ->
-            val originalText = content.textSegment().text()
-            val translationText = content.textSegment().metadata()?.getString("target")
-
-            if (translationText != null) {
-                TranslationMemoryEntry(original = originalText, translation = translationText)
-            } else {
-                null
-            }
-        }
+    companion object {
+        private val BATCH_RESPONSE_TYPE_REF =
+            object : com.fasterxml.jackson.core.type.TypeReference<List<BatchTranslationResponseItem>>() {}
     }
 
     suspend fun translate(
@@ -92,15 +77,8 @@ class OpenAiRAGTranslationAiService(
         dstLang: String
     ): List<String> {
         val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
-
-        // Retrieve RAG context for each text individually
-        val indexedItems = items.map { item ->
-            val ragContext = retrieveContextForText(item.text)
-            RAGBatchTranslationRequestItem(item.index, item.text, ragContext, item.note)
-        }
-
-        val requestJson = mapper.writeValueAsString(indexedItems)
-        val userPrompt = "Translate the following JSON array. Each item has a 'tm' field with relevant translation memory. Return a JSON array with the SAME indices:\n$requestJson"
+        val requestJson = mapper.writeValueAsString(items)
+        val userPrompt = "Translate the following JSON array. Return a JSON array with the SAME indices:\n$requestJson"
 
         val chatRequest = ChatRequest.builder()
             .messages(
@@ -110,7 +88,7 @@ class OpenAiRAGTranslationAiService(
             .responseFormat(createBatchResponseSchema())
             .build()
 
-        logger.debug("Sending RAG batch translation request (batch size: ${items.size})")
+        logger.debug("Sending batch translation request with array-based schema (batch size: ${items.size})")
 
         val apiStartTime = System.currentTimeMillis()
         val response = withContext(Dispatchers.IO) {
@@ -118,37 +96,34 @@ class OpenAiRAGTranslationAiService(
         }
         val apiElapsedTime = System.currentTimeMillis() - apiStartTime
 
-        logger.debug("RAG batch API call completed in ${apiElapsedTime}ms (batch size: ${items.size})")
+        logger.debug("API call completed in ${apiElapsedTime}ms (batch size: ${items.size})")
 
         val batchResponse = parseBatchResponse(response.aiMessage().text())
-        validateIndices(items.map { it.index }.toSet(), batchResponse)
-        return toTranslations(batchResponse)
-    }
 
-    companion object {
-        private val BATCH_RESPONSE_TYPE_REF =
-            object : com.fasterxml.jackson.core.type.TypeReference<List<BatchTranslationResponseItem>>() {}
+        validateIndices(items.map { it.index }.toSet(), batchResponse)
+
+        return toTranslations(batchResponse)
     }
 
     private fun parseBatchResponse(responseJson: String): List<BatchTranslationResponseItem> {
         return try {
-            // OpenAI returns wrapped response: {"translations": [...]}
             val tree = mapper.readTree(responseJson)
             val translationsNode = tree.get("translations") ?: throw IllegalStateException("Missing 'translations' field in response")
             mapper.readValue(translationsNode.toString(), BATCH_RESPONSE_TYPE_REF)
         } catch (e: Exception) {
-            logger.error("Failed to parse RAG batch translation response: $responseJson", e)
+            logger.error("Failed to parse batch translation response: $responseJson", e)
             throw e
         }
     }
 
     private fun validateIndices(expectedIndices: Set<Int>, batchResponse: List<BatchTranslationResponseItem>) {
         val actualIndices = batchResponse.map { it.index }.toSet()
+
         if (expectedIndices != actualIndices) {
             val missing = expectedIndices - actualIndices
             val extra = actualIndices - expectedIndices
-            logger.error("RAG batch index mismatch: expected=$expectedIndices, actual=$actualIndices, missing=$missing, extra=$extra")
-            throw IndexMismatchException("RAG batch translation index mismatch: missing=$missing, extra=$extra", expectedIndices, actualIndices)
+            logger.error("Index mismatch: expected=$expectedIndices, actual=$actualIndices, missing=$missing, extra=$extra")
+            throw IndexMismatchException("Translation index mismatch: missing=$missing, extra=$extra", expectedIndices, actualIndices)
         }
     }
 
@@ -168,7 +143,6 @@ class OpenAiRAGTranslationAiService(
             .description("Array of translation results")
             .build()
 
-        // Wrap the array in an object (OpenAI requirement)
         val rootSchema = JsonObjectSchema.builder()
             .addProperty("translations", arraySchema)
             .required(listOf("translations"))

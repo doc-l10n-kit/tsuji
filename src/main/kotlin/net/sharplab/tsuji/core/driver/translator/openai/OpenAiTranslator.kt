@@ -6,14 +6,16 @@ import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidat
 import net.sharplab.tsuji.core.driver.translator.processor.MessageProcessor
 import net.sharplab.tsuji.core.driver.translator.processor.OpenAiTranslationProcessor
 import net.sharplab.tsuji.core.driver.translator.processor.XrefTitlePostProcessor
+import net.sharplab.tsuji.core.driver.translator.service.RAGTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.service.TranslationAiService
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.po.model.Po
 import org.slf4j.LoggerFactory
 
 class OpenAiTranslator(
-    private val openAiTranslationAiService: OpenAiTranslationAiService,
-    private val openAiRAGTranslationAiService: OpenAiRAGTranslationAiService,
+    private val translationAiService: TranslationAiService,
+    private val ragTranslationAiService: RAGTranslationAiService,
     private val mtTag: String?,
     private val initialTextsPerRequest: Int = 200,
     private val maxTextsPerRequest: Int = 200,
@@ -34,8 +36,8 @@ class OpenAiTranslator(
     // Processor pipeline - OpenAI handles Asciidoc markup similarly to Gemini
     private val processors: List<MessageProcessor> = listOf(
         OpenAiTranslationProcessor(
-            openAiTranslationAiService,
-            openAiRAGTranslationAiService,
+            translationAiService,
+            ragTranslationAiService,
             effectiveMtTag,
             initialTextsPerRequest,
             maxTextsPerRequest,

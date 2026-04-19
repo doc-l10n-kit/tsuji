@@ -7,11 +7,13 @@ import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidat
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.core.driver.translator.processor.*
+import net.sharplab.tsuji.core.driver.translator.service.RAGTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.service.TranslationAiService
 import org.slf4j.LoggerFactory
 
 class GeminiTranslator(
-    private val geminiTranslationAiService: GeminiTranslationAiService,
-    private val geminiRAGTranslationAiService: GeminiRAGTranslationAiService,
+    private val translationAiService: TranslationAiService,
+    private val ragTranslationAiService: RAGTranslationAiService,
     private val initialTextsPerRequest: Int = 200,
     private val maxTextsPerRequest: Int = 200,
     private val maxRetries: Int = 3,
@@ -24,8 +26,8 @@ class GeminiTranslator(
     // Processor pipeline - Gemini handles Asciidoc markup natively
     private val processors = listOf(
         GeminiTranslationProcessor(
-            geminiTranslationAiService,
-            geminiRAGTranslationAiService,
+            translationAiService,
+            ragTranslationAiService,
             initialTextsPerRequest,
             maxTextsPerRequest,
             maxRetries,

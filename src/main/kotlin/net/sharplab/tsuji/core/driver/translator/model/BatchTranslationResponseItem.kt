@@ -1,4 +1,4 @@
-package net.sharplab.tsuji.core.driver.translator.gemini
+package net.sharplab.tsuji.core.driver.translator.model
 
 /**
  * Response item for array-based batch translation.
