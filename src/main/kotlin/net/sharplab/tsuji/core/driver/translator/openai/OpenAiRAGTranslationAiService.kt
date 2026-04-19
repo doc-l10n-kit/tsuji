@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.app.config.toPromptText
+import net.sharplab.tsuji.core.driver.translator.exception.IndexMismatchException
 import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequestItem
 import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationResponseItem
 import net.sharplab.tsuji.core.driver.translator.gemini.RAGBatchTranslationRequestItem
@@ -147,7 +148,7 @@ class OpenAiRAGTranslationAiService(
             val missing = expectedIndices - actualIndices
             val extra = actualIndices - expectedIndices
             logger.error("RAG batch index mismatch: expected=$expectedIndices, actual=$actualIndices, missing=$missing, extra=$extra")
-            throw IllegalStateException("RAG batch translation index mismatch: missing=$missing, extra=$extra")
+            throw IndexMismatchException("RAG batch translation index mismatch: missing=$missing, extra=$extra", expectedIndices, actualIndices)
         }
     }
 
