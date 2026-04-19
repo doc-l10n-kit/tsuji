@@ -1,4 +1,4 @@
-package net.sharplab.tsuji.core.driver.translator.gemini
+package net.sharplab.tsuji.core.driver.translator.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import dev.langchain4j.data.message.SystemMessage
@@ -16,21 +16,31 @@ import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.app.config.toPromptText
 import net.sharplab.tsuji.core.driver.translator.exception.IndexMismatchException
+import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationRequestItem
+import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationResponseItem
+import net.sharplab.tsuji.core.driver.translator.model.RAGBatchTranslationRequestItem
+import net.sharplab.tsuji.core.driver.translator.model.TranslationMemoryEntry
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
+import java.util.Optional
 
-class GeminiRAGTranslationAiService(
+/**
+ * LLM-based batch translation service with RAG (Retrieval-Augmented Generation).
+ * Retrieves translation memory context for each text before sending to the LLM.
+ */
+class RAGTranslationAiService(
     private val chatModel: ChatModel,
     private val vectorStoreDriver: VectorStoreDriver,
-    private val config: TsujiConfig
+    private val config: TsujiConfig,
+    customPromptPath: Optional<String>
 ) {
 
-    private val logger = LoggerFactory.getLogger(GeminiRAGTranslationAiService::class.java)
+    private val logger = LoggerFactory.getLogger(RAGTranslationAiService::class.java)
     private val mapper = jacksonObjectMapper()
 
     private val translationSystemPrompt: String by lazy {
-        config.translator.gemini.prompts.ragBatchSystemPrompt
+        customPromptPath
             .map { path -> java.io.File(path).readText() }
             .orElseGet { loadClasspathPrompt("prompts/translation-rag-system-prompt.txt") }
     }
@@ -50,7 +60,6 @@ class GeminiRAGTranslationAiService(
             .replace("{glossary}", glossaryText)
     }
 
-    // Retrieve RAG context for a single text as structured translation memory entries
     private fun retrieveContextForText(text: String): List<TranslationMemoryEntry> {
         val retriever = vectorStoreDriver.asContentRetriever(
             maxResults = config.rag.maxResults,
@@ -89,7 +98,6 @@ class GeminiRAGTranslationAiService(
     ): List<String> {
         val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
 
-        // Retrieve RAG context for each text individually
         val indexedItems = items.map { item ->
             val ragContext = retrieveContextForText(item.text)
             RAGBatchTranslationRequestItem(item.index, item.text, ragContext, item.note)
@@ -128,7 +136,6 @@ class GeminiRAGTranslationAiService(
 
     private fun parseBatchResponse(responseJson: String): List<BatchTranslationResponseItem> {
         return try {
-            // Response is wrapped: {"translations": [...]}
             val tree = mapper.readTree(responseJson)
             val translationsNode = tree.get("translations") ?: throw IllegalStateException("Missing 'translations' field in response")
             mapper.readValue(translationsNode.toString(), BATCH_RESPONSE_TYPE_REF)
@@ -164,7 +171,6 @@ class GeminiRAGTranslationAiService(
             .description("Array of translation results")
             .build()
 
-        // Wrap the array in an object for unified structure
         val rootSchema = JsonObjectSchema.builder()
             .addProperty("translations", arraySchema)
             .required(listOf("translations"))

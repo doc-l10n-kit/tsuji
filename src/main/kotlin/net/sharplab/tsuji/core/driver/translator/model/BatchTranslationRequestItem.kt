@@ -1,4 +1,4 @@
-package net.sharplab.tsuji.core.driver.translator.gemini
+package net.sharplab.tsuji.core.driver.translator.model
 
 import com.fasterxml.jackson.annotation.JsonInclude
 

@@ -1,8 +1,8 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
-import net.sharplab.tsuji.core.driver.translator.openai.OpenAiRAGTranslationAiService
-import net.sharplab.tsuji.core.driver.translator.openai.OpenAiTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.service.RAGTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.service.TranslationAiService
 import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 import org.slf4j.Logger
@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory
  * Translates efficiently using batch processing with adaptive batch size and retry logic.
  */
 class OpenAiTranslationProcessor(
-    private val openAiTranslationAiService: OpenAiTranslationAiService,
-    private val openAiRAGTranslationAiService: OpenAiRAGTranslationAiService,
+    private val translationAiService: TranslationAiService,
+    private val ragTranslationAiService: RAGTranslationAiService,
     mtTag: String,
     initialTextsPerRequest: Int = 200,
     maxTextsPerRequest: Int = 200,
@@ -39,12 +39,12 @@ class OpenAiTranslationProcessor(
         return try {
             if (context.useRag) {
                 logger.debug("Batch of ${texts.size} texts using RAG batch translation")
-                openAiRAGTranslationAiService.translate(texts, context.srcLang, context.dstLang)
+                ragTranslationAiService.translate(texts, context.srcLang, context.dstLang)
             } else {
                 logger.debug("Sending batch: ${texts.size} items")
 
                 val batchStartTime = System.currentTimeMillis()
-                val result = openAiTranslationAiService.translate(texts, context.srcLang, context.dstLang)
+                val result = translationAiService.translate(texts, context.srcLang, context.dstLang)
                 val batchElapsedTime = System.currentTimeMillis() - batchStartTime
 
                 logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${texts.size})")
@@ -56,18 +56,18 @@ class OpenAiTranslationProcessor(
     }
 
     override suspend fun callTranslationApiWithNotes(
-        items: List<net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequestItem>,
+        items: List<net.sharplab.tsuji.core.driver.translator.model.BatchTranslationRequestItem>,
         context: TranslationContext
     ): List<String> {
         return try {
             if (context.useRag) {
                 logger.debug("Batch of ${items.size} texts using RAG batch translation with notes")
-                openAiRAGTranslationAiService.translateWithNotes(items, context.srcLang, context.dstLang)
+                ragTranslationAiService.translateWithNotes(items, context.srcLang, context.dstLang)
             } else {
                 logger.debug("Sending batch: ${items.size} items with notes")
 
                 val batchStartTime = System.currentTimeMillis()
-                val result = openAiTranslationAiService.translateWithNotes(items, context.srcLang, context.dstLang)
+                val result = translationAiService.translateWithNotes(items, context.srcLang, context.dstLang)
                 val batchElapsedTime = System.currentTimeMillis() - batchStartTime
 
                 logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${items.size})")

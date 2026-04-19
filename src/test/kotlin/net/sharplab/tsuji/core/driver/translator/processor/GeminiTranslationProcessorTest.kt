@@ -3,8 +3,8 @@ import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
-import net.sharplab.tsuji.core.driver.translator.gemini.GeminiRAGTranslationAiService
-import net.sharplab.tsuji.core.driver.translator.gemini.GeminiTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.service.RAGTranslationAiService
+import net.sharplab.tsuji.core.driver.translator.service.TranslationAiService
 import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.po.model.MessageType
 import net.sharplab.tsuji.po.model.Po
@@ -73,8 +73,8 @@ internal class GeminiTranslationProcessorTest {
     @Test
     fun `process should use RAG translation for single message when useRag is true`() {
         // Given
-        val mockTranslationService = mock<GeminiTranslationAiService>()
-        val mockRAGService = mock<GeminiRAGTranslationAiService>()
+        val mockTranslationService = mock<TranslationAiService>()
+        val mockRAGService = mock<RAGTranslationAiService>()
 
         val translations = listOf("rag-translated")
         runBlocking { whenever(mockRAGService.translate(any(), any(), any())).thenReturn(translations) }
@@ -106,8 +106,8 @@ internal class GeminiTranslationProcessorTest {
     @Test
     fun `process should skip already translated messages`() {
         // Given
-        val mockTranslationService = mock<GeminiTranslationAiService>()
-        val mockRAGService = mock<GeminiRAGTranslationAiService>()
+        val mockTranslationService = mock<TranslationAiService>()
+        val mockRAGService = mock<RAGTranslationAiService>()
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController(), asciidocMarkupValidator = mock<AsciidocMarkupValidator>())
         val message = createMessage("Hello", messageString = "こんにちは")
         val context = createContext()
@@ -124,8 +124,8 @@ internal class GeminiTranslationProcessorTest {
     @Test
     fun `process should skip empty text`() {
         // Given
-        val mockTranslationService = mock<GeminiTranslationAiService>()
-        val mockRAGService = mock<GeminiRAGTranslationAiService>()
+        val mockTranslationService = mock<TranslationAiService>()
+        val mockRAGService = mock<RAGTranslationAiService>()
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController(), asciidocMarkupValidator = mock<AsciidocMarkupValidator>())
         val message = createMessage("")
         val context = createContext()
@@ -142,8 +142,8 @@ internal class GeminiTranslationProcessorTest {
     @Test
     fun `process should fill messageString with messageId for special types`() {
         // Given
-        val mockTranslationService = mock<GeminiTranslationAiService>()
-        val mockRAGService = mock<GeminiRAGTranslationAiService>()
+        val mockTranslationService = mock<TranslationAiService>()
+        val mockRAGService = mock<RAGTranslationAiService>()
         val processor = GeminiTranslationProcessor(mockTranslationService, mockRAGService, parallelismController = createMockParallelismController(), asciidocMarkupValidator = mock<AsciidocMarkupValidator>())
         val message = createMessage(
             "some-id",
@@ -164,8 +164,8 @@ internal class GeminiTranslationProcessorTest {
     @Test
     fun `process should translate Jekyll Front Matter correctly`() {
         // Given
-        val mockTranslationService = mock<GeminiTranslationAiService>()
-        val mockRAGService = mock<GeminiRAGTranslationAiService>()
+        val mockTranslationService = mock<TranslationAiService>()
+        val mockRAGService = mock<RAGTranslationAiService>()
 
         // Mock batch translation for title and synopsis
         val translations = listOf("Hello!", "World!")
@@ -219,8 +219,8 @@ author: me"""
     @Test
     fun `process should use batch translation for multiple normal messages`() {
         // Given
-        val mockTranslationService = mock<GeminiTranslationAiService>()
-        val mockRAGService = mock<GeminiRAGTranslationAiService>()
+        val mockTranslationService = mock<TranslationAiService>()
+        val mockRAGService = mock<RAGTranslationAiService>()
 
         val translations = listOf("translated 1", "translated 2", "translated 3")
         runBlocking { whenever(mockTranslationService.translate(any(), any(), any())).thenReturn(translations) }
@@ -252,8 +252,8 @@ author: me"""
     @Test
     fun `process should preserve curly braces in batch translation`() {
         // Given
-        val mockTranslationService = mock<GeminiTranslationAiService>()
-        val mockRAGService = mock<GeminiRAGTranslationAiService>()
+        val mockTranslationService = mock<TranslationAiService>()
+        val mockRAGService = mock<RAGTranslationAiService>()
 
         val translations = listOf("translated with {variable}")
         runBlocking { whenever(mockTranslationService.translate(any(), any(), any())).thenReturn(translations) }
@@ -282,8 +282,8 @@ author: me"""
     @Test
     fun `process should use RAG batch translation when useRag is true`() {
         // Given
-        val mockTranslationService = mock<GeminiTranslationAiService>()
-        val mockRAGService = mock<GeminiRAGTranslationAiService>()
+        val mockTranslationService = mock<TranslationAiService>()
+        val mockRAGService = mock<RAGTranslationAiService>()
 
         val translations = listOf("RAG translated 1", "RAG translated 2", "RAG translated 3")
         runBlocking { whenever(mockRAGService.translate(any(), any(), any())).thenReturn(translations) }

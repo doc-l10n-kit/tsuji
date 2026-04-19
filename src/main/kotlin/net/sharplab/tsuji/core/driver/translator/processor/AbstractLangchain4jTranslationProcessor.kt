@@ -7,7 +7,7 @@ import net.sharplab.tsuji.core.driver.translator.exception.AsciidocMarkupValidat
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.core.driver.translator.exception.ResponseParseException
 import net.sharplab.tsuji.core.driver.translator.exception.TranslationValidationException
-import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequestItem
+import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationRequestItem
 import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 import net.sharplab.tsuji.core.model.translation.TranslationMessage

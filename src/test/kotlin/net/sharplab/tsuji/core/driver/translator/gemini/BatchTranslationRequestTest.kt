@@ -2,6 +2,8 @@ package net.sharplab.tsuji.core.driver.translator.gemini
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationRequestItem
+import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationResponseItem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
