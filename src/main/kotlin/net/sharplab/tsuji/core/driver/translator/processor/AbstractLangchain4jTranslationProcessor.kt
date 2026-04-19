@@ -1,8 +1,8 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
-import net.sharplab.tsuji.core.driver.translator.adaptive.BatchProvider
 import net.sharplab.tsuji.core.driver.translator.adaptive.BatchedExecutor
+import net.sharplab.tsuji.core.driver.translator.adaptive.CountBasedBatchProvider
 import net.sharplab.tsuji.core.driver.translator.exception.AsciidocMarkupValidationException
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.core.driver.translator.exception.ResponseParseException
@@ -34,15 +34,19 @@ abstract class AbstractLangchain4jTranslationProcessor(
         private const val MAX_MARKUP_RETRIES = 2
     }
 
-    /**
-     * Creates a batch provider for the specific translation service.
-     */
-    protected abstract fun createBatchProvider(
+    private fun createBatchProvider(
         items: List<TranslationMessage>,
         initialLimit: Int,
         minLimit: Int,
         maxLimit: Int
-    ): BatchProvider<TranslationMessage>
+    ): CountBasedBatchProvider<TranslationMessage> {
+        return CountBasedBatchProvider(
+            items = items,
+            initialLimit = initialLimit,
+            minLimit = minLimit,
+            maxLimit = maxLimit
+        )
+    }
 
     /**
      * Calls the translation API (with or without RAG) for normal translation.
