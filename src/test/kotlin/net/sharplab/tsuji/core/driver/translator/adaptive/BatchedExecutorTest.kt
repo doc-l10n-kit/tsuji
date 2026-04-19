@@ -1,7 +1,7 @@
 package net.sharplab.tsuji.core.driver.translator.adaptive
 
 import kotlinx.coroutines.runBlocking
-import net.sharplab.tsuji.core.driver.translator.exception.BatchSizeMismatchException
+import net.sharplab.tsuji.core.driver.translator.exception.ResponseParseException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -97,7 +97,7 @@ class BatchedExecutorTest {
 
             // First attempt: batch size 4 -> validation error
             if (attemptCount == 1) {
-                throw BatchSizeMismatchException(expected = 4, actual = 0, message = "Batch too large")
+                throw ResponseParseException("Batch too large")
             }
 
             // Second attempt should have smaller batch (size 2 after halving)
@@ -153,9 +153,9 @@ class BatchedExecutorTest {
         )
 
         // When/Then
-        val exception = assertThrows<BatchSizeMismatchException> {
+        val exception = assertThrows<ResponseParseException> {
             executor.execute<String> { batch ->
-                throw BatchSizeMismatchException(expected = 3, actual = 0, message = "Always fails")
+                throw ResponseParseException("Always fails")
             }
         }
 

@@ -168,10 +168,6 @@ interface TsujiConfig {
             }
 
             interface Adaptive {
-                @get:WithName("enabled")
-                @get:WithDefault("true")
-                val enabled: Boolean
-
                 @get:WithName("initial-concurrency")
                 @get:WithDefault("40")
                 val initialConcurrency: Int
@@ -237,10 +233,6 @@ interface TsujiConfig {
             }
 
             interface Adaptive {
-                @get:WithName("enabled")
-                @get:WithDefault("true")
-                val enabled: Boolean
-
                 @get:WithName("initial-concurrency")
                 @get:WithDefault("40")
                 val initialConcurrency: Int

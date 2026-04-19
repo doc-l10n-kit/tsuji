@@ -26,9 +26,5 @@ companion object{
     fun String.normalizeLineBreak(): String{
         return this.replace("\r\n", "\n")
     }
-
-    fun String.calculateLines(): Int{
-        return this.split("\n").size
-    }
 }
 }
