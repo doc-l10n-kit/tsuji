@@ -277,9 +277,9 @@ class TsujiBeans(
     @Singleton
     fun adaptiveParallelismController(tsujiConfig: TsujiConfig): AdaptiveParallelismController {
         return AdaptiveParallelismController(
-            initialConcurrency = tsujiConfig.translator.gemini.adaptive.initialConcurrency,
-            minConcurrency = tsujiConfig.translator.gemini.adaptive.minConcurrency,
-            maxConcurrency = tsujiConfig.translator.gemini.adaptive.maxConcurrency,
+            initialConcurrency = tsujiConfig.translator.adaptive.initialConcurrency,
+            minConcurrency = tsujiConfig.translator.adaptive.minConcurrency,
+            maxConcurrency = tsujiConfig.translator.adaptive.maxConcurrency,
             rateLimitExceptionClass = net.sharplab.tsuji.core.driver.translator.exception.RateLimitException::class
         )
     }
@@ -309,7 +309,7 @@ class TsujiBeans(
                     deeplKey,
                     asciidoctorPreProcessor,
                     adaptiveParallelismController,
-                    tsujiConfig.translator.gemini.adaptive.maxRetries
+                    tsujiConfig.translator.adaptive.maxRetries
                 )
             }
             "gemini" -> {
@@ -323,7 +323,7 @@ class TsujiBeans(
                     geminiRAGTranslationAiService,
                     tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
-                    tsujiConfig.translator.gemini.adaptive.maxRetries,
+                    tsujiConfig.translator.adaptive.maxRetries,
                     adaptiveParallelismController,
                     asciidocMarkupValidator
                 )
@@ -341,7 +341,7 @@ class TsujiBeans(
                     mtTag,
                     tsujiConfig.translator.openai.batch.initialTextsPerRequest,
                     tsujiConfig.translator.openai.batch.maxTextsPerRequest,
-                    tsujiConfig.translator.openai.adaptive.maxRetries,
+                    tsujiConfig.translator.adaptive.maxRetries,
                     adaptiveParallelismController,
                     asciidocMarkupValidator
                 )

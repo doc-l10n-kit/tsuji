@@ -11,6 +11,16 @@ tsuji:
   translator:
     type: "gemini"
 
+    adaptive:
+      # Initial concurrency for parallel requests (default: 40)
+      initial-concurrency: 40
+      # Minimum concurrency (default: 1)
+      min-concurrency: 1
+      # Maximum concurrency (default: 60)
+      max-concurrency: 60
+      # Maximum retry attempts (default: 3)
+      max-retries: 3
+
     deepl:
       # key: ""
 
@@ -21,28 +31,12 @@ tsuji:
         initial-texts-per-request: 200
         max-texts-per-request: 200
 
-      adaptive:
-        # Initial concurrency for parallel requests (default: 40)
-        initial-concurrency: 40
-        # Minimum concurrency (default: 1)
-        min-concurrency: 1
-        # Maximum concurrency (default: 60)
-        max-concurrency: 60
-        # Maximum retry attempts (default: 3)
-        max-retries: 3
-
     openai:
       # mt-tag: "openai"  # Can be set to "gemini" when using OpenAI-compatible Gemini proxy
 
       batch:
         initial-texts-per-request: 200
         max-texts-per-request: 200
-
-      adaptive:
-        initial-concurrency: 40
-        min-concurrency: 1
-        max-concurrency: 60
-        max-retries: 3
 
   jekyll:
     cname: ""
