@@ -13,6 +13,7 @@ import dev.langchain4j.model.chat.request.json.JsonSchema
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.app.config.toPromptText
+import net.sharplab.tsuji.core.driver.translator.exception.IndexMismatchException
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
 
@@ -114,7 +115,7 @@ class GeminiTranslationAiService(
             val missing = expectedIndices - actualIndices
             val extra = actualIndices - expectedIndices
             logger.error("Index mismatch: expected=$expectedIndices, actual=$actualIndices, missing=$missing, extra=$extra")
-            throw IllegalStateException("Translation index mismatch: missing=$missing, extra=$extra")
+            throw IndexMismatchException("Translation index mismatch: missing=$missing, extra=$extra", expectedIndices, actualIndices)
         }
     }
 

@@ -13,6 +13,7 @@ import dev.langchain4j.model.chat.request.json.JsonSchema
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.app.config.toPromptText
+import net.sharplab.tsuji.core.driver.translator.exception.IndexMismatchException
 import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationRequestItem
 import net.sharplab.tsuji.core.driver.translator.gemini.BatchTranslationResponseItem
 import org.slf4j.LoggerFactory
@@ -116,7 +117,7 @@ class OpenAiTranslationAiService(
             val missing = expectedIndices - actualIndices
             val extra = actualIndices - expectedIndices
             logger.error("Index mismatch: expected=$expectedIndices, actual=$actualIndices, missing=$missing, extra=$extra")
-            throw IllegalStateException("Translation index mismatch: missing=$missing, extra=$extra")
+            throw IndexMismatchException("Translation index mismatch: missing=$missing, extra=$extra", expectedIndices, actualIndices)
         }
     }
 
