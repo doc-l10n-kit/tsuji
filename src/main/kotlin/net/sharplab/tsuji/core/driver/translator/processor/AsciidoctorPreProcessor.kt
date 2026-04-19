@@ -18,10 +18,10 @@ class AsciidoctorPreProcessor(
     private val tempDir = Files.createTempDirectory("asciidoc-templates-")
 
     init {
-        val inputStream = this.javaClass.classLoader.getResourceAsStream("asciidoc-templates/inline_anchor.html.erb")
-        requireNotNull(inputStream) { "Asciidoc template resource not found: asciidoc-templates/inline_anchor.html.erb" }
         val inlineAnchorTemplateFile = tempDir.toFile().resolve("inline_anchor.html.erb")
-        Files.copy(inputStream, inlineAnchorTemplateFile.toPath())
+        this.javaClass.classLoader.getResourceAsStream("asciidoc-templates/inline_anchor.html.erb")?.use { inputStream ->
+            Files.copy(inputStream, inlineAnchorTemplateFile.toPath())
+        } ?: throw IllegalStateException("Asciidoc template resource not found: asciidoc-templates/inline_anchor.html.erb")
     }
 
     override suspend fun process(messages: List<TranslationMessage>, context: TranslationContext): List<TranslationMessage> {

@@ -33,7 +33,7 @@ class ImageTagMessageProcessor : MessageProcessor {
 
     private fun replaceImage(element: Element) {
         if (element.tagName() == "span" && element.classNames().contains("image")) {
-            val imgTag = element.selectFirst("img")!!
+            val imgTag = element.selectFirst("img") ?: return
             val src = imgTag.attr("src")
             val attrs = imgTag.attributes().filterNot { attr -> attr.key == "src" }
             val attrsText = attrs.joinToString(separator = ", ")

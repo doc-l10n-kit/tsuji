@@ -147,7 +147,7 @@ class JekyllDriverImpl(
             .directory(jekyllSourceDir.toFile())
             .start()
 
-        val output = listProcess.inputStream.bufferedReader().readText()
+        val output = listProcess.inputStream.bufferedReader().use { it.readText() }
         listProcess.waitFor()
 
         if (!output.contains("jekyll-l10n")) {
