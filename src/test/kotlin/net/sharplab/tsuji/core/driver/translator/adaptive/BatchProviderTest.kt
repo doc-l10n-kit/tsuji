@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test
 class BatchProviderTest {
 
     @Test
-    fun `GeminiBatchProvider should start with initial limit`() {
-        val provider = GeminiBatchProvider(
+    fun `CountBasedBatchProvider should start with initial limit`() {
+        val provider = CountBasedBatchProvider(
             items = listOf("a", "b", "c"),
             initialLimit = 10,
             minLimit = 1,
@@ -19,8 +19,8 @@ class BatchProviderTest {
     }
 
     @Test
-    fun `GeminiBatchProvider should split by count`() {
-        val provider = GeminiBatchProvider(
+    fun `CountBasedBatchProvider should split by count`() {
+        val provider = CountBasedBatchProvider(
             items = listOf("a", "b", "c", "d", "e"),
             initialLimit = 2,
             minLimit = 1,
@@ -61,7 +61,7 @@ class BatchProviderTest {
 
     @Test
     fun `should increase limit on success`() {
-        val provider = GeminiBatchProvider(
+        val provider = CountBasedBatchProvider(
             items = listOf("a", "b", "c"),
             initialLimit = 5,
             minLimit = 1,
@@ -81,7 +81,7 @@ class BatchProviderTest {
 
     @Test
     fun `should decrease limit on validation error`() {
-        val provider = GeminiBatchProvider(
+        val provider = CountBasedBatchProvider(
             items = listOf("a", "b", "c", "d"),
             initialLimit = 10,
             minLimit = 1,
@@ -102,7 +102,7 @@ class BatchProviderTest {
 
     @Test
     fun `should not decrease below minimum`() {
-        val provider = GeminiBatchProvider(
+        val provider = CountBasedBatchProvider(
             items = listOf("a", "b"),
             initialLimit = 2,
             minLimit = 1,
@@ -118,7 +118,7 @@ class BatchProviderTest {
 
     @Test
     fun `should not increase above maximum`() {
-        val provider = GeminiBatchProvider(
+        val provider = CountBasedBatchProvider(
             items = List(20) { "item$it" },
             initialLimit = 10,
             minLimit = 1,

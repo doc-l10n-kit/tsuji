@@ -62,7 +62,7 @@ class BatchedExecutorTest {
     fun `should call onBatchSuccess on successful processing`(): Unit = runBlocking {
         // Given
         val items = listOf("a", "b", "c")
-        val batchProvider = GeminiBatchProvider(
+        val batchProvider = CountBasedBatchProvider(
             items = items,
             initialLimit = 10,
             minLimit = 1,
@@ -238,7 +238,7 @@ class BatchedExecutorTest {
         minLimit: Int = 1,
         maxLimit: Int = 100
     ): BatchProvider<String> {
-        return GeminiBatchProvider(
+        return CountBasedBatchProvider(
             items = items,
             initialLimit = initialLimit,
             minLimit = minLimit,

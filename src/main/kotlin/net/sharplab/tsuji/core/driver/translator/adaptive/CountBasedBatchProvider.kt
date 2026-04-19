@@ -3,19 +3,17 @@ package net.sharplab.tsuji.core.driver.translator.adaptive
 import org.slf4j.LoggerFactory
 
 /**
- * Batch provider for OpenAI-compatible API translation.
- *
- * Uses count-based batching with AIMD (Additive Increase Multiplicative Decrease) control.
+ * Count-based batch provider with AIMD (Additive Increase Multiplicative Decrease) control.
  * Each batch's item count must not exceed the size limit.
  */
-class OpenAiBatchProvider<T>(
+class CountBasedBatchProvider<T>(
     private val items: List<T>,
     initialLimit: Int,
     private val minLimit: Int,
     private val maxLimit: Int
 ) : BatchProvider<T> {
 
-    private val logger = LoggerFactory.getLogger(OpenAiBatchProvider::class.java)
+    private val logger = LoggerFactory.getLogger(CountBasedBatchProvider::class.java)
 
     @Volatile
     private var currentLimit: Int = initialLimit
