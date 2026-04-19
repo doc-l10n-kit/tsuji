@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 class TmxServiceImplTest {
 
-    private val target = TmxServiceImpl()
+    private val target = TmxServiceImpl("en", "ja_JP")
 
     @Test
     fun createTmxFromPos_confirmedMode_shouldIncludeOnlyConfirmed() {

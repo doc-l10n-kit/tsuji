@@ -3,15 +3,22 @@ package net.sharplab.tsuji.core.service
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.model.tmx.TmxGenerationMode
 import net.sharplab.tsuji.tmx.model.*
+import org.slf4j.LoggerFactory
 
-class TmxServiceImpl : TmxService {
+class TmxServiceImpl(
+    private val sourceLang: String,
+    private val targetLang: String
+) : TmxService {
+
+    private val logger = LoggerFactory.getLogger(TmxServiceImpl::class.java)
 
     override fun createTmxFromPos(pos: List<Po>, mode: TmxGenerationMode): Tmx {
         val translations = mutableMapOf<String, String>()
-        var targetLang = "ja_JP"
 
         pos.forEach { po ->
-            targetLang = po.target
+            if (po.target != targetLang) {
+                logger.warn("PO file target language '{}' does not match configured target language '{}'", po.target, targetLang)
+            }
             po.messages.forEach { msg ->
                 if (msg.messageId.isEmpty()) return@forEach
                 if (msg.messageString.isEmpty()) return@forEach
@@ -33,7 +40,7 @@ class TmxServiceImpl : TmxService {
             .sortedBy { it.key }
             .map { (src, dst) ->
                 TranslationUnit(listOf(
-                    TranslationUnitVariant("en", src),
+                    TranslationUnitVariant(sourceLang, src),
                     TranslationUnitVariant(targetLang, dst)
                 ))
             }
@@ -43,8 +50,8 @@ class TmxServiceImpl : TmxService {
             creationToolVersion = "1.0.0",
             segType = "sentence",
             oTmf = "UTF-8",
-            adminLang = "en",
-            srcLang = "en",
+            adminLang = sourceLang,
+            srcLang = sourceLang,
             dataType = "PlainText"
         )
         val body = TmxBody(translationUnits)

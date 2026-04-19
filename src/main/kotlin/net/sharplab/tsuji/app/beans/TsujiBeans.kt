@@ -186,8 +186,8 @@ class TsujiBeans(
     }
 
     @Produces
-    fun tmxService(): TmxService {
-        return TmxServiceImpl()
+    fun tmxService(tsujiConfig: TsujiConfig): TmxService {
+        return TmxServiceImpl(tsujiConfig.language.from, tsujiConfig.language.to)
     }
 
     @Produces
