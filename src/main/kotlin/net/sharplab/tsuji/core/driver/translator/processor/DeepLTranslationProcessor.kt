@@ -12,7 +12,6 @@ import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismCon
 import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslatorException
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
-import net.sharplab.tsuji.po.util.MessageClassifier
 import org.slf4j.LoggerFactory
 
 /**
@@ -41,33 +40,19 @@ class DeepLTranslationProcessor(
         options.tagHandling = "html"  // Use "html" instead of "xml" to support HTML entities
         options.formality = Formality.PreferMore
 
-        // Classify messages
-        val jekyllIndices = mutableListOf<Int>()
-        val normalIndices = mutableListOf<Int>()
-        val fillIndices = mutableListOf<Int>()
-        val skipIndices = mutableListOf<Int>()
-
-        messages.forEachIndexed { index, msg ->
-            when {
-                !msg.needsTranslation -> skipIndices.add(index)
-                msg.isEmpty() -> skipIndices.add(index) // Skip empty text
-                MessageClassifier.shouldFillWithMessageId(msg.original) -> fillIndices.add(index)
-                MessageClassifier.isJekyllFrontMatter(msg.original.messageId) -> jekyllIndices.add(index)
-                else -> normalIndices.add(index)
-            }
-        }
+        val classified = classifyMessages(messages)
 
         val result = messages.toMutableList()
 
         // Fill processing (no translation needed)
-        fillIndices.forEach { index ->
+        classified.fillIndices.forEach { index ->
             result[index] = result[index]
                 .withText(result[index].original.messageId)
                 .withFuzzy(false)
         }
 
         // Jekyll Front Matter processing (individual translation with retry)
-        jekyllIndices.forEach { index ->
+        classified.jekyllIndices.forEach { index ->
             logger.info("Translating Jekyll Front Matter [${index + 1}/${messages.size}]")
             val msg = messages[index]
             val translated = translateJekyllFrontMatterWithRetry(msg.text, context.srcLang, context.dstLang, options)
@@ -78,8 +63,8 @@ class DeepLTranslationProcessor(
         }
 
         // Normal translation (batch processing with retry)
-        if (normalIndices.isNotEmpty()) {
-            val normalTexts = normalIndices.map { messages[it].text }
+        if (classified.normalIndices.isNotEmpty()) {
+            val normalTexts = classified.normalIndices.map { messages[it].text }
 
             logger.info("Translating ${normalTexts.size} texts (${context.srcLang} -> ${context.dstLang})")
 
@@ -114,7 +99,7 @@ class DeepLTranslationProcessor(
             }
 
             translated.forEachIndexed { i, translatedText ->
-                val index = normalIndices[i]
+                val index = classified.normalIndices[i]
                 result[index] = result[index]
                     .withText(translatedText)
                     .withFuzzy(true)
@@ -132,46 +117,16 @@ class DeepLTranslationProcessor(
                e.message?.contains("too many requests", ignoreCase = true) == true
     }
 
-    /**
-     * Translates Jekyll Front Matter format with retry logic.
-     * Only translates title and synopsis fields, preserving others.
-     */
     private suspend fun translateJekyllFrontMatterWithRetry(
         message: String,
         srcLang: String,
         dstLang: String,
         options: TextTranslationOptions
     ): String {
-        val titleRegex = Regex("""^title:\s*(.*)$""", RegexOption.MULTILINE)
-        val synopsisRegex = Regex("""^synopsis:\s*(.*)$""", RegexOption.MULTILINE)
-
-        val titleMatch = titleRegex.find(message)
-        val synopsisMatch = synopsisRegex.find(message)
-
-        val title = titleMatch?.groupValues?.get(1)?.trim() ?: ""
-        val synopsis = synopsisMatch?.groupValues?.get(1)?.trim() ?: ""
-
-        val stringsToTranslate = mutableListOf<String>()
-        if (title.isNotEmpty()) stringsToTranslate.add(title)
-        if (synopsis.isNotEmpty()) stringsToTranslate.add(synopsis)
-
-        if (stringsToTranslate.isEmpty()) return message
-
-        // Translate title and synopsis with retry
-        val translated = translateTextsWithRetry(stringsToTranslate, srcLang, dstLang, options)
-
-        // Replace in the original message
-        var translatedIndex = 0
-        var replaced = message
-        if (title.isNotEmpty()) {
-            val titleTranslated = translated[translatedIndex++]
-            replaced = titleRegex.replace(replaced) { "title: $titleTranslated" }
-        }
-        if (synopsis.isNotEmpty()) {
-            val synopsisTranslated = translated[translatedIndex++]
-            replaced = synopsisRegex.replace(replaced) { "synopsis: $synopsisTranslated" }
-        }
-        return replaced
+        val fields = JekyllFrontMatterUtil.extractFields(message)
+        if (fields.isEmpty()) return message
+        val translated = translateTextsWithRetry(fields, srcLang, dstLang, options)
+        return JekyllFrontMatterUtil.replaceFields(message, translated)
     }
 
     private suspend fun translateTextsWithRetry(

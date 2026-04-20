@@ -11,7 +11,6 @@ import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationRequestIt
 import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
-import net.sharplab.tsuji.po.util.MessageClassifier
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -72,32 +71,19 @@ abstract class AbstractLangchain4jTranslationProcessor(
             return messages
         }
 
-        // Classify messages
-        val jekyllIndices = mutableListOf<Int>()
-        val normalIndices = mutableListOf<Int>()
-        val fillIndices = mutableListOf<Int>()
-
-        messages.forEachIndexed { index, msg ->
-            when {
-                !msg.needsTranslation -> {} // skip
-                msg.isEmpty() -> {} // skip
-                MessageClassifier.shouldFillWithMessageId(msg.original) -> fillIndices.add(index)
-                MessageClassifier.isJekyllFrontMatter(msg.original.messageId) -> jekyllIndices.add(index)
-                else -> normalIndices.add(index)
-            }
-        }
+        val classified = classifyMessages(messages)
 
         val result = messages.toMutableList()
 
         // Fill processing (no translation needed)
-        fillIndices.forEach { index ->
+        classified.fillIndices.forEach { index ->
             result[index] = result[index]
                 .withText(result[index].original.messageId)
                 .withFuzzy(false)
         }
 
         // Jekyll Front Matter processing (individual translation)
-        jekyllIndices.forEach { index ->
+        classified.jekyllIndices.forEach { index ->
             logger.info("Translating Jekyll Front Matter [${index + 1}/${messages.size}]")
             val msg = messages[index]
             val translated = translateJekyllFrontMatter(msg.text, context.srcLang, context.dstLang, context.useRag, context)
@@ -108,8 +94,8 @@ abstract class AbstractLangchain4jTranslationProcessor(
         }
 
         // Normal translation with adaptive batch processing
-        if (normalIndices.isNotEmpty()) {
-            val normalMessages = normalIndices.map { messages[it] }
+        if (classified.normalIndices.isNotEmpty()) {
+            val normalMessages = classified.normalIndices.map { messages[it] }
 
             logger.info("Translating ${normalMessages.size} texts (${context.srcLang} -> ${context.dstLang})")
             logger.debug("Current parallelism controller state: concurrency=${parallelismController.getCurrentConcurrency()}")
@@ -134,7 +120,7 @@ abstract class AbstractLangchain4jTranslationProcessor(
             }
 
             translated.forEachIndexed { i, translatedMsg ->
-                result[normalIndices[i]] = translatedMsg
+                result[classified.normalIndices[i]] = translatedMsg
             }
 
             val processElapsedTime = System.currentTimeMillis() - processStartTime
@@ -203,39 +189,11 @@ abstract class AbstractLangchain4jTranslationProcessor(
         return messages.map { msg -> fixes[msg.original.messageId]?.let { msg.withText(it) } ?: msg }
     }
 
-    /**
-     * Translates Jekyll Front Matter format.
-     * Only translates title and synopsis fields, preserving others.
-     */
     private suspend fun translateJekyllFrontMatter(message: String, srcLang: String, dstLang: String, useRag: Boolean, context: TranslationContext): String {
-        val titleRegex = Regex("""^title:\s*(.*)$""", RegexOption.MULTILINE)
-        val synopsisRegex = Regex("""^synopsis:\s*(.*)$""", RegexOption.MULTILINE)
-
-        val titleMatch = titleRegex.find(message)
-        val synopsisMatch = synopsisRegex.find(message)
-
-        val title = titleMatch?.groupValues?.get(1)?.trim() ?: ""
-        val synopsis = synopsisMatch?.groupValues?.get(1)?.trim() ?: ""
-
-        val texts = mutableListOf<String>()
-        if (title.isNotEmpty()) texts.add(title)
-        if (synopsis.isNotEmpty()) texts.add(synopsis)
-
-        if (texts.isEmpty()) return message
-
-        val translated = callTranslationApi(texts, context)
-
-        var translatedIndex = 0
-        var replaced = message
-        if (title.isNotEmpty()) {
-            val titleTranslated = translated[translatedIndex++]
-            replaced = titleRegex.replace(replaced) { "title: $titleTranslated" }
-        }
-        if (synopsis.isNotEmpty()) {
-            val synopsisTranslated = translated[translatedIndex++]
-            replaced = synopsisRegex.replace(replaced) { "synopsis: $synopsisTranslated" }
-        }
-        return replaced
+        val fields = JekyllFrontMatterUtil.extractFields(message)
+        if (fields.isEmpty()) return message
+        val translated = callTranslationApi(fields, context)
+        return JekyllFrontMatterUtil.replaceFields(message, translated)
     }
 
     /**
