@@ -93,6 +93,19 @@ interface TsujiConfig {
         }
     }
 
+    @get:WithName("tmx")
+    val tmx: Tmx
+
+    interface Tmx {
+        @get:WithName("confirmed-path")
+        @get:WithDefault("l10n/tmx/quarkus.tmx")
+        val confirmedPath: String
+
+        @get:WithName("fuzzy-path")
+        @get:WithDefault("l10n/tmx/fuzzy.tmx")
+        val fuzzyPath: String
+    }
+
     @get:WithName("language")
     val language: Language
 
