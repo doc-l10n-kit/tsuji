@@ -175,4 +175,48 @@ class AsciidocMarkupValidatorTest {
         // So code count should be 0 or less than expected
         assertThat(features.codeCount).isLessThan(2)
     }
+
+    // --- xref tests ---
+
+    @Test
+    fun `extractMarkupFeatures should extract xref links`() {
+        val features = validator.extractMarkupFeatures("See xref:telemetry-micrometer.adoc[Micrometer] for details.")
+        assertThat(features.linkHrefs).isNotEmpty()
+    }
+
+    @Test
+    fun `validate should pass when xref is preserved with proper spacing`() {
+        assertThatCode {
+            validator.validate(listOf(
+                msg(
+                    "Implemented with the xref:telemetry-micrometer.adoc[Micrometer] extension.",
+                    "xref:telemetry-micrometer.adoc[Micrometer] エクステンションで実装されています。"
+                )
+            ))
+        }.doesNotThrowAnyException()
+    }
+
+    @Test
+    fun `validate should throw when xref is removed`() {
+        assertThatThrownBy {
+            validator.validate(listOf(
+                msg(
+                    "Implemented with the xref:telemetry-micrometer.adoc[Micrometer] extension.",
+                    "Micrometer エクステンションで実装されています。"
+                )
+            ))
+        }.isInstanceOf(AsciidocMarkupValidationException::class.java)
+    }
+
+    @Test
+    fun `validate should pass when inline xref anchors are unchanged`() {
+        assertThatCode {
+            validator.validate(listOf(
+                msg(
+                    "See <<getting-started>> for details.",
+                    "詳細は <<getting-started>> を参照してください。"
+                )
+            ))
+        }.doesNotThrowAnyException()
+    }
 }
