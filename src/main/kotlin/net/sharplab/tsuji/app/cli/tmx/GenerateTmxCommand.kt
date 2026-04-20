@@ -3,6 +3,7 @@ package net.sharplab.tsuji.app.cli.tmx
 import io.quarkus.arc.Unremovable
 import jakarta.enterprise.context.Dependent
 import net.sharplab.tsuji.app.cli.BaseCommand
+import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.app.service.TmxAppService
 import net.sharplab.tsuji.core.model.tmx.TmxGenerationMode
 import picocli.CommandLine
@@ -11,18 +12,27 @@ import java.nio.file.Path
 @Dependent
 @Unremovable
 @CommandLine.Command(name = "generate", mixinStandardHelpOptions = true, description = ["Generates TMX from PO files"])
-class GenerateTmxCommand(private val tmxAppService: TmxAppService) : BaseCommand() {
+class GenerateTmxCommand(
+    private val tmxAppService: TmxAppService,
+    private val tsujiConfig: TsujiConfig
+) : BaseCommand() {
 
     @CommandLine.Option(names = ["--po", "-p"], description = ["The directory containing PO files"])
     var po: Path? = null
 
-    @CommandLine.Option(names = ["--tmx", "-t"], description = ["The output TMX file path"], required = true)
-    lateinit var tmx: Path
+    @CommandLine.Option(names = ["--tmx", "-t"], description = ["The output TMX file path"])
+    var tmx: Path? = null
 
     @CommandLine.Option(names = ["--mode"], description = ["Generation mode: CONFIRMED or FUZZY"], defaultValue = "CONFIRMED")
     lateinit var mode: TmxGenerationMode
 
     override fun execute() {
-        tmxAppService.generateTmx(po, tmx, mode)
+        val tmxPath = tmx ?: Path.of(
+            when (mode) {
+                TmxGenerationMode.CONFIRMED -> tsujiConfig.tmx.confirmedPath
+                TmxGenerationMode.FUZZY -> tsujiConfig.tmx.fuzzyPath
+            }
+        )
+        tmxAppService.generateTmx(po, tmxPath, mode)
     }
 }
