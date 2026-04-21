@@ -8,9 +8,11 @@ import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.core.driver.translator.exception.ResponseParseException
 import net.sharplab.tsuji.core.driver.translator.exception.TranslationValidationException
 import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationRequestItem
+import net.sharplab.tsuji.core.driver.translator.util.MessageTypeNoteGenerator
 import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
+import net.sharplab.tsuji.po.model.type
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -24,7 +26,8 @@ abstract class AbstractLangchain4jTranslationProcessor(
     private val maxTextsPerRequest: Int,
     private val maxRetries: Int,
     private val parallelismController: AdaptiveParallelismController,
-    private val asciidocMarkupValidator: AsciidocMarkupValidator
+    private val asciidocMarkupValidator: AsciidocMarkupValidator,
+    private val messageTypeNoteGenerator: MessageTypeNoteGenerator
 ) : MessageProcessor {
 
     protected abstract val logger: Logger
@@ -134,8 +137,15 @@ abstract class AbstractLangchain4jTranslationProcessor(
         batch: List<TranslationMessage>,
         context: TranslationContext
     ): List<TranslationMessage> {
-        val texts = batch.map { it.text }
-        val translations = callTranslationApi(texts, context)
+        // Generate notes from MessageType and create BatchTranslationRequestItems
+        val items = batch.mapIndexed { index, msg ->
+            BatchTranslationRequestItem(
+                index = index,
+                text = msg.text,
+                note = messageTypeNoteGenerator.generateNote(msg.original.type)
+            )
+        }
+        val translations = callTranslationApiWithNotes(items, context)
         var messages = batch.zip(translations).map { (msg, translated) ->
             msg.withText(translated).withFuzzy(true).withMtEngine(mtTag)
         }
@@ -175,10 +185,12 @@ abstract class AbstractLangchain4jTranslationProcessor(
         context: TranslationContext
     ): List<TranslationMessage> {
         val items = brokenTranslations.mapIndexed { index, broken ->
+            // Merge MessageType-based note with Asciidoc validation error note
+            val typeNote = messageTypeNoteGenerator.generateNote(broken.message.original.type)
             BatchTranslationRequestItem(
                 index = index,
                 text = broken.message.original.messageId,
-                note = broken.note
+                note = MessageTypeNoteGenerator.mergeNotes(typeNote, broken.note)
             )
         }
 

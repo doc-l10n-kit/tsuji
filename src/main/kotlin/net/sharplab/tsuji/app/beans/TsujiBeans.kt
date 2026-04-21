@@ -37,7 +37,10 @@ import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidat
 import net.sharplab.tsuji.core.driver.vectorstore.LuceneVectorStoreDriver
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import net.sharplab.tsuji.core.driver.translator.processor.AsciidoctorPreProcessor
+import net.sharplab.tsuji.core.driver.translator.processor.GeminiTranslationProcessor
+import net.sharplab.tsuji.core.driver.translator.processor.OpenAiTranslationProcessor
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
+import net.sharplab.tsuji.core.driver.translator.util.MessageTypeNoteGenerator
 import net.sharplab.tsuji.core.service.IndexingService
 import net.sharplab.tsuji.core.service.IndexingServiceImpl
 import net.sharplab.tsuji.core.service.JekyllService
@@ -290,12 +293,21 @@ class TsujiBeans(
 
     @Produces
     @ApplicationScoped
+    fun messageTypeNoteGenerator(tsujiConfig: TsujiConfig): MessageTypeNoteGenerator {
+        return MessageTypeNoteGenerator(
+            headingNote = tsujiConfig.translator.note.heading.orElse(null)
+        )
+    }
+
+    @Produces
+    @ApplicationScoped
     fun translator(
         tsujiConfig: TsujiConfig,
         asciidoctorPreProcessor: AsciidoctorPreProcessor,
         vectorStoreDriver: VectorStoreDriver,
         adaptiveParallelismController: AdaptiveParallelismController,
-        asciidocMarkupValidator: AsciidocMarkupValidator
+        asciidocMarkupValidator: AsciidocMarkupValidator,
+        messageTypeNoteGenerator: MessageTypeNoteGenerator
     ): Translator {
         return when (tsujiConfig.translator.type.lowercase()) {
             "deepl" -> {
@@ -316,15 +328,17 @@ class TsujiBeans(
                 val translationAiService = TranslationAiService(chatModel, tsujiConfig, tsujiConfig.translator.gemini.prompts.batchSystemPrompt)
                 val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, tsujiConfig.translator.gemini.prompts.ragBatchSystemPrompt)
 
-                GeminiTranslator(
+                val geminiTranslationProcessor = GeminiTranslationProcessor(
                     translationAiService,
                     ragTranslationAiService,
                     tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
                     tsujiConfig.translator.adaptive.maxRetries,
                     adaptiveParallelismController,
-                    asciidocMarkupValidator
+                    asciidocMarkupValidator,
+                    messageTypeNoteGenerator
                 )
+                GeminiTranslator(geminiTranslationProcessor)
             }
             "openai" -> {
                 logger.info("Using OpenAI Translator")
@@ -332,8 +346,8 @@ class TsujiBeans(
                 val translationAiService = TranslationAiService(chatModel, tsujiConfig, tsujiConfig.translator.openai.prompts.batchSystemPrompt)
                 val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, tsujiConfig.translator.openai.prompts.ragBatchSystemPrompt)
 
-                val mtTag = tsujiConfig.translator.openai.mtTag.orElse(null)
-                OpenAiTranslator(
+                val mtTag = tsujiConfig.translator.openai.mtTag.orElse("openai")
+                val openAiTranslationProcessor = OpenAiTranslationProcessor(
                     translationAiService,
                     ragTranslationAiService,
                     mtTag,
@@ -341,8 +355,10 @@ class TsujiBeans(
                     tsujiConfig.translator.openai.batch.maxTextsPerRequest,
                     tsujiConfig.translator.adaptive.maxRetries,
                     adaptiveParallelismController,
-                    asciidocMarkupValidator
+                    asciidocMarkupValidator,
+                    messageTypeNoteGenerator
                 )
+                OpenAiTranslator(openAiTranslationProcessor, tsujiConfig.translator.openai.mtTag.orElse(null))
             }
             else -> {
                 throw IllegalArgumentException(

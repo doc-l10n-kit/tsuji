@@ -1,27 +1,17 @@
 package net.sharplab.tsuji.core.driver.translator.openai
 
 import net.sharplab.tsuji.core.driver.translator.Translator
-import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
-import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.driver.translator.processor.MessageProcessor
 import net.sharplab.tsuji.core.driver.translator.processor.OpenAiTranslationProcessor
 import net.sharplab.tsuji.core.driver.translator.processor.XrefTitlePostProcessor
-import net.sharplab.tsuji.core.driver.translator.service.RAGTranslationAiService
-import net.sharplab.tsuji.core.driver.translator.service.TranslationAiService
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import net.sharplab.tsuji.po.model.Po
 import org.slf4j.LoggerFactory
 
 class OpenAiTranslator(
-    private val translationAiService: TranslationAiService,
-    private val ragTranslationAiService: RAGTranslationAiService,
-    private val mtTag: String?,
-    private val initialTextsPerRequest: Int = 200,
-    private val maxTextsPerRequest: Int = 200,
-    private val maxRetries: Int = 3,
-    private val parallelismController: AdaptiveParallelismController,
-    private val asciidocMarkupValidator: AsciidocMarkupValidator
+    openAiTranslationProcessor: OpenAiTranslationProcessor,
+    mtTag: String?
 ) : Translator {
 
     private val logger = LoggerFactory.getLogger(OpenAiTranslator::class.java)
@@ -35,16 +25,7 @@ class OpenAiTranslator(
 
     // Processor pipeline - OpenAI handles Asciidoc markup similarly to Gemini
     private val processors: List<MessageProcessor> = listOf(
-        OpenAiTranslationProcessor(
-            translationAiService,
-            ragTranslationAiService,
-            effectiveMtTag,
-            initialTextsPerRequest,
-            maxTextsPerRequest,
-            maxRetries,
-            parallelismController,
-            asciidocMarkupValidator
-        ),
+        openAiTranslationProcessor,
         XrefTitlePostProcessor()
     )
 
