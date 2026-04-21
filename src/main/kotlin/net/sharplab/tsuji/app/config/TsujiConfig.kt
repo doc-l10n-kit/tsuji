@@ -130,6 +130,14 @@ interface TsujiConfig {
         @get:WithName("target-directories")
         val targetDirectories: Optional<List<String>>
 
+        @get:WithName("note")
+        val note: Note
+
+        interface Note {
+            @get:WithName("heading")
+            val heading: Optional<String>
+        }
+
         @get:WithName("adaptive")
         val adaptive: Adaptive
 

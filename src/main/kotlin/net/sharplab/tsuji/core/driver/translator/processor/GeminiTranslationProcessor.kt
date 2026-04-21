@@ -1,8 +1,10 @@
 package net.sharplab.tsuji.core.driver.translator.processor
 
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
+import net.sharplab.tsuji.core.driver.translator.model.BatchTranslationRequestItem
 import net.sharplab.tsuji.core.driver.translator.service.RAGTranslationAiService
 import net.sharplab.tsuji.core.driver.translator.service.TranslationAiService
+import net.sharplab.tsuji.core.driver.translator.util.MessageTypeNoteGenerator
 import net.sharplab.tsuji.core.driver.translator.validator.AsciidocMarkupValidator
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 import org.slf4j.Logger
@@ -19,14 +21,16 @@ class GeminiTranslationProcessor(
     maxTextsPerRequest: Int = 200,
     maxRetries: Int = 3,
     parallelismController: AdaptiveParallelismController,
-    asciidocMarkupValidator: AsciidocMarkupValidator
+    asciidocMarkupValidator: AsciidocMarkupValidator,
+    messageTypeNoteGenerator: MessageTypeNoteGenerator
 ) : AbstractLangchain4jTranslationProcessor(
     mtTag = "gemini",
     initialTextsPerRequest = initialTextsPerRequest,
     maxTextsPerRequest = maxTextsPerRequest,
     maxRetries = maxRetries,
     parallelismController = parallelismController,
-    asciidocMarkupValidator = asciidocMarkupValidator
+    asciidocMarkupValidator = asciidocMarkupValidator,
+    messageTypeNoteGenerator = messageTypeNoteGenerator
 ) {
 
     override val logger: Logger = LoggerFactory.getLogger(GeminiTranslationProcessor::class.java)
@@ -55,7 +59,7 @@ class GeminiTranslationProcessor(
     }
 
     override suspend fun callTranslationApiWithNotes(
-        items: List<net.sharplab.tsuji.core.driver.translator.model.BatchTranslationRequestItem>,
+        items: List<BatchTranslationRequestItem>,
         context: TranslationContext
     ): List<String> {
         return try {
