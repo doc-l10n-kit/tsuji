@@ -11,14 +11,14 @@ class MessageTypeNoteGenerator(
 ) {
     /**
      * Generates a note for the given MessageType.
-     * Returns the configured heading note for heading types (Title1/2/3).
+     * Returns the configured heading note for heading types (Title1/2/3) and BlockTitle.
      *
      * @param type The MessageType to generate a note for
-     * @return A note string if the type is a heading and headingNote is configured, null otherwise
+     * @return A note string if the type is a heading/block title and headingNote is configured, null otherwise
      */
     fun generateNote(type: MessageType): String? {
         return when (type) {
-            MessageType.Title1, MessageType.Title2, MessageType.Title3 -> headingNote
+            MessageType.Title1, MessageType.Title2, MessageType.Title3, MessageType.BlockTitle -> headingNote
             else -> null
         }
     }

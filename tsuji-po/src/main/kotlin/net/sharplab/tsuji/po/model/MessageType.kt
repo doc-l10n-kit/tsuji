@@ -7,10 +7,11 @@ package net.sharplab.tsuji.po.model
 data class MessageType(val value: String) {
     companion object {
         val None = MessageType("")
-        val Title1 = MessageType("type: Title = ")
+        val Title1 = MessageType("type: Title =")
         val Title2 = MessageType("type: Title ==")
         val Title3 = MessageType("type: Title ===")
-        val PlainText = MessageType("type: Plain Text")
+        val PlainText = MessageType("type: Plain text")
+        val BlockTitle = MessageType("type: Block title")
         val DelimitedBlock1 = MessageType("type: delimited block =")
         val DelimitedBlock2 = MessageType("type: delimited block ==")
         val DelimitedBlock3 = MessageType("type: delimited block ===")

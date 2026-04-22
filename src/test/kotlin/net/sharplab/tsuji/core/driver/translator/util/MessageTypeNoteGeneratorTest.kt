@@ -31,6 +31,14 @@ class MessageTypeNoteGeneratorTest {
     }
 
     @Test
+    fun `generateNote returns configured note for BlockTitle`() {
+        val headingNote = "Use 体言止め style."
+        val generator = MessageTypeNoteGenerator(headingNote)
+        val result = generator.generateNote(MessageType.BlockTitle)
+        assertEquals(headingNote, result)
+    }
+
+    @Test
     fun `generateNote returns null for Title when headingNote is null`() {
         val generator = MessageTypeNoteGenerator(null)
         val result = generator.generateNote(MessageType.Title1)

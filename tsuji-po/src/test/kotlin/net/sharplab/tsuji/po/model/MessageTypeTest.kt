@@ -69,7 +69,7 @@ class MessageTypeTest {
     fun `equality check for known type constants`() {
         // Given
         val type1 = MessageType.PlainText
-        val type2 = MessageType("type: Plain Text")
+        val type2 = MessageType("type: Plain text")
 
         // Then
         assertThat(type1).isEqualTo(type2)
@@ -77,8 +77,22 @@ class MessageTypeTest {
 
     @Test
     fun `known type constants should have correct values`() {
-        assertThat(MessageType.PlainText.value).isEqualTo("type: Plain Text")
-        assertThat(MessageType.Title1.value).isEqualTo("type: Title = ")
+        assertThat(MessageType.PlainText.value).isEqualTo("type: Plain text")
+        assertThat(MessageType.Title1.value).isEqualTo("type: Title =")
+        assertThat(MessageType.BlockTitle.value).isEqualTo("type: Block title")
         assertThat(MessageType.YAML_HASH_VALUE_LINKS_NAME.value).isEqualTo("type: Hash Value: links name")
+    }
+
+    @Test
+    fun `tryParse should parse Block title type`() {
+        // Given
+        val comment = "type: Block title"
+
+        // When
+        val result = MessageType.tryParse(comment)
+
+        // Then
+        assertThat(result).isNotNull
+        assertThat(result).isEqualTo(MessageType.BlockTitle)
     }
 }
