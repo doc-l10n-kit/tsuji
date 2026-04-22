@@ -83,3 +83,9 @@ quarkus:
       # Application logs (net.sharplab) show at INFO level
       "net.sharplab":
         level: INFO
+
+      # Quarkus LangChain4j OpenAI HTTP request/response logging
+      # To enable, set in .env: QUARKUS_LANGCHAIN4J_OPENAI_LOG_REQUESTS=true
+      #                          QUARKUS_LANGCHAIN4J_OPENAI_LOG_RESPONSES=true
+      "io.quarkiverse.langchain4j.openai.common":
+        level: INFO
