@@ -1,6 +1,6 @@
 [versions]
 quarkus = "3.34.6"
-kotlin = "2.3.20"
+kotlin = "2.3.21"
 jgettext = "0.15.1"
 asciidoctorj = "3.0.1"
 jsoup = "1.22.2"
