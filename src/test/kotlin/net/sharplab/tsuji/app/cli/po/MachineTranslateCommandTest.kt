@@ -32,34 +32,34 @@ class MachineTranslateCommandTest {
     }
 
     @Test
-    fun `--isAsciidoc should enable asciidoc processing`() {
+    fun `--asciidoc should enable asciidoc processing`() {
         val mockService = mock(TranslationAppService::class.java)
         val command = MachineTranslateCommand(mockService)
 
         val cmd = CommandLine(command)
-        cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--isAsciidoc")
+        cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--asciidoc")
 
         val asciidocField = command.javaClass.getDeclaredField("asciidoc")
         asciidocField.isAccessible = true
 
         assertThat(asciidocField.getBoolean(command))
-            .describedAs("--isAsciidoc should enable asciidoc")
+            .describedAs("--asciidoc should enable asciidoc")
             .isTrue()
     }
 
     @Test
-    fun `--no-isAsciidoc should disable asciidoc processing`() {
+    fun `--no-asciidoc should disable asciidoc processing`() {
         val mockService = mock(TranslationAppService::class.java)
         val command = MachineTranslateCommand(mockService)
 
         val cmd = CommandLine(command)
-        cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--no-isAsciidoc")
+        cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--no-asciidoc")
 
         val asciidocField = command.javaClass.getDeclaredField("asciidoc")
         asciidocField.isAccessible = true
 
         assertThat(asciidocField.getBoolean(command))
-            .describedAs("--no-isAsciidoc should disable asciidoc")
+            .describedAs("--no-asciidoc should disable asciidoc")
             .isFalse()
     }
 
