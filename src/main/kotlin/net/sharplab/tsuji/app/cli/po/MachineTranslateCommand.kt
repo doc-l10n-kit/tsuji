@@ -23,10 +23,10 @@ class MachineTranslateCommand(private val translationAppService: TranslationAppS
 
     @CommandLine.Option(
         order = 4,
-        names = ["--isAsciidoc"],
+        names = ["--asciidoc"],
         negatable = true,
         fallbackValue = "true",
-        description = ["enable or disable asciidoc inline markup processing (default: true, use --no-isAsciidoc to disable)"]
+        description = ["enable or disable asciidoc inline markup processing (default: true, use --no-asciidoc to disable)"]
     )
     private var asciidoc = true
 

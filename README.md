@@ -54,7 +54,7 @@ Options:
   -p, --po <path>         PO file or directory to translate (repeatable)
   --source <lang>         Source language (default: from config)
   --target <lang>         Target language (default: from config)
-  --isAsciidoc            Enable AsciiDoc inline markup processing
+  --asciidoc              Enable AsciiDoc inline markup processing
   --rag                   Enable RAG (Retrieval-Augmented Generation)
 ```
 
