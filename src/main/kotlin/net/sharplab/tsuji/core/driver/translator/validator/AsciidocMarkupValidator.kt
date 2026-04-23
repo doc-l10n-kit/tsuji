@@ -31,14 +31,14 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
 
     /**
      * Validates that markup features in source texts are preserved in translations.
+     * Also detects when markup is incorrectly added to translations.
      * @throws AsciidocMarkupValidationException if any markup is broken
      */
     fun validate(messages: List<TranslationMessage>) {
         val brokenTranslations = messages.mapNotNull { msg ->
             val sourceFeatures = extractMarkupFeatures(msg.original.messageId)
-            if (sourceFeatures.isEmpty()) return@mapNotNull null
-
             val translatedFeatures = extractMarkupFeatures(msg.text)
+
             val note = buildValidationNote(sourceFeatures, translatedFeatures)
             if (note != null) {
                 logger.warn("Broken Asciidoc markup in translation of '${msg.original.messageId.take(60)}...'")

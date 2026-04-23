@@ -219,4 +219,49 @@ class AsciidocMarkupValidatorTest {
             ))
         }.doesNotThrowAnyException()
     }
+
+    // --- Tests for detecting incorrectly added markup ---
+
+    @Test
+    fun `validate should throw when backticks are added to plain text translation`() {
+        // Source has no markup, but translation incorrectly adds backticks
+        // This was not detected before the fix
+        assertThatThrownBy {
+            validator.validate(listOf(
+                msg("pom.xml", "`pom.xml`")
+            ))
+        }.isInstanceOf(AsciidocMarkupValidationException::class.java)
+            .satisfies({ e ->
+                val ex = e as AsciidocMarkupValidationException
+                assertThat(ex.brokenTranslations).hasSize(1)
+                assertThat(ex.brokenTranslations[0].note).contains("0 backtick pair(s)")
+            })
+    }
+
+    @Test
+    fun `validate should throw when bold markup is added to plain text translation`() {
+        assertThatThrownBy {
+            validator.validate(listOf(
+                msg("Architecture", "*アーキテクチャ*")
+            ))
+        }.isInstanceOf(AsciidocMarkupValidationException::class.java)
+    }
+
+    @Test
+    fun `validate should throw when link is added to plain text translation`() {
+        assertThatThrownBy {
+            validator.validate(listOf(
+                msg("See the documentation.", "link:https://example.com[ドキュメント] を参照してください。")
+            ))
+        }.isInstanceOf(AsciidocMarkupValidationException::class.java)
+    }
+
+    @Test
+    fun `validate should pass when both source and translation have no markup`() {
+        assertThatCode {
+            validator.validate(listOf(
+                msg("Configuration", "設定")
+            ))
+        }.doesNotThrowAnyException()
+    }
 }
