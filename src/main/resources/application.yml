@@ -42,6 +42,12 @@ tsuji:
     cname: ""
     surge-domain-suffix: ""
 
+# SmallRye Config settings
+smallrye:
+  config:
+    mapping:
+      validate-unknown: false
+
 # Quarkus configuration
 quarkus:
   langchain4j:
