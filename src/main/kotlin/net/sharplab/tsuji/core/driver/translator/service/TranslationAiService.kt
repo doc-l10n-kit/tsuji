@@ -40,6 +40,14 @@ class TranslationAiService(
             .orElseGet { loadClasspathPrompt("prompts/translation-system-prompt.txt") }
     }
 
+    private val asciidocMarkupRules: String by lazy {
+        loadClasspathPrompt("prompts/asciidoc-markup-rules.txt")
+    }
+
+    private val htmlMarkupRules: String by lazy {
+        loadClasspathPrompt("prompts/html-markup-rules.txt")
+    }
+
     private fun loadClasspathPrompt(resourcePath: String): String {
         return javaClass.classLoader.getResourceAsStream(resourcePath)?.use {
             InputStreamReader(it).readText()
@@ -48,7 +56,7 @@ class TranslationAiService(
 
     private fun buildSystemPrompt(template: String, srcLang: String, dstLang: String, isAsciidoctor: Boolean): String {
         val glossaryText = config.glossary.toPromptText()
-        val additionalRules = if (isAsciidoctor) ASCIIDOC_MARKUP_RULES else HTML_MARKUP_RULES
+        val additionalRules = if (isAsciidoctor) asciidocMarkupRules else htmlMarkupRules
 
         return template
             .replace("{srcLang}", srcLang)
@@ -60,24 +68,6 @@ class TranslationAiService(
     companion object {
         private val BATCH_RESPONSE_TYPE_REF =
             object : com.fasterxml.jackson.core.type.TypeReference<List<BatchTranslationResponseItem>>() {}
-
-        private const val ASCIIDOC_MARKUP_RULES = """
-- Preserve ALL Asciidoc markup exactly:
-  - Keep inline markup as-is: `code`, *bold*, _italic_, etc.
-  - CJK MUST have space around markup like: text `code` text, text *bold* text (NOT text`code`text or text*bold*text)
-  - Keep link/xref targets unchanged: in link:URL[text] only translate text, never URL
-  - Keep cross-reference anchors (<<...>>) unchanged
-  - Keep bare URLs (https://...) exactly as they appear in the source text
-  - Keep {attribute-references} unchanged
-  - Keep image:path[alt] paths unchanged
-- In CJK, add space before link AND after ']' like: text https://url[link] (note)"""
-
-        private const val HTML_MARKUP_RULES = """
-- Preserve ALL HTML tags exactly:
-  - Keep tags as-is: <strong>, <em>, <code>, <a>, <div>, <span>, etc.
-  - Do NOT convert HTML tags to Asciidoc markup (e.g., do NOT change <strong> to *)
-  - Keep tag attributes unchanged: <a href="...">, <img src="...">
-  - Translate only text content between tags, not the tags themselves"""
     }
 
     suspend fun translate(
