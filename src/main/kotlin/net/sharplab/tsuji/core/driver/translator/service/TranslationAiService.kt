@@ -40,19 +40,29 @@ class TranslationAiService(
             .orElseGet { loadClasspathPrompt("prompts/translation-system-prompt.txt") }
     }
 
+    private val asciidocMarkupRules: String by lazy {
+        loadClasspathPrompt("prompts/asciidoc-markup-rules.txt")
+    }
+
+    private val htmlMarkupRules: String by lazy {
+        loadClasspathPrompt("prompts/html-markup-rules.txt")
+    }
+
     private fun loadClasspathPrompt(resourcePath: String): String {
         return javaClass.classLoader.getResourceAsStream(resourcePath)?.use {
             InputStreamReader(it).readText()
         } ?: throw IllegalStateException("Failed to load prompt from $resourcePath")
     }
 
-    private fun buildSystemPrompt(template: String, srcLang: String, dstLang: String): String {
+    private fun buildSystemPrompt(template: String, srcLang: String, dstLang: String, isAsciidoctor: Boolean): String {
         val glossaryText = config.glossary.toPromptText()
+        val additionalRules = if (isAsciidoctor) asciidocMarkupRules else htmlMarkupRules
 
         return template
             .replace("{srcLang}", srcLang)
             .replace("{dstLang}", dstLang)
             .replace("{glossary}", glossaryText)
+            .replace("{additional_rules}", additionalRules)
     }
 
     companion object {
@@ -63,20 +73,22 @@ class TranslationAiService(
     suspend fun translate(
         texts: List<String>,
         srcLang: String,
-        dstLang: String
+        dstLang: String,
+        isAsciidoctor: Boolean
     ): List<String> {
         val items = texts.mapIndexed { index, text ->
             BatchTranslationRequestItem(index, text)
         }
-        return translateWithNotes(items, srcLang, dstLang)
+        return translateWithNotes(items, srcLang, dstLang, isAsciidoctor)
     }
 
     internal suspend fun translateWithNotes(
         items: List<BatchTranslationRequestItem>,
         srcLang: String,
-        dstLang: String
+        dstLang: String,
+        isAsciidoctor: Boolean
     ): List<String> {
-        val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
+        val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang, isAsciidoctor)
         val requestJson = mapper.writeValueAsString(items)
         val userPrompt = "Translate the following JSON array. Return a JSON array with the SAME indices:\n$requestJson"
 

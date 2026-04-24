@@ -42,7 +42,15 @@ class RAGTranslationAiService(
     private val translationSystemPrompt: String by lazy {
         customPromptPath
             .map { path -> java.io.File(path).readText() }
-            .orElseGet { loadClasspathPrompt("prompts/translation-rag-system-prompt.txt") }
+            .orElseGet { loadClasspathPrompt("prompts/translation-system-prompt.txt") }
+    }
+
+    private val asciidocMarkupRules: String by lazy {
+        loadClasspathPrompt("prompts/asciidoc-markup-rules.txt")
+    }
+
+    private val htmlMarkupRules: String by lazy {
+        loadClasspathPrompt("prompts/html-markup-rules.txt")
     }
 
     private fun loadClasspathPrompt(resourcePath: String): String {
@@ -51,13 +59,15 @@ class RAGTranslationAiService(
         } ?: throw IllegalStateException("Failed to load prompt from $resourcePath")
     }
 
-    private fun buildSystemPrompt(template: String, srcLang: String, dstLang: String): String {
+    private fun buildSystemPrompt(template: String, srcLang: String, dstLang: String, isAsciidoctor: Boolean): String {
         val glossaryText = config.glossary.toPromptText()
+        val additionalRules = if (isAsciidoctor) asciidocMarkupRules else htmlMarkupRules
 
         return template
             .replace("{srcLang}", srcLang)
             .replace("{dstLang}", dstLang)
             .replace("{glossary}", glossaryText)
+            .replace("{additional_rules}", additionalRules)
     }
 
     private fun retrieveContextForText(text: String): List<TranslationMemoryEntry> {
@@ -83,20 +93,22 @@ class RAGTranslationAiService(
     suspend fun translate(
         texts: List<String>,
         srcLang: String,
-        dstLang: String
+        dstLang: String,
+        isAsciidoctor: Boolean
     ): List<String> {
         val items = texts.mapIndexed { index, text ->
             BatchTranslationRequestItem(index, text)
         }
-        return translateWithNotes(items, srcLang, dstLang)
+        return translateWithNotes(items, srcLang, dstLang, isAsciidoctor)
     }
 
     internal suspend fun translateWithNotes(
         items: List<BatchTranslationRequestItem>,
         srcLang: String,
-        dstLang: String
+        dstLang: String,
+        isAsciidoctor: Boolean
     ): List<String> {
-        val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang)
+        val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang, isAsciidoctor)
 
         val indexedItems = items.map { item ->
             val ragContext = retrieveContextForText(item.text)

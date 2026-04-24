@@ -325,8 +325,9 @@ class TsujiBeans(
             "gemini" -> {
                 logger.info("Using Gemini Translator")
                 val chatModel = createGeminiChatModel(tsujiConfig)
-                val translationAiService = TranslationAiService(chatModel, tsujiConfig, tsujiConfig.translator.gemini.prompts.batchSystemPrompt)
-                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, tsujiConfig.translator.gemini.prompts.ragBatchSystemPrompt)
+                val promptPath = tsujiConfig.translator.gemini.prompts.systemPrompt
+                val translationAiService = TranslationAiService(chatModel, tsujiConfig, promptPath)
+                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, promptPath)
 
                 val geminiTranslationProcessor = GeminiTranslationProcessor(
                     translationAiService,
@@ -343,8 +344,9 @@ class TsujiBeans(
             "openai" -> {
                 logger.info("Using OpenAI Translator")
                 val chatModel = createOpenAiChatModel(tsujiConfig)
-                val translationAiService = TranslationAiService(chatModel, tsujiConfig, tsujiConfig.translator.openai.prompts.batchSystemPrompt)
-                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, tsujiConfig.translator.openai.prompts.ragBatchSystemPrompt)
+                val promptPath = tsujiConfig.translator.openai.prompts.systemPrompt
+                val translationAiService = TranslationAiService(chatModel, tsujiConfig, promptPath)
+                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, promptPath)
 
                 val mtTag = tsujiConfig.translator.openai.mtTag.orElse("openai")
                 val openAiTranslationProcessor = OpenAiTranslationProcessor(

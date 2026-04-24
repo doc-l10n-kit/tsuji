@@ -42,12 +42,12 @@ class GeminiTranslationProcessor(
         return try {
             if (context.useRag) {
                 logger.debug("Batch of ${texts.size} texts using RAG batch translation")
-                ragTranslationAiService.translate(texts, context.srcLang, context.dstLang)
+                ragTranslationAiService.translate(texts, context.srcLang, context.dstLang, context.isAsciidoctor)
             } else {
                 logger.debug("Sending batch: ${texts.size} items")
 
                 val batchStartTime = System.currentTimeMillis()
-                val result = translationAiService.translate(texts, context.srcLang, context.dstLang)
+                val result = translationAiService.translate(texts, context.srcLang, context.dstLang, context.isAsciidoctor)
                 val batchElapsedTime = System.currentTimeMillis() - batchStartTime
 
                 logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${texts.size})")
@@ -65,12 +65,12 @@ class GeminiTranslationProcessor(
         return try {
             if (context.useRag) {
                 logger.debug("Batch of ${items.size} texts using RAG batch translation with notes")
-                ragTranslationAiService.translateWithNotes(items, context.srcLang, context.dstLang)
+                ragTranslationAiService.translateWithNotes(items, context.srcLang, context.dstLang, context.isAsciidoctor)
             } else {
                 logger.debug("Sending batch: ${items.size} items with notes")
 
                 val batchStartTime = System.currentTimeMillis()
-                val result = translationAiService.translateWithNotes(items, context.srcLang, context.dstLang)
+                val result = translationAiService.translateWithNotes(items, context.srcLang, context.dstLang, context.isAsciidoctor)
                 val batchElapsedTime = System.currentTimeMillis() - batchStartTime
 
                 logger.debug("Batch translation completed in ${batchElapsedTime}ms (batch size: ${items.size})")
