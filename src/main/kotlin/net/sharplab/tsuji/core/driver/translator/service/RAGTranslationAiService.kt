@@ -42,7 +42,7 @@ class RAGTranslationAiService(
     private val translationSystemPrompt: String by lazy {
         customPromptPath
             .map { path -> java.io.File(path).readText() }
-            .orElseGet { loadClasspathPrompt("prompts/translation-rag-system-prompt.txt") }
+            .orElseGet { loadClasspathPrompt("prompts/translation-system-prompt.txt") }
     }
 
     private fun loadClasspathPrompt(resourcePath: String): String {
