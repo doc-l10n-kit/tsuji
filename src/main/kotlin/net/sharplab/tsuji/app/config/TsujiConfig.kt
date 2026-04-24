@@ -185,11 +185,8 @@ interface TsujiConfig {
             val prompts: Prompts
 
             interface Prompts {
-                @get:WithName("batch-system-prompt")
-                val batchSystemPrompt: Optional<String>
-
-                @get:WithName("rag-batch-system-prompt")
-                val ragBatchSystemPrompt: Optional<String>
+                @get:WithName("system-prompt")
+                val systemPrompt: Optional<String>
             }
 
             interface Batch {
@@ -225,11 +222,8 @@ interface TsujiConfig {
             val prompts: Prompts
 
             interface Prompts {
-                @get:WithName("batch-system-prompt")
-                val batchSystemPrompt: Optional<String>
-
-                @get:WithName("rag-batch-system-prompt")
-                val ragBatchSystemPrompt: Optional<String>
+                @get:WithName("system-prompt")
+                val systemPrompt: Optional<String>
             }
 
             interface Batch {
