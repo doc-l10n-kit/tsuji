@@ -58,8 +58,8 @@ class ExternalProcessDriverImpl : ExternalProcessDriver {
         }
 
         val process = processBuilder.start()
-        val output = process.inputStream.bufferedReader().readText()
-        val errorOutput = process.errorStream.bufferedReader().readText()
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        val errorOutput = process.errorStream.bufferedReader().use { it.readText() }
         val finished = process.waitFor(timeoutValue, timeoutUnit)
 
         if (!finished) {
