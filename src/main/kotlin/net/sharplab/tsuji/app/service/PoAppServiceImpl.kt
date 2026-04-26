@@ -187,6 +187,22 @@ class PoAppServiceImpl(
                     return@forEach
                 }
 
+                // Apply extract filters (same as extractJekyll)
+                if (format == "xhtml") {
+                    val includeList = tsujiConfig.jekyll.extract.html.include.orElse(emptyList())
+                    if (!includeList.contains(relativeMasterPath)) {
+                        logger.debug("Skipping non-included HTML file: $relativeMasterPath")
+                        return@forEach
+                    }
+                }
+                if (format == "yaml") {
+                    val excludeList = tsujiConfig.jekyll.extract.yaml.exclude.orElse(emptyList())
+                    if (excludeList.contains(relativeMasterPath)) {
+                        logger.debug("Skipping excluded YAML file: $relativeMasterPath")
+                        return@forEach
+                    }
+                }
+
                 if (format != null) {
                     logger.info("Applying translation to $masterFile using $poFile (format: $format)")
                     po4aDriver.translate(masterFile, poFile, masterFile, format, workDir)
