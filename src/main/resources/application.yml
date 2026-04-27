@@ -95,3 +95,10 @@ quarkus:
       #                          QUARKUS_LANGCHAIN4J_OPENAI_LOG_RESPONSES=true
       "io.quarkiverse.langchain4j.openai.common":
         level: INFO
+
+      # LangChain4j HTTP client logging (used by Gemini via LoggingHttpClient)
+      # Unlike OpenAI which has its own logger, Gemini relies on this generic HTTP client logger.
+      # To enable, set in .env: QUARKUS_LANGCHAIN4J_AI_GEMINI_LOG_REQUESTS=true
+      #                          QUARKUS_LANGCHAIN4J_AI_GEMINI_LOG_RESPONSES=true
+      "dev.langchain4j.http.client.log":
+        level: INFO
