@@ -33,7 +33,9 @@ class RAGTranslationAiService(
     private val chatModel: ChatModel,
     private val vectorStoreDriver: VectorStoreDriver,
     private val config: TsujiConfig,
-    customPromptPath: Optional<String>
+    customPromptPath: Optional<String>,
+    customAsciidocMarkupRulesPath: Optional<String> = Optional.empty(),
+    customHtmlMarkupRulesPath: Optional<String> = Optional.empty()
 ) {
 
     private val logger = LoggerFactory.getLogger(RAGTranslationAiService::class.java)
@@ -46,11 +48,15 @@ class RAGTranslationAiService(
     }
 
     private val asciidocMarkupRules: String by lazy {
-        loadClasspathPrompt("prompts/asciidoc-markup-rules.txt")
+        customAsciidocMarkupRulesPath
+            .map { path -> java.io.File(path).readText() }
+            .orElseGet { loadClasspathPrompt("prompts/asciidoc-markup-rules.txt") }
     }
 
     private val htmlMarkupRules: String by lazy {
-        loadClasspathPrompt("prompts/html-markup-rules.txt")
+        customHtmlMarkupRulesPath
+            .map { path -> java.io.File(path).readText() }
+            .orElseGet { loadClasspathPrompt("prompts/html-markup-rules.txt") }
     }
 
     private fun loadClasspathPrompt(resourcePath: String): String {

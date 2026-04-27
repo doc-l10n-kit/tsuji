@@ -326,8 +326,10 @@ class TsujiBeans(
                 logger.info("Using Gemini Translator")
                 val chatModel = createGeminiChatModel(tsujiConfig)
                 val promptPath = tsujiConfig.translator.gemini.prompts.systemPrompt
-                val translationAiService = TranslationAiService(chatModel, tsujiConfig, promptPath)
-                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, promptPath)
+                val asciidocRulesPath = tsujiConfig.translator.gemini.prompts.asciidocMarkupRules
+                val htmlRulesPath = tsujiConfig.translator.gemini.prompts.htmlMarkupRules
+                val translationAiService = TranslationAiService(chatModel, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
+                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
 
                 val geminiTranslationProcessor = GeminiTranslationProcessor(
                     translationAiService,
@@ -345,8 +347,10 @@ class TsujiBeans(
                 logger.info("Using OpenAI Translator")
                 val chatModel = createOpenAiChatModel(tsujiConfig)
                 val promptPath = tsujiConfig.translator.openai.prompts.systemPrompt
-                val translationAiService = TranslationAiService(chatModel, tsujiConfig, promptPath)
-                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, promptPath)
+                val asciidocRulesPath = tsujiConfig.translator.openai.prompts.asciidocMarkupRules
+                val htmlRulesPath = tsujiConfig.translator.openai.prompts.htmlMarkupRules
+                val translationAiService = TranslationAiService(chatModel, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
+                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
 
                 val mtTag = tsujiConfig.translator.openai.mtTag.orElse("openai")
                 val openAiTranslationProcessor = OpenAiTranslationProcessor(

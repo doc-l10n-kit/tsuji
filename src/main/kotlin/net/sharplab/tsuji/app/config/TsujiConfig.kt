@@ -187,6 +187,12 @@ interface TsujiConfig {
             interface Prompts {
                 @get:WithName("system-prompt")
                 val systemPrompt: Optional<String>
+
+                @get:WithName("asciidoc-markup-rules")
+                val asciidocMarkupRules: Optional<String>
+
+                @get:WithName("html-markup-rules")
+                val htmlMarkupRules: Optional<String>
             }
 
             interface Batch {
@@ -224,6 +230,12 @@ interface TsujiConfig {
             interface Prompts {
                 @get:WithName("system-prompt")
                 val systemPrompt: Optional<String>
+
+                @get:WithName("asciidoc-markup-rules")
+                val asciidocMarkupRules: Optional<String>
+
+                @get:WithName("html-markup-rules")
+                val htmlMarkupRules: Optional<String>
             }
 
             interface Batch {
