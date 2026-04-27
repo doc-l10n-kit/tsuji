@@ -47,12 +47,56 @@ class TranslationAppServiceImplTest {
         whenever(poTranslatorService.translate(dummyPo, "en", "ja", true, true)).thenReturn(dummyPo)
 
         // When
-        target.machineTranslatePoFiles(listOf(poPath), "en", "ja", true, true)
+        target.machineTranslatePoFiles(listOf(poPath), "en", "ja", AsciidocMode.ALWAYS, true)
 
         // Then
         verify(poDriver).load(poPath)
         verify(poTranslatorService).translate(dummyPo, "en", "ja", true, true)
         verify(poDriver).save(dummyPo, poPath)
         verify(poNormalizerService).normalize(poPath)
+    }
+
+    @Test
+    fun `machineTranslatePoFiles auto-detects asciidoc mode for adoc files`() {
+        runBlocking {
+            // Given
+            val poPath = TestUtil.resolveClasspath("po/sample.adoc.po")
+            val dummyPo = PoDriverImpl().load(poPath)
+
+            whenever(poDriver.load(poPath)).thenReturn(dummyPo)
+            whenever(poTranslatorService.translate(dummyPo, "en", "ja", true, true)).thenReturn(dummyPo)
+
+            // When: AUTO mode with .adoc.po -> true
+            target.machineTranslatePoFiles(listOf(poPath), "en", "ja", AsciidocMode.AUTO, true)
+
+            // Then
+            verify(poTranslatorService).translate(dummyPo, "en", "ja", true, true)
+        }
+    }
+
+    @Test
+    fun `machineTranslatePoFiles auto-detects non-asciidoc mode for html files`() {
+        runBlocking {
+            // Given: create a temporary .html.po file from sample
+            val samplePath = TestUtil.resolveClasspath("po/sample.adoc.po")
+            val tempDir = java.nio.file.Files.createTempDirectory("tsuji-test")
+            val htmlPoPath = tempDir.resolve("sample.html.po")
+            java.nio.file.Files.copy(samplePath, htmlPoPath)
+
+            val dummyPo = PoDriverImpl().load(htmlPoPath)
+
+            whenever(poDriver.load(htmlPoPath)).thenReturn(dummyPo)
+            whenever(poTranslatorService.translate(dummyPo, "en", "ja", false, true)).thenReturn(dummyPo)
+
+            // When: AUTO mode with .html.po -> false
+            target.machineTranslatePoFiles(listOf(htmlPoPath), "en", "ja", AsciidocMode.AUTO, true)
+
+            // Then
+            verify(poTranslatorService).translate(dummyPo, "en", "ja", false, true)
+
+            // Cleanup
+            java.nio.file.Files.deleteIfExists(htmlPoPath)
+            java.nio.file.Files.deleteIfExists(tempDir)
+        }
     }
 }

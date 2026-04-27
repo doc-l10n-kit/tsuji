@@ -7,7 +7,7 @@ interface TranslationAppService {
         filePaths: List<Path>?,
         source: String?,
         target: String?,
-        isAsciidoctor: Boolean,
+        asciidocMode: AsciidocMode,
         useRag: Boolean,
         configPath: Path? = null
     )

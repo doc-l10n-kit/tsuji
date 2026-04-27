@@ -31,7 +31,7 @@ class TranslationAppServiceImpl(
         filePaths: List<Path>?,
         source: String?,
         target: String?,
-        isAsciidoctor: Boolean,
+        asciidocMode: AsciidocMode,
         useRag: Boolean,
         configPath: Path?
     ) {
@@ -40,7 +40,7 @@ class TranslationAppServiceImpl(
                 // Explicit file paths provided via --po option - process only these files/directories
                 logger.info("Processing explicitly specified files/directories")
                 filePaths.forEach { filePath ->
-                    translateRecursiveAsync(filePath, source, target, isAsciidoctor, useRag)
+                    translateRecursiveAsync(filePath, source, target, asciidocMode, useRag)
                 }
             } else {
                 val targetDirectories = tsujiConfig.translator.targetDirectories
@@ -56,7 +56,7 @@ class TranslationAppServiceImpl(
                     dirs.forEach { targetDir ->
                         val dirPath = baseDir.resolve(targetDir)
                         if (dirPath.exists()) {
-                            translateRecursiveAsync(dirPath, source, target, isAsciidoctor, useRag)
+                            translateRecursiveAsync(dirPath, source, target, asciidocMode, useRag)
                         } else {
                             logger.warn("Target directory does not exist, skipping: ${dirPath.absolutePathString()}")
                         }
@@ -65,7 +65,7 @@ class TranslationAppServiceImpl(
                     // Default behavior: process base directory
                     logger.info("Processing default base directory")
                     val baseDir = Paths.get(tsujiConfig.po.baseDir)
-                    translateRecursiveAsync(baseDir, source, target, isAsciidoctor, useRag)
+                    translateRecursiveAsync(baseDir, source, target, asciidocMode, useRag)
                 }
             }
         }
@@ -75,7 +75,7 @@ class TranslationAppServiceImpl(
         filePath: Path,
         source: String?,
         target: String?,
-        isAsciidoctor: Boolean,
+        asciidocMode: AsciidocMode,
         useRag: Boolean
     ) {
         if (filePath.isDirectory()) {
@@ -91,7 +91,7 @@ class TranslationAppServiceImpl(
             poFiles.asFlow()
                 .flatMapMerge(concurrency = 30) { file ->
                     flow {
-                        emit(translateSingleFile(file, source, target, isAsciidoctor, useRag))
+                        emit(translateSingleFile(file, source, target, asciidocMode, useRag))
                     }
                 }
                 .collect()
@@ -101,21 +101,27 @@ class TranslationAppServiceImpl(
         }
 
         // Single file
-        translateSingleFile(filePath, source, target, isAsciidoctor, useRag)
+        translateSingleFile(filePath, source, target, asciidocMode, useRag)
     }
 
     private suspend fun translateSingleFile(
         filePath: Path,
         source: String?,
         target: String?,
-        isAsciidoctor: Boolean,
+        asciidocMode: AsciidocMode,
         useRag: Boolean
     ) {
+        val isAsciidoctor = when (asciidocMode) {
+            AsciidocMode.ALWAYS -> true
+            AsciidocMode.NEVER -> false
+            AsciidocMode.AUTO -> filePath.fileName.toString().endsWith(".adoc.po")
+        }
+
         val resolvedSourceLang = source ?: tsujiConfig.language.from
         val resolvedTargetLang = target ?: tsujiConfig.language.to
 
         val startTime = System.currentTimeMillis()
-        logger.info("Start translation: %s (%s -> %s) at ${startTime}ms".format(filePath.fileName, resolvedSourceLang, resolvedTargetLang))
+        logger.info("Start translation: %s (%s -> %s, asciidoc=%s) at ${startTime}ms".format(filePath.fileName, resolvedSourceLang, resolvedTargetLang, isAsciidoctor))
         val poFile = poDriver.load(filePath)
         logger.debug("Loaded PO file: ${poFile.messages.size} messages")
         val translated = poTranslatorService.translate(poFile, resolvedSourceLang, resolvedTargetLang, isAsciidoctor, useRag)

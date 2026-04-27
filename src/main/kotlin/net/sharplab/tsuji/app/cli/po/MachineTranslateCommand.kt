@@ -3,6 +3,7 @@ package net.sharplab.tsuji.app.cli.po
 import io.quarkus.arc.Unremovable
 import jakarta.enterprise.context.Dependent
 import net.sharplab.tsuji.app.cli.BaseCommand
+import net.sharplab.tsuji.app.service.AsciidocMode
 import net.sharplab.tsuji.app.service.TranslationAppService
 import picocli.CommandLine
 import java.nio.file.Path
@@ -24,11 +25,10 @@ class MachineTranslateCommand(private val translationAppService: TranslationAppS
     @CommandLine.Option(
         order = 4,
         names = ["--asciidoc"],
-        negatable = true,
-        fallbackValue = "true",
-        description = ["enable or disable asciidoc inline markup processing (default: true, use --no-asciidoc to disable)"]
+        description = ["asciidoc inline markup processing mode: auto (detect from filename), always (force enable), never (force disable). Default: auto"],
+        defaultValue = "auto"
     )
-    private var asciidoc = true
+    private var asciidoc: AsciidocMode = AsciidocMode.AUTO
 
     @CommandLine.Option(
         order = 5,
