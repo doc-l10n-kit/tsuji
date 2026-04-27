@@ -1,5 +1,6 @@
 package net.sharplab.tsuji.app.cli.po
 
+import net.sharplab.tsuji.app.service.AsciidocMode
 import net.sharplab.tsuji.app.service.TranslationAppService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -8,59 +9,63 @@ import picocli.CommandLine
 
 class MachineTranslateCommandTest {
 
+    private fun createCommandLine(command: MachineTranslateCommand): CommandLine {
+        val cmd = CommandLine(command)
+        cmd.isCaseInsensitiveEnumValuesAllowed = true
+        return cmd
+    }
+
     @Test
     fun `default values should be correct`() {
-        // Create a command without Quarkus injection for pure picocli testing
         val mockService = mock(TranslationAppService::class.java)
         val command = MachineTranslateCommand(mockService)
 
-        val cmd = CommandLine(command)
+        val cmd = createCommandLine(command)
         cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja")
 
-        // Access via reflection since fields are private
         val asciidocField = command.javaClass.getDeclaredField("asciidoc")
         asciidocField.isAccessible = true
         val ragField = command.javaClass.getDeclaredField("rag")
         ragField.isAccessible = true
 
-        assertThat(asciidocField.getBoolean(command))
-            .describedAs("Default asciidoc should be true")
-            .isTrue()
+        assertThat(asciidocField.get(command))
+            .describedAs("Default asciidoc should be AUTO")
+            .isEqualTo(AsciidocMode.AUTO)
         assertThat(ragField.getBoolean(command))
             .describedAs("Default rag should be true")
             .isTrue()
     }
 
     @Test
-    fun `--asciidoc should enable asciidoc processing`() {
+    fun `--asciidoc always should enable asciidoc processing`() {
         val mockService = mock(TranslationAppService::class.java)
         val command = MachineTranslateCommand(mockService)
 
-        val cmd = CommandLine(command)
-        cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--asciidoc")
+        val cmd = createCommandLine(command)
+        cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--asciidoc", "always")
 
         val asciidocField = command.javaClass.getDeclaredField("asciidoc")
         asciidocField.isAccessible = true
 
-        assertThat(asciidocField.getBoolean(command))
-            .describedAs("--asciidoc should enable asciidoc")
-            .isTrue()
+        assertThat(asciidocField.get(command))
+            .describedAs("--asciidoc always should set ALWAYS")
+            .isEqualTo(AsciidocMode.ALWAYS)
     }
 
     @Test
-    fun `--no-asciidoc should disable asciidoc processing`() {
+    fun `--asciidoc never should disable asciidoc processing`() {
         val mockService = mock(TranslationAppService::class.java)
         val command = MachineTranslateCommand(mockService)
 
-        val cmd = CommandLine(command)
-        cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--no-asciidoc")
+        val cmd = createCommandLine(command)
+        cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--asciidoc", "never")
 
         val asciidocField = command.javaClass.getDeclaredField("asciidoc")
         asciidocField.isAccessible = true
 
-        assertThat(asciidocField.getBoolean(command))
-            .describedAs("--no-asciidoc should disable asciidoc")
-            .isFalse()
+        assertThat(asciidocField.get(command))
+            .describedAs("--asciidoc never should set NEVER")
+            .isEqualTo(AsciidocMode.NEVER)
     }
 
     @Test
@@ -68,7 +73,7 @@ class MachineTranslateCommandTest {
         val mockService = mock(TranslationAppService::class.java)
         val command = MachineTranslateCommand(mockService)
 
-        val cmd = CommandLine(command)
+        val cmd = createCommandLine(command)
         cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--rag")
 
         val ragField = command.javaClass.getDeclaredField("rag")
@@ -84,7 +89,7 @@ class MachineTranslateCommandTest {
         val mockService = mock(TranslationAppService::class.java)
         val command = MachineTranslateCommand(mockService)
 
-        val cmd = CommandLine(command)
+        val cmd = createCommandLine(command)
         cmd.parseArgs("-p", "test.po", "--source", "en", "--target", "ja", "--no-rag")
 
         val ragField = command.javaClass.getDeclaredField("rag")
