@@ -109,7 +109,9 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
 
         if (source.linkHrefs.size != translated.linkHrefs.size) {
             notes.add("This text contains ${source.linkHrefs.size} link(s). " +
-                    "Preserve all link URLs unchanged in your translation.")
+                    "Preserve all link URLs unchanged in your translation. " +
+                    "IMPORTANT: In CJK text, URLs MUST be preceded by a half-width space or Asciidoctor will not recognize them as links. " +
+                    "Example: ✓ \"静的ファイルは、 https://example.com[text] を参照\" ✗ \"静的ファイルは、https://example.com[text] を参照\"")
         }
 
         if (source.imageSrcs.size != translated.imageSrcs.size) {

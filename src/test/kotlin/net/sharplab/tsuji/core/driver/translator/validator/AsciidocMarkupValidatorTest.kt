@@ -257,6 +257,35 @@ class AsciidocMarkupValidatorTest {
     }
 
     @Test
+    fun `validate should throw when URL lacks space after CJK punctuation`() {
+        assertThatThrownBy {
+            validator.validate(listOf(
+                msg(
+                    "Quarkus provides the https://github.com/smallrye/smallrye-open-api/[SmallRye OpenAPI] extension.",
+                    "Quarkus は、https://github.com/smallrye/smallrye-open-api/[SmallRye OpenAPI] エクステンションを提供します。"
+                )
+            ))
+        }.isInstanceOf(AsciidocMarkupValidationException::class.java)
+            .satisfies({ e ->
+                val ex = e as AsciidocMarkupValidationException
+                assertThat(ex.brokenTranslations).hasSize(1)
+                assertThat(ex.brokenTranslations[0].note).contains("half-width space")
+            })
+    }
+
+    @Test
+    fun `validate should pass when URL has space after CJK punctuation`() {
+        assertThatCode {
+            validator.validate(listOf(
+                msg(
+                    "Quarkus provides the https://github.com/smallrye/smallrye-open-api/[SmallRye OpenAPI] extension.",
+                    "Quarkus は、 https://github.com/smallrye/smallrye-open-api/[SmallRye OpenAPI] エクステンションを提供します。"
+                )
+            ))
+        }.doesNotThrowAnyException()
+    }
+
+    @Test
     fun `validate should pass when both source and translation have no markup`() {
         assertThatCode {
             validator.validate(listOf(

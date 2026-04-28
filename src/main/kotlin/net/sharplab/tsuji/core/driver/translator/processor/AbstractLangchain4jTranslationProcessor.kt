@@ -25,16 +25,13 @@ abstract class AbstractLangchain4jTranslationProcessor(
     private val initialTextsPerRequest: Int,
     private val maxTextsPerRequest: Int,
     private val maxRetries: Int,
+    private val maxMessageValidationRetries: Int = 4,
     private val parallelismController: AdaptiveParallelismController,
     private val asciidocMarkupValidator: AsciidocMarkupValidator,
     private val messageTypeNoteGenerator: MessageTypeNoteGenerator
 ) : MessageProcessor {
 
     protected abstract val logger: Logger
-
-    companion object {
-        private const val MAX_MARKUP_RETRIES = 2
-    }
 
     private fun createBatchProvider(
         items: List<TranslationMessage>,
@@ -113,7 +110,7 @@ abstract class AbstractLangchain4jTranslationProcessor(
             val executor = BatchedExecutor(
                 batchProvider = batchProvider,
                 maxRetries = maxRetries,
-                maxValidationRetries = 5
+                maxBatchValidationRetries = 5
             )
 
             val translated = executor.execute { batch ->
@@ -154,13 +151,13 @@ abstract class AbstractLangchain4jTranslationProcessor(
             return messages
         }
 
-        repeat(MAX_MARKUP_RETRIES + 1) { attempt ->
+        repeat(maxMessageValidationRetries + 1) { attempt ->
             try {
                 asciidocMarkupValidator.validate(messages)
                 return messages
             } catch (e: AsciidocMarkupValidationException) {
-                if (attempt < MAX_MARKUP_RETRIES) {
-                    logger.info("Retrying ${e.brokenTranslations.size} broken translation(s) (attempt ${attempt + 1}/$MAX_MARKUP_RETRIES)")
+                if (attempt < maxMessageValidationRetries) {
+                    logger.info("Retrying ${e.brokenTranslations.size} broken translation(s) (attempt ${attempt + 1}/$maxMessageValidationRetries)")
                     messages = retranslateBroken(messages, e.brokenTranslations, context)
                 } else {
                     logger.warn("Asciidoc markup still broken in ${e.brokenTranslations.size} translation(s), accepting anyway")

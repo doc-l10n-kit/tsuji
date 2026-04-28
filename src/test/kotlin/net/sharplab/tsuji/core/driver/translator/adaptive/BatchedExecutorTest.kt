@@ -84,7 +84,7 @@ class BatchedExecutorTest {
         val batchProvider = createBatchProvider(items = items, initialLimit = 4, maxLimit = 4)
         val executor = BatchedExecutor(
             batchProvider = batchProvider,
-            maxValidationRetries = 5
+            maxBatchValidationRetries = 5
         )
 
         var attemptCount = 0
@@ -149,7 +149,7 @@ class BatchedExecutorTest {
         val batchProvider = createBatchProvider(items = items, initialLimit = 10, minLimit = 1, maxLimit = 10)
         val executor = BatchedExecutor(
             batchProvider = batchProvider,
-            maxValidationRetries = 3
+            maxBatchValidationRetries = 3
         )
 
         // When/Then

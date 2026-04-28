@@ -337,6 +337,7 @@ class TsujiBeans(
                     tsujiConfig.translator.gemini.batch.initialTextsPerRequest,
                     tsujiConfig.translator.gemini.batch.maxTextsPerRequest,
                     tsujiConfig.translator.adaptive.maxRetries,
+                    tsujiConfig.translator.adaptive.maxMessageValidationRetries,
                     adaptiveParallelismController,
                     asciidocMarkupValidator,
                     messageTypeNoteGenerator
@@ -360,6 +361,7 @@ class TsujiBeans(
                     tsujiConfig.translator.openai.batch.initialTextsPerRequest,
                     tsujiConfig.translator.openai.batch.maxTextsPerRequest,
                     tsujiConfig.translator.adaptive.maxRetries,
+                    tsujiConfig.translator.adaptive.maxMessageValidationRetries,
                     adaptiveParallelismController,
                     asciidocMarkupValidator,
                     messageTypeNoteGenerator
