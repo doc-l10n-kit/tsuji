@@ -186,7 +186,8 @@ abstract class AbstractLangchain4jTranslationProcessor(
             BatchTranslationRequestItem(
                 index = index,
                 text = broken.message.original.messageId,
-                note = MessageTypeNoteGenerator.mergeNotes(typeNote, broken.note)
+                note = MessageTypeNoteGenerator.mergeNotes(typeNote, broken.note),
+                previousTranslation = broken.message.text
             )
         }
 

@@ -11,6 +11,8 @@ You will receive a JSON array of objects. Each object has:
 - "tm": (Optional) Translation memory array (original-translation pairs) specific to this text
 - "note": (Optional) Additional note specific to this text.
           Follow this note carefully to ensure translation quality.
+- "previousTranslation": (Optional) A previous translation that had validation issues.
+          Fix the issues described in "note" while preserving the rest of the translation.
 
 RULES:
 - Each input text is ONE unit — do NOT split at newlines

@@ -23,7 +23,10 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
         val imageSrcs: Set<String>,
         val emphasisCount: Int,
         val strongCount: Int,
-        val codeCount: Int
+        val codeCount: Int,
+        val emphasisTexts: List<String> = emptyList(),
+        val strongTexts: List<String> = emptyList(),
+        val codeTexts: List<String> = emptyList()
     ) {
         fun isEmpty(): Boolean =
             linkHrefs.isEmpty() && imageSrcs.isEmpty() && emphasisCount == 0 && strongCount == 0 && codeCount == 0
@@ -64,14 +67,21 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
             val doc = Jsoup.parseBodyFragment(html)
             val body = doc.body()
 
+            val emElements = body.select("em")
+            val strongElements = body.select("strong")
+            val codeElements = body.select("code")
+
             MarkupFeatures(
                 linkHrefs = body.select("a[href]")
                     .map { it.attr("href") }
                     .toSet(),
                 imageSrcs = body.select("img[src]").map { it.attr("src") }.toSet(),
-                emphasisCount = body.select("em").size,
-                strongCount = body.select("strong").size,
-                codeCount = body.select("code").size
+                emphasisCount = emElements.size,
+                strongCount = strongElements.size,
+                codeCount = codeElements.size,
+                emphasisTexts = emElements.map { it.text() },
+                strongTexts = strongElements.map { it.text() },
+                codeTexts = codeElements.map { it.text() }
             )
         } catch (e: Exception) {
             logger.debug("Failed to extract markup features: ${e.message}")
@@ -93,29 +103,53 @@ class AsciidocMarkupValidator(private val asciidoctor: Asciidoctor) {
         val notes = mutableListOf<String>()
 
         if (source.codeCount != translated.codeCount) {
-            notes.add("This text contains ${source.codeCount} backtick pair(s) for inline code markup. " +
-                    "Ensure your translation preserves exactly ${source.codeCount} backtick pair(s) with proper spacing in CJK text.")
+            val sourceDesc = if (source.codeTexts.isNotEmpty()) {
+                source.codeTexts.joinToString(", ") { "`$it`" }
+            } else "none"
+            if (source.codeCount > translated.codeCount) {
+                notes.add("Source has ${source.codeCount} code span(s) ($sourceDesc) but your translation has ${translated.codeCount}. " +
+                        "Preserve all code spans with proper spacing in CJK text.")
+            } else {
+                notes.add("Source has ${source.codeCount} code span(s) ($sourceDesc) but your translation has ${translated.codeCount}. " +
+                        "Do NOT add backticks around text that is not in backticks in the source.")
+            }
         }
 
         if (source.strongCount != translated.strongCount) {
-            notes.add("This text contains ${source.strongCount} bold markup (*text*). " +
-                    "Preserve exactly ${source.strongCount} bold markup(s) with proper spacing in CJK text.")
+            val sourceDesc = if (source.strongTexts.isNotEmpty()) {
+                source.strongTexts.joinToString(", ") { "*$it*" }
+            } else "none"
+            if (source.strongCount > translated.strongCount) {
+                notes.add("Source has ${source.strongCount} bold markup ($sourceDesc) but your translation has ${translated.strongCount}. " +
+                        "Preserve the bold markup with proper spacing in CJK text.")
+            } else {
+                notes.add("Source has ${source.strongCount} bold markup ($sourceDesc) but your translation has ${translated.strongCount}. " +
+                        "Do NOT add bold markup that is not in the source.")
+            }
         }
 
         if (source.emphasisCount != translated.emphasisCount) {
-            notes.add("This text contains ${source.emphasisCount} italic markup (_text_). " +
-                    "Preserve exactly ${source.emphasisCount} italic markup(s) with proper spacing in CJK text.")
+            val sourceDesc = if (source.emphasisTexts.isNotEmpty()) {
+                source.emphasisTexts.joinToString(", ") { "_${it}_" }
+            } else "none"
+            if (source.emphasisCount > translated.emphasisCount) {
+                notes.add("Source has ${source.emphasisCount} italic markup ($sourceDesc) but your translation has ${translated.emphasisCount}. " +
+                        "Preserve the italic markup with proper spacing in CJK text.")
+            } else {
+                notes.add("Source has ${source.emphasisCount} italic markup ($sourceDesc) but your translation has ${translated.emphasisCount}. " +
+                        "Do NOT add italic markup that is not in the source.")
+            }
         }
 
         if (source.linkHrefs.size != translated.linkHrefs.size) {
-            notes.add("This text contains ${source.linkHrefs.size} link(s). " +
+            notes.add("Source has ${source.linkHrefs.size} link(s) but your translation has ${translated.linkHrefs.size}. " +
                     "Preserve all link URLs unchanged in your translation. " +
                     "IMPORTANT: In CJK text, URLs MUST be preceded by a half-width space or Asciidoctor will not recognize them as links. " +
                     "Example: ✓ \"静的ファイルは、 https://example.com[text] を参照\" ✗ \"静的ファイルは、https://example.com[text] を参照\"")
         }
 
         if (source.imageSrcs.size != translated.imageSrcs.size) {
-            notes.add("This text contains ${source.imageSrcs.size} image(s). " +
+            notes.add("Source has ${source.imageSrcs.size} image(s) but your translation has ${translated.imageSrcs.size}. " +
                     "Preserve all image paths unchanged in your translation.")
         }
 
