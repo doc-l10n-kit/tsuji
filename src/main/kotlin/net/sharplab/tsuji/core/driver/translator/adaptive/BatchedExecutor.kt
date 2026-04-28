@@ -9,14 +9,14 @@ import org.slf4j.LoggerFactory
  *
  * Handles:
  * - Batch splitting using BatchProvider
- * - Retry logic (maxRetries for general errors, maxValidationRetries for validation errors)
+ * - Retry logic (maxRetries for general errors, maxBatchValidationRetries for validation errors)
  * - Automatic size limit reduction on validation errors
  * - Exponential backoff on retries
  */
 class BatchedExecutor<T>(
     private val batchProvider: BatchProvider<T>,
     private val maxRetries: Int = 3,
-    private val maxValidationRetries: Int = 5
+    private val maxBatchValidationRetries: Int = 5
 ) {
     private val logger = LoggerFactory.getLogger(BatchedExecutor::class.java)
 
@@ -62,10 +62,10 @@ class BatchedExecutor<T>(
             } catch (e: TranslationValidationException) {
                 // Validation error: reduce size limit and retry from same position
                 validationRetryCount++
-                logger.warn("Validation error (retry $validationRetryCount/$maxValidationRetries): ${e.javaClass.simpleName}: ${e.message}")
+                logger.warn("Validation error (retry $validationRetryCount/$maxBatchValidationRetries): ${e.javaClass.simpleName}: ${e.message}")
 
-                if (validationRetryCount >= maxValidationRetries) {
-                    logger.error("Exceeded maximum validation retries ($maxValidationRetries), giving up")
+                if (validationRetryCount >= maxBatchValidationRetries) {
+                    logger.error("Exceeded maximum validation retries ($maxBatchValidationRetries), giving up")
                     throw e
                 }
 
