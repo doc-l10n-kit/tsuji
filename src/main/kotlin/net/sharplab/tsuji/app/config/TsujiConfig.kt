@@ -155,7 +155,7 @@ interface TsujiConfig {
             val maxConcurrency: Int
 
             @get:WithName("max-retries")
-            @get:WithDefault("3")
+            @get:WithDefault("2")
             val maxRetries: Int
 
             @get:WithName("max-message-validation-retries")
