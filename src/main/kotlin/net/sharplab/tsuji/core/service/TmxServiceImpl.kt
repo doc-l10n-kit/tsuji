@@ -3,6 +3,7 @@ package net.sharplab.tsuji.core.service
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.model.tmx.TmxGenerationMode
 import net.sharplab.tsuji.tmx.model.*
+import net.sharplab.tsuji.core.util.LocaleUtils
 import org.slf4j.LoggerFactory
 
 class TmxServiceImpl(
@@ -15,8 +16,10 @@ class TmxServiceImpl(
     override fun createTmxFromPos(pos: List<Po>, mode: TmxGenerationMode): Tmx {
         val translations = mutableMapOf<String, String>()
 
+        val configLocale = LocaleUtils.parse(targetLang)
         pos.forEach { po ->
-            if (po.target != targetLang) {
+            val poLocale = LocaleUtils.parse(po.target)
+            if (poLocale != configLocale) {
                 logger.warn("PO file target language '{}' does not match configured target language '{}'", po.target, targetLang)
             }
             po.messages.forEach { msg ->
