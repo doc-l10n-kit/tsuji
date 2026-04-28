@@ -56,8 +56,6 @@ quarkus:
         chat-model:
           # Set to model's maximum output tokens (no cost penalty, only charges for actual tokens generated)
           max-output-tokens: 65536
-          thinking:
-            thinking-budget: 0
         timeout: 300s
         log-requests: false
         log-responses: false

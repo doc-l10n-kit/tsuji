@@ -179,17 +179,32 @@ interface TsujiConfig {
             val key: Optional<String>
 
             @get:WithName("model")
-            @get:WithDefault("gemini-2.5-flash")
-            val model: String
+            val model: ModelConfig
 
             @get:WithName("escalation-model")
-            val escalationModel: Optional<String>
+            val escalationModel: ModelConfig
 
             @get:WithName("batch")
             val batch: Batch
 
             @get:WithName("prompts")
             val prompts: Prompts
+
+            interface ModelConfig {
+                @get:WithName("model-id")
+                val modelId: Optional<String>
+
+                @get:WithName("thinking")
+                val thinking: Thinking
+            }
+
+            interface Thinking {
+                @get:WithName("thinking-budget")
+                val thinkingBudget: Optional<Int>
+
+                @get:WithName("thinking-level")
+                val thinkingLevel: Optional<String>
+            }
 
             interface Prompts {
                 @get:WithName("system-prompt")
@@ -222,14 +237,18 @@ interface TsujiConfig {
             val key: Optional<String>
 
             @get:WithName("model")
-            @get:WithDefault("gpt-4o-mini")
-            val model: String
+            val model: ModelConfig
 
             @get:WithName("escalation-model")
-            val escalationModel: Optional<String>
+            val escalationModel: ModelConfig
 
             @get:WithName("mt-tag")
             val mtTag: Optional<String>
+
+            interface ModelConfig {
+                @get:WithName("model-id")
+                val modelId: Optional<String>
+            }
 
             @get:WithName("batch")
             val batch: Batch
