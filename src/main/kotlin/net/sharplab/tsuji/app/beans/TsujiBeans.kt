@@ -345,9 +345,9 @@ class TsujiBeans(
                 logger.info("Using Gemini Translator")
                 val chatModel = createStandardGeminiChatModel(tsujiConfig)
                 val escalationChatModel = createEscalationGeminiChatModel(tsujiConfig) ?: chatModel
-                val promptPath = tsujiConfig.translator.gemini.prompts.systemPrompt
-                val asciidocRulesPath = tsujiConfig.translator.gemini.prompts.asciidocMarkupRules
-                val htmlRulesPath = tsujiConfig.translator.gemini.prompts.htmlMarkupRules
+                val promptPath = tsujiConfig.translator.gemini.prompts.systemPrompt.orElse(null)
+                val asciidocRulesPath = tsujiConfig.translator.gemini.prompts.asciidocMarkupRules.orElse(null)
+                val htmlRulesPath = tsujiConfig.translator.gemini.prompts.htmlMarkupRules.orElse(null)
                 val translationAiService = TranslationAiService(chatModel, escalationChatModel, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
                 val ragTranslationAiService = RAGTranslationAiService(chatModel, escalationChatModel, vectorStoreDriver, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
 
@@ -368,9 +368,9 @@ class TsujiBeans(
                 logger.info("Using OpenAI Translator")
                 val chatModel = createStandardOpenAiChatModel(tsujiConfig)
                 val escalationChatModel = createEscalationOpenAiChatModel(tsujiConfig) ?: chatModel
-                val promptPath = tsujiConfig.translator.openai.prompts.systemPrompt
-                val asciidocRulesPath = tsujiConfig.translator.openai.prompts.asciidocMarkupRules
-                val htmlRulesPath = tsujiConfig.translator.openai.prompts.htmlMarkupRules
+                val promptPath = tsujiConfig.translator.openai.prompts.systemPrompt.orElse(null)
+                val asciidocRulesPath = tsujiConfig.translator.openai.prompts.asciidocMarkupRules.orElse(null)
+                val htmlRulesPath = tsujiConfig.translator.openai.prompts.htmlMarkupRules.orElse(null)
                 val translationAiService = TranslationAiService(chatModel, escalationChatModel, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
                 val ragTranslationAiService = RAGTranslationAiService(chatModel, escalationChatModel, vectorStoreDriver, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
 
