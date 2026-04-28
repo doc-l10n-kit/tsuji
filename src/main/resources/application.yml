@@ -5,8 +5,8 @@ tsuji:
     min-score: 0.5
 
   language:
-    from: "en"
-    to: "ja"
+    from: "en_US"
+    to: "ja_JP"
 
   translator:
     type: "gemini"

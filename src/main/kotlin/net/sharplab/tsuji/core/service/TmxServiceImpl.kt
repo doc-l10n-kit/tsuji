@@ -2,13 +2,18 @@ package net.sharplab.tsuji.core.service
 
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.model.tmx.TmxGenerationMode
+import net.sharplab.tsuji.core.util.LocaleUtils
 import net.sharplab.tsuji.tmx.model.*
 import org.slf4j.LoggerFactory
 
 class TmxServiceImpl(
-    private val sourceLang: String,
-    private val targetLang: String
+    sourceLang: String,
+    targetLang: String
 ) : TmxService {
+
+    // Normalize to POSIX format (underscore) to match PO file locale convention
+    private val sourceLang: String = LocaleUtils.parse(sourceLang).toString()
+    private val targetLang: String = LocaleUtils.parse(targetLang).toString()
 
     private val logger = LoggerFactory.getLogger(TmxServiceImpl::class.java)
 
