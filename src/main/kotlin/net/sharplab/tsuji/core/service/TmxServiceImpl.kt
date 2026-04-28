@@ -15,10 +15,11 @@ class TmxServiceImpl(
     override fun createTmxFromPos(pos: List<Po>, mode: TmxGenerationMode): Tmx {
         val translations = mutableMapOf<String, String>()
 
+        // Use the actual target language from PO files instead of the config value,
+        // so that the TMX language tag matches the PO file's Language header (e.g. "ja_JP").
+        var resolvedTargetLang = targetLang
         pos.forEach { po ->
-            if (po.target != targetLang) {
-                logger.warn("PO file target language '{}' does not match configured target language '{}'", po.target, targetLang)
-            }
+            resolvedTargetLang = po.target
             po.messages.forEach { msg ->
                 if (msg.messageId.isEmpty()) return@forEach
                 if (msg.messageString.isEmpty()) return@forEach
@@ -41,7 +42,7 @@ class TmxServiceImpl(
             .map { (src, dst) ->
                 TranslationUnit(listOf(
                     TranslationUnitVariant(sourceLang, src),
-                    TranslationUnitVariant(targetLang, dst)
+                    TranslationUnitVariant(resolvedTargetLang, dst)
                 ))
             }
 
