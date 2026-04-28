@@ -40,7 +40,8 @@ class JekyllDriverImpl(
             directory = jekyllSourceDir,
             env = mapOf(
                 "L10N_MODE" to "update_po",
-                "L10N_PO_BASE_DIR" to poBaseDir.toAbsolutePath().toString()
+                "L10N_PO_BASE_DIR" to poBaseDir.toAbsolutePath().toString(),
+                "L10N_LANGUAGE" to poBaseDir.fileName.toString()
             ),
             timeoutValue = 60,
             timeoutUnit = TimeUnit.MINUTES
