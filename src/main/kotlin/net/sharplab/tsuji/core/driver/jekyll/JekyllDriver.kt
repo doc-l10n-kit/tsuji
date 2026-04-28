@@ -16,7 +16,7 @@ interface JekyllDriver {
     /**
      * Updates PO files from AsciiDoc source using jekyll-l10n plugin in update_po mode.
      */
-    fun extractPo(jekyllSourceDir: Path, poBaseDir: Path)
+    fun extractPo(jekyllSourceDir: Path, poBaseDir: Path, languageTo: String)
 
     /**
      * Builds the Jekyll site.

@@ -160,7 +160,7 @@ class PoAppServiceImpl(
 
             // 2. Extract AsciiDoc using Jekyll plugin (after po4a processing)
             logger.info("Extracting AsciiDoc PO files using Jekyll plugin")
-            jekyllDriver.extractPo(workDir, resolvedPoBaseDir)
+            jekyllDriver.extractPo(workDir, resolvedPoBaseDir, tsujiConfig.language.to)
 
             normalize(resolvedPoBaseDir)
         }
