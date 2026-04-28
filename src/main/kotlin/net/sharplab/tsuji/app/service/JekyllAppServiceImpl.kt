@@ -2,7 +2,7 @@ package net.sharplab.tsuji.app.service
 
 import jakarta.enterprise.context.Dependent
 import net.sharplab.tsuji.app.config.TsujiConfig
-import net.sharplab.tsuji.core.driver.common.ExternalProcessDriver
+import net.sharplab.tsuji.core.driver.git.GitTimestampDriver
 import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
 import net.sharplab.tsuji.core.service.JekyllService
 import org.slf4j.LoggerFactory
@@ -15,7 +15,7 @@ import kotlin.io.path.*
 class JekyllAppServiceImpl(
     private val jekyllDriver: JekyllDriver,
     private val poAppService: PoAppService,
-    private val externalProcessDriver: ExternalProcessDriver,
+    private val gitTimestampDriver: GitTimestampDriver,
     private val jekyllService: JekyllService,
     private val tsujiConfig: TsujiConfig
 ) : JekyllAppService {
@@ -81,8 +81,8 @@ class JekyllAppServiceImpl(
             }
 
             // Get git timestamps
-            val overrideTime = getGitTimestamp(path, path.parent)
-            val upstreamTime = getGitTimestamp(upstreamFile, upstreamDir)
+            val overrideTime = gitTimestampDriver.getTimestamp(path, path.parent)
+            val upstreamTime = gitTimestampDriver.getTimestamp(upstreamFile, upstreamDir)
 
             val status = jekyllService.determineOverrideStatus(overrideTime.epoch, upstreamTime.epoch)
 
@@ -146,25 +146,6 @@ class JekyllAppServiceImpl(
         )
     }
 
-    private fun getGitTimestamp(path: Path, workDir: Path): GitTimestamp {
-        return try {
-            val epoch = externalProcessDriver.executeAndGetOutput(
-                listOf("git", "log", "-1", "--format=%ct", "--", path.fileName.toString()),
-                directory = path.parent
-            ).toLong()
-
-            val iso = externalProcessDriver.executeAndGetOutput(
-                listOf("git", "log", "-1", "--format=%cd", "--date=iso-local", "--", path.fileName.toString()),
-                directory = path.parent,
-                env = mapOf("TZ" to "UTC")
-            )
-            GitTimestamp(epoch, iso)
-        } catch (e: Exception) {
-            logger.warn("Failed to get git timestamp for $path: ${e.message}")
-            GitTimestamp(0, "unknown")
-        }
-    }
-
     private fun <T> withTempWorkDir(action: (Path) -> T): T {
         val tempDir = Files.createTempDirectory("tsuji-jekyll-work")
         try {
@@ -183,5 +164,4 @@ class JekyllAppServiceImpl(
         val status: String
     )
 
-    private data class GitTimestamp(val epoch: Long, val iso: String)
 }

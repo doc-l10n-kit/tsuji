@@ -17,6 +17,8 @@ import java.time.Duration
 import java.util.Optional
 import net.sharplab.tsuji.core.driver.common.ExternalProcessDriver
 import net.sharplab.tsuji.core.driver.common.ExternalProcessDriverImpl
+import net.sharplab.tsuji.core.driver.git.GitTimestampDriver
+import net.sharplab.tsuji.core.driver.git.GitTimestampDriverImpl
 import net.sharplab.tsuji.core.driver.gettext.GettextDriver
 import net.sharplab.tsuji.core.driver.gettext.GettextDriverImpl
 import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
@@ -252,6 +254,11 @@ class TsujiBeans(
     @Produces
     fun externalProcessDriver(): ExternalProcessDriver {
         return ExternalProcessDriverImpl()
+    }
+
+    @Produces
+    fun gitTimestampDriver(externalProcessDriver: ExternalProcessDriver): GitTimestampDriver {
+        return GitTimestampDriverImpl(externalProcessDriver)
     }
 
     @Produces
