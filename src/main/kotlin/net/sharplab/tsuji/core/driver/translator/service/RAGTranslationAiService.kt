@@ -23,7 +23,7 @@ import net.sharplab.tsuji.core.driver.translator.model.TranslationMemoryEntry
 import net.sharplab.tsuji.core.driver.vectorstore.VectorStoreDriver
 import org.slf4j.LoggerFactory
 import java.io.InputStreamReader
-import java.util.Optional
+
 
 /**
  * LLM-based batch translation service with RAG (Retrieval-Augmented Generation).
@@ -34,30 +34,27 @@ class RAGTranslationAiService(
     private val escalationChatModel: ChatModel = chatModel,
     private val vectorStoreDriver: VectorStoreDriver,
     private val config: TsujiConfig,
-    customPromptPath: Optional<String>,
-    customAsciidocMarkupRulesPath: Optional<String> = Optional.empty(),
-    customHtmlMarkupRulesPath: Optional<String> = Optional.empty()
+    customPromptPath: String? = null,
+    customAsciidocMarkupRulesPath: String? = null,
+    customHtmlMarkupRulesPath: String? = null
 ) {
 
     private val logger = LoggerFactory.getLogger(RAGTranslationAiService::class.java)
     private val mapper = jacksonObjectMapper()
 
     private val translationSystemPrompt: String by lazy {
-        customPromptPath
-            .map { path -> java.io.File(path).readText() }
-            .orElseGet { loadClasspathPrompt("prompts/translation-system-prompt.txt") }
+        customPromptPath?.let { java.io.File(it).readText() }
+            ?: loadClasspathPrompt("prompts/translation-system-prompt.txt")
     }
 
     private val asciidocMarkupRules: String by lazy {
-        customAsciidocMarkupRulesPath
-            .map { path -> java.io.File(path).readText() }
-            .orElseGet { loadClasspathPrompt("prompts/asciidoc-markup-rules.txt") }
+        customAsciidocMarkupRulesPath?.let { java.io.File(it).readText() }
+            ?: loadClasspathPrompt("prompts/asciidoc-markup-rules.txt")
     }
 
     private val htmlMarkupRules: String by lazy {
-        customHtmlMarkupRulesPath
-            .map { path -> java.io.File(path).readText() }
-            .orElseGet { loadClasspathPrompt("prompts/html-markup-rules.txt") }
+        customHtmlMarkupRulesPath?.let { java.io.File(it).readText() }
+            ?: loadClasspathPrompt("prompts/html-markup-rules.txt")
     }
 
     private fun loadClasspathPrompt(resourcePath: String): String {
