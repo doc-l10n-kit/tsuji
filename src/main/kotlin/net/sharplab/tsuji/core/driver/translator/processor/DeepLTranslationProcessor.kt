@@ -77,8 +77,7 @@ class DeepLTranslationProcessor(
             )
             val executor = net.sharplab.tsuji.core.driver.translator.adaptive.BatchedExecutor(
                 batchProvider = batchProvider,
-                maxRetries = maxRetries,
-                maxBatchValidationRetries = 5
+                maxRetries = maxRetries
             )
 
             val translated = executor.execute { batch ->
