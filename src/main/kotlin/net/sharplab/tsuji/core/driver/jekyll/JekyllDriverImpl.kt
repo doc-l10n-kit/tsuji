@@ -3,6 +3,7 @@ package net.sharplab.tsuji.core.driver.jekyll
 import net.sharplab.tsuji.core.driver.common.ExternalProcessDriver
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.*
 
@@ -29,18 +30,22 @@ class JekyllDriverImpl(
         }
     }
 
-    override fun extractPo(jekyllSourceDir: Path, poBaseDir: Path) {
+    override fun extractPo(jekyllSourceDir: Path, poBaseDir: Path, languageTo: String) {
         // Ensure basic gems are installed before adding jekyll-l10n plugin
         ensureBundleInstalled(jekyllSourceDir)
 
         ensureJekyllL10nPlugin(jekyllSourceDir, asciidoctorL10nRepo)
+
+        // Convert BCP 47 tag (e.g. "ja-JP") to POSIX locale format (e.g. "ja_JP") for PO files
+        val poLocale = Locale.forLanguageTag(languageTo).toString()
 
         externalProcessDriver.execute(
             command = listOf("bundle", "exec", "jekyll", "build", "--config", "_config.yml"),
             directory = jekyllSourceDir,
             env = mapOf(
                 "L10N_MODE" to "update_po",
-                "L10N_PO_BASE_DIR" to poBaseDir.toAbsolutePath().toString()
+                "L10N_PO_BASE_DIR" to poBaseDir.toAbsolutePath().toString(),
+                "L10N_LANGUAGE" to poLocale
             ),
             timeoutValue = 60,
             timeoutUnit = TimeUnit.MINUTES
