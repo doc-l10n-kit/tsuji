@@ -20,6 +20,7 @@ class GeminiTranslationProcessor(
     initialTextsPerRequest: Int = 200,
     maxTextsPerRequest: Int = 200,
     maxRetries: Int = 3,
+    maxMessageValidationRetries: Int = 4,
     parallelismController: AdaptiveParallelismController,
     asciidocMarkupValidator: AsciidocMarkupValidator,
     messageTypeNoteGenerator: MessageTypeNoteGenerator
@@ -28,6 +29,7 @@ class GeminiTranslationProcessor(
     initialTextsPerRequest = initialTextsPerRequest,
     maxTextsPerRequest = maxTextsPerRequest,
     maxRetries = maxRetries,
+    maxMessageValidationRetries = maxMessageValidationRetries,
     parallelismController = parallelismController,
     asciidocMarkupValidator = asciidocMarkupValidator,
     messageTypeNoteGenerator = messageTypeNoteGenerator

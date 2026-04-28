@@ -157,6 +157,10 @@ interface TsujiConfig {
             @get:WithName("max-retries")
             @get:WithDefault("3")
             val maxRetries: Int
+
+            @get:WithName("max-message-validation-retries")
+            @get:WithDefault("4")
+            val maxMessageValidationRetries: Int
         }
 
         @get:WithName("deepl")
