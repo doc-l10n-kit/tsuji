@@ -10,5 +10,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 data class BatchTranslationRequestItem(
     val index: Int,
     val text: String,
-    val note: String? = null
+    val note: String? = null,
+    val previousTranslation: String? = null
 )
