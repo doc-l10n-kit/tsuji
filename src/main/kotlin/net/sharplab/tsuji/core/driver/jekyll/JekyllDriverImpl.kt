@@ -1,9 +1,9 @@
 package net.sharplab.tsuji.core.driver.jekyll
 
 import net.sharplab.tsuji.core.driver.common.ExternalProcessDriver
+import net.sharplab.tsuji.core.util.LocaleUtils
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.*
 
@@ -37,7 +37,7 @@ class JekyllDriverImpl(
         ensureJekyllL10nPlugin(jekyllSourceDir, asciidoctorL10nRepo)
 
         // Convert BCP 47 tag (e.g. "ja-JP") to POSIX locale format (e.g. "ja_JP") for PO files
-        val poLocale = Locale.forLanguageTag(languageTo).toString()
+        val poLocale = LocaleUtils.parse(languageTo).toString()
 
         externalProcessDriver.execute(
             command = listOf("bundle", "exec", "jekyll", "build", "--config", "_config.yml"),
