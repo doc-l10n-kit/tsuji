@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory
  */
 class BatchedExecutor<T>(
     private val batchProvider: BatchProvider<T>,
-    private val maxRetries: Int = 3,
-    private val maxBatchValidationRetries: Int = 5
+    private val maxRetries: Int = 2,
+    private val maxBatchValidationRetries: Int = 4
 ) {
     private val logger = LoggerFactory.getLogger(BatchedExecutor::class.java)
 
@@ -64,7 +64,7 @@ class BatchedExecutor<T>(
                 validationRetryCount++
                 logger.warn("Validation error (retry $validationRetryCount/$maxBatchValidationRetries): ${e.javaClass.simpleName}: ${e.message}")
 
-                if (validationRetryCount >= maxBatchValidationRetries) {
+                if (validationRetryCount > maxBatchValidationRetries) {
                     logger.error("Exceeded maximum validation retries ($maxBatchValidationRetries), giving up")
                     throw e
                 }
@@ -81,7 +81,7 @@ class BatchedExecutor<T>(
                 generalRetryCount++
                 logger.warn("Error: ${e.javaClass.simpleName}: ${e.message}, retrying")
 
-                if (generalRetryCount >= maxRetries) {
+                if (generalRetryCount > maxRetries) {
                     throw e
                 }
 

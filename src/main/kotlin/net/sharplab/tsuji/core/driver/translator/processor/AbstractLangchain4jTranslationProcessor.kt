@@ -109,8 +109,7 @@ abstract class AbstractLangchain4jTranslationProcessor(
             )
             val executor = BatchedExecutor(
                 batchProvider = batchProvider,
-                maxRetries = maxRetries,
-                maxBatchValidationRetries = 5
+                maxRetries = maxRetries
             )
 
             val translated = executor.execute { batch ->
