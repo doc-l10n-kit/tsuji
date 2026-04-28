@@ -182,6 +182,9 @@ interface TsujiConfig {
             @get:WithDefault("gemini-2.5-flash")
             val model: String
 
+            @get:WithName("escalation-model")
+            val escalationModel: Optional<String>
+
             @get:WithName("batch")
             val batch: Batch
 
@@ -221,6 +224,9 @@ interface TsujiConfig {
             @get:WithName("model")
             @get:WithDefault("gpt-4o-mini")
             val model: String
+
+            @get:WithName("escalation-model")
+            val escalationModel: Optional<String>
 
             @get:WithName("mt-tag")
             val mtTag: Optional<String>

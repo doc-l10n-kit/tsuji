@@ -27,6 +27,7 @@ import java.util.Optional
  */
 class TranslationAiService(
     private val chatModel: ChatModel,
+    private val escalationChatModel: ChatModel = chatModel,
     private val config: TsujiConfig,
     customPromptPath: Optional<String>,
     customAsciidocMarkupRulesPath: Optional<String> = Optional.empty(),
@@ -92,8 +93,10 @@ class TranslationAiService(
         items: List<BatchTranslationRequestItem>,
         srcLang: String,
         dstLang: String,
-        isAsciidoctor: Boolean
+        isAsciidoctor: Boolean,
+        useEscalationModel: Boolean = false
     ): List<String> {
+        val model = if (useEscalationModel) escalationChatModel else chatModel
         val systemPrompt = buildSystemPrompt(translationSystemPrompt, srcLang, dstLang, isAsciidoctor)
         val requestJson = mapper.writeValueAsString(items)
         val userPrompt = "Translate the following JSON array. Return a JSON array with the SAME indices:\n$requestJson"
@@ -110,7 +113,7 @@ class TranslationAiService(
 
         val apiStartTime = System.currentTimeMillis()
         val response = withContext(Dispatchers.IO) {
-            chatModel.chat(chatRequest)
+            model.chat(chatRequest)
         }
         val apiElapsedTime = System.currentTimeMillis() - apiStartTime
 

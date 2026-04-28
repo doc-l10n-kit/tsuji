@@ -84,8 +84,22 @@ class TsujiBeans(
         private const val QUARKUS_LANGCHAIN4J_GEMINI_THINKING_BUDGET = "quarkus.langchain4j.ai.gemini.chat-model.thinking.thinking-budget"
     }
 
-    private fun createGeminiChatModel(tsujiConfig: TsujiConfig): ChatModel {
-        // API key: quarkus.langchain4j.* > tsuji.translator.*
+    private fun createStandardGeminiChatModel(tsujiConfig: TsujiConfig): ChatModel {
+        val modelId = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_MODEL_ID, String::class.java)
+            .orElse(tsujiConfig.translator.gemini.model)
+        return createGeminiChatModel(tsujiConfig, modelId)
+    }
+
+    private fun createEscalationGeminiChatModel(tsujiConfig: TsujiConfig): ChatModel? {
+        return tsujiConfig.translator.gemini.escalationModel
+            .map { escalationModelId ->
+                logger.info("Using Gemini escalation model: $escalationModelId")
+                createGeminiChatModel(tsujiConfig, escalationModelId)
+            }
+            .orElse(null)
+    }
+
+    private fun createGeminiChatModel(tsujiConfig: TsujiConfig, modelId: String): ChatModel {
         val resolvedApiKey = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_API_KEY, String::class.java)
             .or { tsujiConfig.translator.gemini.key }
             .orElseThrow {
@@ -95,11 +109,6 @@ class TsujiBeans(
                 )
             }
 
-        // Model ID: quarkus.langchain4j.* > tsuji.translator.* (default: "gemini-2.5-flash")
-        val modelId = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_MODEL_ID, String::class.java)
-            .orElse(tsujiConfig.translator.gemini.model)
-
-        // Other properties with defaults
         val maxOutputTokens = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_MAX_OUTPUT_TOKENS, Int::class.java)
             .orElse(65536)
         val timeout = config.getOptionalValue(QUARKUS_LANGCHAIN4J_GEMINI_TIMEOUT, Duration::class.java)
@@ -131,8 +140,22 @@ class TsujiBeans(
         return builder.build()
     }
 
-    private fun createOpenAiChatModel(tsujiConfig: TsujiConfig): ChatModel {
-        // API key: quarkus.langchain4j.* > tsuji.translator.*
+    private fun createStandardOpenAiChatModel(tsujiConfig: TsujiConfig): ChatModel {
+        val modelName = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_MODEL_NAME, String::class.java)
+            .orElse(tsujiConfig.translator.openai.model)
+        return createOpenAiChatModel(tsujiConfig, modelName)
+    }
+
+    private fun createEscalationOpenAiChatModel(tsujiConfig: TsujiConfig): ChatModel? {
+        return tsujiConfig.translator.openai.escalationModel
+            .map { escalationModelId ->
+                logger.info("Using OpenAI escalation model: $escalationModelId")
+                createOpenAiChatModel(tsujiConfig, escalationModelId)
+            }
+            .orElse(null)
+    }
+
+    private fun createOpenAiChatModel(tsujiConfig: TsujiConfig, modelName: String): ChatModel {
         val resolvedApiKey = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_API_KEY, String::class.java)
             .or { tsujiConfig.translator.openai.key }
             .orElseThrow {
@@ -141,10 +164,6 @@ class TsujiBeans(
                     "Set property '$QUARKUS_LANGCHAIN4J_OPENAI_API_KEY' or 'tsuji.translator.openai.key'"
                 )
             }
-
-        // Model name: quarkus.langchain4j.* > tsuji.translator.* (default: "gpt-4o-mini")
-        val modelName = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_MODEL_NAME, String::class.java)
-            .orElse(tsujiConfig.translator.openai.model)
 
         // Other properties with defaults
         val maxCompletionTokens = config.getOptionalValue(QUARKUS_LANGCHAIN4J_OPENAI_MAX_COMPLETION_TOKENS, Int::class.java)
@@ -324,12 +343,13 @@ class TsujiBeans(
             }
             "gemini" -> {
                 logger.info("Using Gemini Translator")
-                val chatModel = createGeminiChatModel(tsujiConfig)
+                val chatModel = createStandardGeminiChatModel(tsujiConfig)
+                val escalationChatModel = createEscalationGeminiChatModel(tsujiConfig) ?: chatModel
                 val promptPath = tsujiConfig.translator.gemini.prompts.systemPrompt
                 val asciidocRulesPath = tsujiConfig.translator.gemini.prompts.asciidocMarkupRules
                 val htmlRulesPath = tsujiConfig.translator.gemini.prompts.htmlMarkupRules
-                val translationAiService = TranslationAiService(chatModel, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
-                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
+                val translationAiService = TranslationAiService(chatModel, escalationChatModel, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
+                val ragTranslationAiService = RAGTranslationAiService(chatModel, escalationChatModel, vectorStoreDriver, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
 
                 val geminiTranslationProcessor = GeminiTranslationProcessor(
                     translationAiService,
@@ -346,12 +366,13 @@ class TsujiBeans(
             }
             "openai" -> {
                 logger.info("Using OpenAI Translator")
-                val chatModel = createOpenAiChatModel(tsujiConfig)
+                val chatModel = createStandardOpenAiChatModel(tsujiConfig)
+                val escalationChatModel = createEscalationOpenAiChatModel(tsujiConfig) ?: chatModel
                 val promptPath = tsujiConfig.translator.openai.prompts.systemPrompt
                 val asciidocRulesPath = tsujiConfig.translator.openai.prompts.asciidocMarkupRules
                 val htmlRulesPath = tsujiConfig.translator.openai.prompts.htmlMarkupRules
-                val translationAiService = TranslationAiService(chatModel, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
-                val ragTranslationAiService = RAGTranslationAiService(chatModel, vectorStoreDriver, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
+                val translationAiService = TranslationAiService(chatModel, escalationChatModel, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
+                val ragTranslationAiService = RAGTranslationAiService(chatModel, escalationChatModel, vectorStoreDriver, tsujiConfig, promptPath, asciidocRulesPath, htmlRulesPath)
 
                 val mtTag = tsujiConfig.translator.openai.mtTag.orElse("openai")
                 val openAiTranslationProcessor = OpenAiTranslationProcessor(
