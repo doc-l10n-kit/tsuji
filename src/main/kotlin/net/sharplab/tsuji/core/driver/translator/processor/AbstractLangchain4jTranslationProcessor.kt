@@ -60,7 +60,8 @@ abstract class AbstractLangchain4jTranslationProcessor(
      */
     protected abstract suspend fun callTranslationApiWithNotes(
         items: List<BatchTranslationRequestItem>,
-        context: TranslationContext
+        context: TranslationContext,
+        useEscalationModel: Boolean = false
     ): List<String>
 
     override suspend fun process(
@@ -191,7 +192,7 @@ abstract class AbstractLangchain4jTranslationProcessor(
             )
         }
 
-        val retranslated = callTranslationApiWithNotes(items, context)
+        val retranslated = callTranslationApiWithNotes(items, context, useEscalationModel = true)
         val fixes = brokenTranslations.zip(retranslated).associate { (broken, newText) ->
             broken.message.original.messageId to newText
         }
