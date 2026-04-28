@@ -234,7 +234,7 @@ class AsciidocMarkupValidatorTest {
             .satisfies({ e ->
                 val ex = e as AsciidocMarkupValidationException
                 assertThat(ex.brokenTranslations).hasSize(1)
-                assertThat(ex.brokenTranslations[0].note).contains("0 backtick pair(s)")
+                assertThat(ex.brokenTranslations[0].note).contains("Do NOT add backticks")
             })
     }
 
