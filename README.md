@@ -229,6 +229,8 @@ tsuji uses [Quarkus SmallRye Config](https://quarkus.io/guides/config-reference)
 | Property | Default | Description |
 |---|---|---|
 | `tsuji.translator.type` | `deepl` | Translation engine to use: `gemini`, `openai`, or `deepl` |
+| `tsuji.translator.language.source` | *(none)* | Source language code to pass to the translation API. If omitted, falls back to `tsuji.language.from`. Useful when the API requires a different code format (e.g., DeepL expects `EN` instead of `en-US`) |
+| `tsuji.translator.language.target` | *(none)* | Target language code to pass to the translation API. If omitted, falls back to `tsuji.language.to` |
 | `tsuji.translator.target-directories` | *(none)* | List of subdirectories under `tsuji.po.base-dir` to translate. If omitted, the entire base directory is processed |
 | `tsuji.translator.deepl.key` | *(none)* | DeepL API key. Can also be set via `TSUJI_TRANSLATOR_DEEPL_KEY` |
 
@@ -347,6 +349,9 @@ tsuji:
 
   translator:
     type: "gemini"
+    language:
+      source: "en"
+      target: "ja"
     adaptive:
       initial-concurrency: 40
       max-concurrency: 60
