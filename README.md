@@ -453,7 +453,7 @@ java -jar build/tsuji.jar <command> [options]
 
 ## Documentation
 
-- **[Design Document](./design-doc.md)**: Detailed overview of the architecture and core components (Japanese).
+- **[Architecture Guide](./architecture-guide.md)**: Detailed overview of the translation workflow, architecture, and core components (Japanese).
 
 ## License
 
