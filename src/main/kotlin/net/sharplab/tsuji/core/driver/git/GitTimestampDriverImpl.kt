@@ -38,7 +38,7 @@ class GitTimestampDriverImpl(
                 logger.warn("Could not parse GitHub remote URL for {}. Returning unknown.", filePath)
                 return GitTimestamp(0, "unknown")
             }
-            val relativePath = repoRoot.relativize(filePath).toString()
+            val relativePath = repoRoot.relativize(filePath.toAbsolutePath().normalize()).toString()
             fetchTimestampFromGitHub(remote, relativePath)
                 ?: GitTimestamp(0, "unknown")
         } catch (e: Exception) {
@@ -48,7 +48,7 @@ class GitTimestampDriverImpl(
     }
 
     private fun resolveRepoRoot(workDir: Path): Path {
-        return repoRootCache.computeIfAbsent(workDir) {
+        return repoRootCache.computeIfAbsent(workDir.toAbsolutePath().normalize()) {
             val output = externalProcessDriver.executeAndGetOutput(
                 listOf("git", "rev-parse", "--show-toplevel"),
                 directory = workDir
