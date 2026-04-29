@@ -117,8 +117,12 @@ class TranslationAppServiceImpl(
             AsciidocMode.AUTO -> filePath.fileName.toString().endsWith(".adoc.po")
         }
 
-        val resolvedSourceLang = source ?: tsujiConfig.language.from
-        val resolvedTargetLang = target ?: tsujiConfig.language.to
+        val resolvedSourceLang = source
+            ?: tsujiConfig.translator.language.source.orElse(null)
+            ?: tsujiConfig.language.from
+        val resolvedTargetLang = target
+            ?: tsujiConfig.translator.language.target.orElse(null)
+            ?: tsujiConfig.language.to
 
         val startTime = System.currentTimeMillis()
         logger.info("Start translation: %s (%s -> %s, asciidoc=%s) at ${startTime}ms".format(filePath.fileName, resolvedSourceLang, resolvedTargetLang, isAsciidoctor))
