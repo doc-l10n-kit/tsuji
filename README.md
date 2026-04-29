@@ -12,15 +12,16 @@ They were not merely translators of language. They served as a **"Gateway of Kno
 
 ## Key Features
 
-- **Dual Translator Support**: Choose between **Google Gemini** (via LangChain4j) and **DeepL** as the translation engine. Each uses a different markup protection strategy optimized for its capabilities.
+- **Triple Translator Support**: Choose between **Google Gemini** (via LangChain4j), **OpenAI**, and **DeepL** as the translation engine. Each uses a different markup protection strategy optimized for its capabilities.
 - **RAG-Enhanced Translation**: Automatically retrieves relevant translation context from your existing TMX (Translation Memory eXchange) files using Lucene vector search, ensuring terminology consistency without manual model training.
 - **Adaptive Parallelism**: Two-level AIMD (Additive Increase / Multiplicative Decrease) control automatically adjusts both API request concurrency and batch size in response to rate limits, maximizing throughput while respecting API constraints.
 - **AsciiDoc Markup Protection**: Gemini translates AsciiDoc natively with post-translation validation and retry via AsciidoctorJ + jsoup. DeepL uses an HTML round-trip pipeline (AsciiDoc → HTML → translate → HTML → AsciiDoc) with 11 specialized message processors.
 - **Structured Batch Translation**: Sends multiple texts per LLM request using JSON Schema-constrained output, with index-based validation to ensure correct mapping between source and translated texts.
 - **Glossary Support**: Define terminology mappings in configuration to inject into translation prompts for consistent term usage.
 - **Customizable System Prompts**: Override built-in translation prompts with external files for project-specific tuning.
-- **MT Engine Tracking**: Machine-translated messages are tagged with `mt: gemini` or `mt: deepl` comments, enabling selective acceptance of fuzzy MT translations during site builds.
-- **Gemini Thinking Level Control**: Configure Gemini's reasoning depth (MINIMAL/LOW/MEDIUM/HIGH) to balance translation quality and speed.
+- **MT Engine Tracking**: Machine-translated messages are tagged with `mt: gemini`, `mt: openai`, or `mt: deepl` comments, enabling selective acceptance of fuzzy MT translations during site builds.
+- **Escalation Model Support**: Use a cost-effective model for initial translation and automatically escalate to a higher-quality model when markup validation fails.
+- **Gemini Thinking Level Control**: Configure Gemini's reasoning depth (MINIMAL/LOW/MEDIUM/HIGH) per model to balance translation quality and speed.
 - **PO File Management**: Comprehensive tools for normalizing, purging, updating, and applying PO files, plus word-count-based translation statistics.
 - **TMX Operations**: Generate Translation Memory from PO files (confirmed or fuzzy translations) and apply TMX translations back to PO files.
 - **Jekyll Integration**: Seamlessly handles PO extraction, build processes, and previews for translated Jekyll sites, with selective acceptance of machine translations.
@@ -54,7 +55,9 @@ Options:
   -p, --po <path>         PO file or directory to translate (repeatable)
   --source <lang>         Source language (default: from config)
   --target <lang>         Target language (default: from config)
-  --asciidoc              Enable AsciiDoc inline markup processing
+  --asciidoc <mode>       AsciiDoc inline markup processing mode: auto (detect
+                          from filename), always (force enable), never (force
+                          disable). Default: auto
   --rag                   Enable RAG (Retrieval-Augmented Generation)
 ```
 
@@ -241,14 +244,20 @@ Controls the adaptive parallelism for API requests (AIMD algorithm). Shared acro
 | `tsuji.translator.adaptive.initial-concurrency` | `40` | Initial number of parallel API requests |
 | `tsuji.translator.adaptive.min-concurrency` | `1` | Minimum concurrency (floor for AIMD decrease) |
 | `tsuji.translator.adaptive.max-concurrency` | `60` | Maximum concurrency (ceiling for AIMD increase) |
-| `tsuji.translator.adaptive.max-retries` | `3` | Maximum retry attempts per batch on error |
+| `tsuji.translator.adaptive.max-retries` | `2` | Maximum retry attempts per batch on error |
+| `tsuji.translator.adaptive.max-message-validation-retries` | `4` | Maximum retry attempts for message/markup validation failures |
 
 #### Gemini Settings
 
 | Property | Default | Description |
 |---|---|---|
 | `tsuji.translator.gemini.key` | *(none)* | Gemini API key. Can also be set via `QUARKUS_LANGCHAIN4J_GEMINI_API_KEY` |
-| `tsuji.translator.gemini.model` | `gemini-2.5-flash` | Gemini model ID |
+| `tsuji.translator.gemini.model.model-id` | *(none)* | Gemini model ID (e.g., `gemini-3-flash-preview`) |
+| `tsuji.translator.gemini.model.thinking.thinking-budget` | *(none)* | Thinking token budget for the model (Gemini 2.5) |
+| `tsuji.translator.gemini.model.thinking.thinking-level` | *(none)* | Thinking level: `MINIMAL`, `LOW`, `MEDIUM`, `HIGH` (Gemini 3) |
+| `tsuji.translator.gemini.escalation-model.model-id` | *(none)* | Escalation model ID used for validation retries. Falls back to the primary model if omitted |
+| `tsuji.translator.gemini.escalation-model.thinking.thinking-budget` | *(none)* | Thinking token budget for the escalation model |
+| `tsuji.translator.gemini.escalation-model.thinking.thinking-level` | *(none)* | Thinking level for the escalation model |
 
 #### Gemini Batch Settings
 
@@ -265,8 +274,33 @@ Override the built-in translation prompts with external files for project-specif
 
 | Property | Default | Description |
 |---|---|---|
-| `tsuji.translator.gemini.prompts.batch-system-prompt` | *(none)* | File path to a custom system prompt for batch translation. If omitted, uses the built-in prompt |
-| `tsuji.translator.gemini.prompts.rag-batch-system-prompt` | *(none)* | File path to a custom system prompt for RAG batch translation. If omitted, uses the built-in prompt |
+| `tsuji.translator.gemini.prompts.system-prompt` | *(none)* | File path to a custom system prompt. If omitted, uses the built-in prompt |
+| `tsuji.translator.gemini.prompts.asciidoc-markup-rules` | *(none)* | File path to custom AsciiDoc markup preservation rules |
+| `tsuji.translator.gemini.prompts.html-markup-rules` | *(none)* | File path to custom HTML markup preservation rules |
+
+#### OpenAI Settings
+
+| Property | Default | Description |
+|---|---|---|
+| `tsuji.translator.openai.key` | *(none)* | OpenAI API key |
+| `tsuji.translator.openai.model.model-id` | *(none)* | OpenAI model ID |
+| `tsuji.translator.openai.escalation-model.model-id` | *(none)* | Escalation model ID used for validation retries. Falls back to the primary model if omitted |
+| `tsuji.translator.openai.mt-tag` | *(none)* | Custom MT tag for tracking (defaults to `openai`) |
+
+#### OpenAI Batch Settings
+
+| Property | Default | Description |
+|---|---|---|
+| `tsuji.translator.openai.batch.initial-texts-per-request` | `200` | Initial number of texts per batch request |
+| `tsuji.translator.openai.batch.max-texts-per-request` | `200` | Maximum number of texts per batch request |
+
+#### OpenAI System Prompts
+
+| Property | Default | Description |
+|---|---|---|
+| `tsuji.translator.openai.prompts.system-prompt` | *(none)* | File path to a custom system prompt. If omitted, uses the built-in prompt |
+| `tsuji.translator.openai.prompts.asciidoc-markup-rules` | *(none)* | File path to custom AsciiDoc markup preservation rules |
+| `tsuji.translator.openai.prompts.html-markup-rules` | *(none)* | File path to custom HTML markup preservation rules |
 
 #### Quarkus LangChain4j Settings
 
@@ -275,7 +309,7 @@ Standard Gemini API settings managed by the Quarkus LangChain4j extension:
 | Property | Default | Description |
 |---|---|---|
 | `quarkus.langchain4j.ai.gemini.api-key` | *(none)* | Gemini API key (typically set via `${tsuji.translator.gemini.key:}`) |
-| `quarkus.langchain4j.ai.gemini.chat-model.model-id` | *(none)* | Model ID (typically set via `${tsuji.translator.gemini.model}`) |
+| `quarkus.langchain4j.ai.gemini.chat-model.model-id` | *(none)* | Model ID (typically set via `${tsuji.translator.gemini.model.model-id}`) |
 | `quarkus.langchain4j.ai.gemini.chat-model.max-output-tokens` | `65536` | Maximum output tokens per response |
 | `quarkus.langchain4j.ai.gemini.timeout` | `300s` | API request timeout |
 | `quarkus.langchain4j.ai.gemini.log-requests` | `false` | Log API requests |
@@ -347,11 +381,22 @@ tsuji:
 
   translator:
     type: "gemini"
+    language:
+      source: "en"
+      target: "ja"
     adaptive:
       initial-concurrency: 40
       max-concurrency: 60
-      max-retries: 3
+      max-retries: 2
     gemini:
+      model:
+        model-id: "gemini-3-flash-preview"
+        thinking:
+          thinking-level: "MINIMAL"
+      escalation-model:
+        model-id: "gemini-3.1-pro-preview"
+        thinking:
+          thinking-level: "LOW"
       batch:
         initial-texts-per-request: 200
         max-texts-per-request: 200
