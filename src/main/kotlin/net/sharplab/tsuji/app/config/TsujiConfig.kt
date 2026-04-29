@@ -127,6 +127,17 @@ interface TsujiConfig {
         @get:WithDefault("deepl")
         val type: String
 
+        @get:WithName("language")
+        val language: TranslatorLanguage
+
+        interface TranslatorLanguage {
+            @get:WithName("source")
+            val source: Optional<String>
+
+            @get:WithName("target")
+            val target: Optional<String>
+        }
+
         @get:WithName("target-directories")
         val targetDirectories: Optional<List<String>>
 
