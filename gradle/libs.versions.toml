@@ -12,7 +12,7 @@ deepl-java = "1.16.0"
 jackson = "2.21.3"
 jackson3 = "3.1.2"
 jackson-annotations = "2.21"
-langchain4j-community = "1.13.1-beta23"
+langchain4j-community = "1.14.0-beta24"
 
 [libraries]
 quarkus-bom = { group = "io.quarkus", name = "quarkus-bom", version.ref = "quarkus" }
