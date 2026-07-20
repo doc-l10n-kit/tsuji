@@ -11,6 +11,13 @@ interface PoAppService {
     fun update(masterFile: Path, poFile: Path, format: String)
     fun apply(masterFile: Path, poFile: Path, localizedFile: Path, format: String)
     fun extractJekyll(poBaseDir: Path? = null, sourceDir: Path? = null, overrideDir: Path? = null)
-    fun applyPoToDirectory(workDir: Path, poBaseDir: Path)
+    fun extractRoq(poBaseDir: Path? = null, sourceDir: Path? = null, overrideDir: Path? = null)
+    fun applyPoToDirectory(
+        workDir: Path,
+        poBaseDir: Path,
+        skipAsciidoc: Boolean = true,
+        htmlIncludeList: List<String>? = null,
+        yamlExcludeList: List<String>? = null
+    )
     fun updatePoStats(poDirs: List<Path>?, output: Path?)
 }

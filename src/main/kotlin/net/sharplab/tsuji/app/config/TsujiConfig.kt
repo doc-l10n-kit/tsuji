@@ -93,6 +93,54 @@ interface TsujiConfig {
         }
     }
 
+    @get:WithName("roq")
+    val roq: Roq
+
+    interface Roq {
+        @get:WithName("source-dir")
+        @get:WithDefault("upstream")
+        val sourceDir: String
+
+        @get:WithName("override-dir")
+        @get:WithDefault("l10n/override/ja_JP")
+        val overrideDir: String
+
+        @get:WithName("destination-dir")
+        @get:WithDefault("target/roq")
+        val destinationDir: String
+
+        @get:WithName("stats-dir")
+        @get:WithDefault("l10n/stats")
+        val statsDir: String
+
+        @get:WithName("quarkus-profile")
+        val quarkusProfile: Optional<String>
+
+        @get:WithName("stats-sections")
+        val statsSections: Map<String, String>
+
+        @get:WithName("extract")
+        val extract: Extract
+
+        interface Extract {
+            @get:WithName("yaml")
+            val yaml: Yaml
+
+            @get:WithName("html")
+            val html: Html
+
+            interface Yaml {
+                @get:WithName("exclude")
+                val exclude: Optional<List<String>>
+            }
+
+            interface Html {
+                @get:WithName("include")
+                val include: Optional<List<String>>
+            }
+        }
+    }
+
     @get:WithName("tmx")
     val tmx: Tmx
 

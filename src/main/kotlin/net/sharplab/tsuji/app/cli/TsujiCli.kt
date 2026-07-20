@@ -13,6 +13,7 @@ import jakarta.inject.Inject
     RagCommand::class,
     TmxCommand::class,
     JekyllCommand::class,
+    RoqCommand::class,
     ConfigCommand::class
 ])
 class TsujiCli : QuarkusApplication {

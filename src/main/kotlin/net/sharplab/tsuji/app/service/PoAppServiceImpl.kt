@@ -7,6 +7,8 @@ import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
 import net.sharplab.tsuji.core.driver.po.PoDriver
 import net.sharplab.tsuji.core.driver.po4a.Po4aDriver
 import net.sharplab.tsuji.core.service.PoService
+import net.sharplab.tsuji.core.util.applyOverlayFiles
+import net.sharplab.tsuji.core.util.copyDirectory
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -166,7 +168,67 @@ class PoAppServiceImpl(
         }
     }
 
-    override fun applyPoToDirectory(workDir: Path, poBaseDir: Path) {
+    override fun extractRoq(poBaseDir: Path?, sourceDir: Path?, overrideDir: Path?) {
+        val resolvedPoBaseDir = poBaseDir ?: Paths.get(tsujiConfig.po.baseDir)
+        val resolvedSourceDir = sourceDir ?: Paths.get(tsujiConfig.roq.sourceDir)
+        val resolvedOverrideDir = overrideDir ?: Paths.get(tsujiConfig.roq.overrideDir)
+
+        withTempWorkDir("tsuji-roq-extract") { workDir ->
+            logger.info("Extracting Roq PO files in $resolvedPoBaseDir using source in $workDir")
+            copyDirectory(resolvedSourceDir, workDir)
+            if (resolvedOverrideDir.exists()) {
+                applyOverlayFiles(resolvedOverrideDir, workDir)
+            }
+
+            if (!resolvedPoBaseDir.exists()) {
+                resolvedPoBaseDir.createDirectories()
+            }
+
+            val yamlExcludeList = tsujiConfig.roq.extract.yaml.exclude.orElse(emptyList())
+            val htmlIncludeList = tsujiConfig.roq.extract.html.include.orElse(emptyList())
+
+            logger.info("Extracting PO files using po4a (including AsciiDoc)")
+            workDir.walk().forEach { file ->
+                if (!file.isRegularFile()) return@forEach
+                val relativePath = workDir.relativize(file)
+                val relativePathStr = relativePath.toString()
+                val format = po4aDriver.determineFormat(file) ?: return@forEach
+
+                if (format == "yaml") {
+                    if (yamlExcludeList.contains(relativePathStr)) {
+                        logger.debug("Skipping excluded YAML file: $relativePathStr")
+                        return@forEach
+                    }
+                }
+
+                if (format == "xhtml") {
+                    if (!htmlIncludeList.contains(relativePathStr)) {
+                        logger.debug("Skipping non-included HTML file: $relativePathStr")
+                        return@forEach
+                    }
+                }
+
+                val poFile = resolvedPoBaseDir.resolve("$relativePath.po")
+                logger.info("Updating PO file for $relativePath (format: $format)")
+                poFile.parent.createDirectories()
+                po4aDriver.updatePo(file, poFile, format, workDir)
+                poNormalizerService.normalize(poFile)
+            }
+
+            normalize(resolvedPoBaseDir)
+        }
+    }
+
+    override fun applyPoToDirectory(
+        workDir: Path,
+        poBaseDir: Path,
+        skipAsciidoc: Boolean,
+        htmlIncludeList: List<String>?,
+        yamlExcludeList: List<String>?
+    ) {
+        val resolvedHtmlInclude = htmlIncludeList ?: tsujiConfig.jekyll.extract.html.include.orElse(emptyList())
+        val resolvedYamlExclude = yamlExcludeList ?: tsujiConfig.jekyll.extract.yaml.exclude.orElse(emptyList())
+
         logger.info("Applying PO files from $poBaseDir to $workDir")
         poBaseDir.walk().filter { it.extension == "po" }.forEach { poFile ->
             val relativePoPath = poBaseDir.relativize(poFile).toString()
@@ -181,23 +243,19 @@ class PoAppServiceImpl(
             if (masterFile.exists()) {
                 val format = po4aDriver.determineFormat(masterFile)
 
-                // Skip AsciiDoc here because it will be handled by Jekyll plugin
-                if (format == "asciidoc") {
-                    logger.debug("Skipping AsciiDoc file $masterFile: will be handled by Jekyll plugin")
+                if (skipAsciidoc && format == "asciidoc") {
+                    logger.debug("Skipping AsciiDoc file $masterFile: will be handled by SSG plugin")
                     return@forEach
                 }
 
-                // Apply extract filters (same as extractJekyll)
                 if (format == "xhtml") {
-                    val includeList = tsujiConfig.jekyll.extract.html.include.orElse(emptyList())
-                    if (!includeList.contains(relativeMasterPath)) {
+                    if (!resolvedHtmlInclude.contains(relativeMasterPath)) {
                         logger.debug("Skipping non-included HTML file: $relativeMasterPath")
                         return@forEach
                     }
                 }
                 if (format == "yaml") {
-                    val excludeList = tsujiConfig.jekyll.extract.yaml.exclude.orElse(emptyList())
-                    if (excludeList.contains(relativeMasterPath)) {
+                    if (resolvedYamlExclude.contains(relativeMasterPath)) {
                         logger.debug("Skipping excluded YAML file: $relativeMasterPath")
                         return@forEach
                     }
@@ -268,8 +326,10 @@ class PoAppServiceImpl(
         val achievement: String
     )
 
-    private fun <T> withTempWorkDir(action: (Path) -> T): T {
-        val tempDir = Files.createTempDirectory("tsuji-jekyll-extract")
+    private fun <T> withTempWorkDir(action: (Path) -> T): T = withTempWorkDir("tsuji-extract", action)
+
+    private fun <T> withTempWorkDir(prefix: String, action: (Path) -> T): T {
+        val tempDir = Files.createTempDirectory(prefix)
         try {
             logger.info("Created temporary work directory: $tempDir")
             return action(tempDir)
@@ -278,4 +338,5 @@ class PoAppServiceImpl(
             tempDir.toFile().deleteRecursively()
         }
     }
+
 }

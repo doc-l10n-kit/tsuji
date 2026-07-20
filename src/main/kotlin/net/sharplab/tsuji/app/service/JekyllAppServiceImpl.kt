@@ -4,7 +4,7 @@ import jakarta.enterprise.context.Dependent
 import net.sharplab.tsuji.app.config.TsujiConfig
 import net.sharplab.tsuji.core.driver.git.GitTimestampDriver
 import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
-import net.sharplab.tsuji.core.service.JekyllService
+import net.sharplab.tsuji.core.service.SiteService
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -16,7 +16,7 @@ class JekyllAppServiceImpl(
     private val jekyllDriver: JekyllDriver,
     private val poAppService: PoAppService,
     private val gitTimestampDriver: GitTimestampDriver,
-    private val jekyllService: JekyllService,
+    private val siteService: SiteService,
     private val tsujiConfig: TsujiConfig
 ) : JekyllAppService {
 
@@ -84,7 +84,7 @@ class JekyllAppServiceImpl(
             val overrideTime = gitTimestampDriver.getTimestamp(path, path.parent)
             val upstreamTime = gitTimestampDriver.getTimestamp(upstreamFile, upstreamDir)
 
-            val status = jekyllService.determineOverrideStatus(overrideTime.epoch, upstreamTime.epoch)
+            val status = siteService.determineOverrideStatus(overrideTime.epoch, upstreamTime.epoch)
 
             results.add(
                 OverrideStat(
