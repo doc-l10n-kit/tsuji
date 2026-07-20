@@ -156,4 +156,61 @@ class RoqDriverImplTest {
             timeoutUnit = any()
         )
     }
+
+    @Test
+    fun build_should_pass_l10n_env_vars_when_provided(@TempDir tempDir: Path) {
+        val roqSourceDir = tempDir.resolve("roq-source").createDirectories()
+        val destinationDir = tempDir.resolve("output").createDirectories()
+        val poBaseDir = tempDir.resolve("po").createDirectories()
+
+        target.build(roqSourceDir, destinationDir, null, poBaseDir = poBaseDir, language = "pt")
+
+        verify(externalProcessDriver).execute(
+            command = any(),
+            directory = eq(roqSourceDir),
+            env = argThat<Map<String, String>> {
+                this["L10N_PO_BASE_DIR"] == poBaseDir.toAbsolutePath().toString() &&
+                this["L10N_LANGUAGE"] == "pt"
+            },
+            timeoutValue = any(),
+            timeoutUnit = any()
+        )
+    }
+
+    @Test
+    fun build_should_not_pass_l10n_env_vars_when_null(@TempDir tempDir: Path) {
+        val roqSourceDir = tempDir.resolve("roq-source").createDirectories()
+        val destinationDir = tempDir.resolve("output").createDirectories()
+
+        target.build(roqSourceDir, destinationDir, null, poBaseDir = null, language = null)
+
+        verify(externalProcessDriver).execute(
+            command = any(),
+            directory = eq(roqSourceDir),
+            env = argThat<Map<String, String>> {
+                !containsKey("L10N_PO_BASE_DIR") && !containsKey("L10N_LANGUAGE")
+            },
+            timeoutValue = any(),
+            timeoutUnit = any()
+        )
+    }
+
+    @Test
+    fun serve_should_pass_l10n_env_vars_when_provided(@TempDir tempDir: Path) {
+        val roqSourceDir = tempDir.resolve("roq-source").createDirectories()
+        val poBaseDir = tempDir.resolve("po").createDirectories()
+
+        target.serve(roqSourceDir, null, poBaseDir = poBaseDir, language = "ja")
+
+        verify(externalProcessDriver).execute(
+            command = any(),
+            directory = eq(roqSourceDir),
+            env = argThat<Map<String, String>> {
+                this["L10N_PO_BASE_DIR"] == poBaseDir.toAbsolutePath().toString() &&
+                this["L10N_LANGUAGE"] == "ja"
+            },
+            timeoutValue = any(),
+            timeoutUnit = any()
+        )
+    }
 }

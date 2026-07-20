@@ -20,11 +20,12 @@ class RoqDriverImpl(
         applyOverlayFiles(overrideDir, workDir)
     }
 
-    override fun build(roqSourceDir: Path, destinationDir: Path, profile: String?) {
+    override fun build(roqSourceDir: Path, destinationDir: Path, profile: String?, poBaseDir: Path?, language: String?) {
         val env = mutableMapOf("QUARKUS_ROQ_GENERATOR_BATCH" to "true")
         if (profile != null) {
             env["QUARKUS_PROFILE"] = profile
         }
+        addL10nEnv(env, poBaseDir, language)
 
         externalProcessDriver.execute(
             command = listOf("mvn", "-B", "package", "quarkus:run", "-DskipTests"),
@@ -35,11 +36,12 @@ class RoqDriverImpl(
         )
     }
 
-    override fun serve(roqSourceDir: Path, profile: String?) {
+    override fun serve(roqSourceDir: Path, profile: String?, poBaseDir: Path?, language: String?) {
         val env = mutableMapOf<String, String>()
         if (profile != null) {
             env["QUARKUS_PROFILE"] = profile
         }
+        addL10nEnv(env, poBaseDir, language)
 
         externalProcessDriver.execute(
             command = listOf("mvn", "quarkus:dev"),
@@ -50,4 +52,12 @@ class RoqDriverImpl(
         )
     }
 
+    private fun addL10nEnv(env: MutableMap<String, String>, poBaseDir: Path?, language: String?) {
+        if (poBaseDir != null) {
+            env["L10N_PO_BASE_DIR"] = poBaseDir.toAbsolutePath().toString()
+        }
+        if (language != null) {
+            env["L10N_LANGUAGE"] = language
+        }
+    }
 }

@@ -5,6 +5,6 @@ import java.nio.file.Path
 interface RoqDriver {
     fun prepareSource(sourceDir: Path, workDir: Path)
     fun applyOverrides(overrideDir: Path, workDir: Path)
-    fun build(roqSourceDir: Path, destinationDir: Path, profile: String?)
-    fun serve(roqSourceDir: Path, profile: String?)
+    fun build(roqSourceDir: Path, destinationDir: Path, profile: String?, poBaseDir: Path? = null, language: String? = null)
+    fun serve(roqSourceDir: Path, profile: String?, poBaseDir: Path? = null, language: String? = null)
 }

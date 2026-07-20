@@ -40,7 +40,11 @@ class RoqAppServiceImpl(
                     yamlExcludeList = yamlExclude
                 )
             }
-            roqDriver.build(workDir, resolvedDestinationDir, resolvedProfile)
+            roqDriver.build(
+                workDir, resolvedDestinationDir, resolvedProfile,
+                poBaseDir = if (translate) resolvedPoBaseDir else null,
+                language = if (translate) tsujiConfig.language.to else null
+            )
         }
     }
 
@@ -61,7 +65,11 @@ class RoqAppServiceImpl(
                     yamlExcludeList = yamlExclude
                 )
             }
-            roqDriver.serve(workDir, resolvedProfile)
+            roqDriver.serve(
+                workDir, resolvedProfile,
+                poBaseDir = if (translate) resolvedPoBaseDir else null,
+                language = if (translate) tsujiConfig.language.to else null
+            )
         }
     }
 

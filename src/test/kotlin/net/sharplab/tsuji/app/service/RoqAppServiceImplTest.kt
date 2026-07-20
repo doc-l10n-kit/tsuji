@@ -49,9 +49,13 @@ class RoqAppServiceImplTest {
         val po: TsujiConfig.Po = mock()
         whenever(po.baseDir).thenReturn(poBaseDir)
 
+        val language: TsujiConfig.Language = mock()
+        whenever(language.to).thenReturn("pt")
+
         val config: TsujiConfig = mock()
         whenever(config.roq).thenReturn(roq)
         whenever(config.po).thenReturn(po)
+        whenever(config.language).thenReturn(language)
         return config
     }
 
@@ -82,7 +86,7 @@ class RoqAppServiceImplTest {
             htmlIncludeList = any(),
             yamlExcludeList = any()
         )
-        verify(roqDriver).build(any(), any(), isNull())
+        verify(roqDriver).build(any(), any(), isNull(), any(), any())
     }
 
     @Test
@@ -101,7 +105,7 @@ class RoqAppServiceImplTest {
         verify(roqDriver).prepareSource(any(), any())
         verify(roqDriver, never()).applyOverrides(any(), any())
         verify(poAppService, never()).applyPoToDirectory(any(), any(), any(), any(), any())
-        verify(roqDriver).build(any(), any(), isNull())
+        verify(roqDriver).build(any(), any(), isNull(), isNull(), isNull())
     }
 
     @Test
@@ -115,7 +119,7 @@ class RoqAppServiceImplTest {
         val target = RoqAppServiceImpl(roqDriver, poAppService, gitTimestampDriver, siteService, config)
         target.build(translate = false, profile = "custom-profile")
 
-        verify(roqDriver).build(any(), any(), eq("custom-profile"))
+        verify(roqDriver).build(any(), any(), eq("custom-profile"), isNull(), isNull())
     }
 
     @Test
@@ -129,7 +133,7 @@ class RoqAppServiceImplTest {
         val target = RoqAppServiceImpl(roqDriver, poAppService, gitTimestampDriver, siteService, config)
         target.build(translate = false)
 
-        verify(roqDriver).build(any(), any(), eq("only-latest-guides"))
+        verify(roqDriver).build(any(), any(), eq("only-latest-guides"), isNull(), isNull())
     }
 
     @Test
@@ -152,7 +156,7 @@ class RoqAppServiceImplTest {
             htmlIncludeList = any(),
             yamlExcludeList = any()
         )
-        verify(roqDriver).serve(any(), isNull())
+        verify(roqDriver).serve(any(), isNull(), any(), any())
     }
 
     @Test
