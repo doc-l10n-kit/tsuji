@@ -34,6 +34,14 @@ class RoqDriverImpl(
             timeoutValue = 30,
             timeoutUnit = TimeUnit.MINUTES
         )
+
+        // "target/roq" is the default output path for Roq (quarkus.roq.generator.output-dir=roq),
+        // and quarkus.io uses this default.
+        val generatedDir = roqSourceDir.resolve("target/roq")
+        if (generatedDir.exists()) {
+            destinationDir.toFile().deleteRecursively()
+            copyDirectory(generatedDir, destinationDir)
+        }
     }
 
     override fun serve(roqSourceDir: Path, profile: String?, poBaseDir: Path?, language: String?) {
