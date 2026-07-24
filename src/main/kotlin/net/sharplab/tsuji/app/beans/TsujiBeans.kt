@@ -23,6 +23,8 @@ import net.sharplab.tsuji.core.driver.gettext.GettextDriver
 import net.sharplab.tsuji.core.driver.gettext.GettextDriverImpl
 import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
 import net.sharplab.tsuji.core.driver.jekyll.JekyllDriverImpl
+import net.sharplab.tsuji.core.driver.roq.RoqDriver
+import net.sharplab.tsuji.core.driver.roq.RoqDriverImpl
 import net.sharplab.tsuji.core.driver.po.PoDriver
 import net.sharplab.tsuji.core.driver.po.PoDriverImpl
 import net.sharplab.tsuji.core.driver.po4a.Po4aDriver
@@ -45,8 +47,8 @@ import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismCon
 import net.sharplab.tsuji.core.driver.translator.util.MessageTypeNoteGenerator
 import net.sharplab.tsuji.core.service.IndexingService
 import net.sharplab.tsuji.core.service.IndexingServiceImpl
-import net.sharplab.tsuji.core.service.JekyllService
-import net.sharplab.tsuji.core.service.JekyllServiceImpl
+import net.sharplab.tsuji.core.service.SiteService
+import net.sharplab.tsuji.core.service.SiteServiceImpl
 import net.sharplab.tsuji.core.service.PoNormalizerService
 import net.sharplab.tsuji.core.service.PoNormalizerServiceImpl
 import net.sharplab.tsuji.core.service.PoService
@@ -209,8 +211,8 @@ class TsujiBeans(
     }
 
     @Produces
-    fun jekyllService(): JekyllService {
-        return JekyllServiceImpl()
+    fun siteService(): SiteService {
+        return SiteServiceImpl()
     }
 
     @Produces
@@ -264,6 +266,11 @@ class TsujiBeans(
     @Produces
     fun jekyllDriver(externalProcessDriver: ExternalProcessDriver, tsujiConfig: TsujiConfig) : JekyllDriver {
         return JekyllDriverImpl(externalProcessDriver, tsujiConfig.jekyll.jekyllL10nBranch)
+    }
+
+    @Produces
+    fun roqDriver(externalProcessDriver: ExternalProcessDriver): RoqDriver {
+        return RoqDriverImpl(externalProcessDriver)
     }
 
     @Produces

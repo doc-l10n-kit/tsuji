@@ -3,9 +3,9 @@ package net.sharplab.tsuji.core.service
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-class JekyllServiceImplTest {
+class SiteServiceImplTest {
 
-    private val target = JekyllServiceImpl()
+    private val target = SiteServiceImpl()
 
     @Test
     fun determineOverrideStatus_shouldReturnOkWhenOverrideIsNewer() {
