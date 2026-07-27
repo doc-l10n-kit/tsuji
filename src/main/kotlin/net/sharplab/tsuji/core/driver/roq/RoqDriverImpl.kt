@@ -26,6 +26,7 @@ class RoqDriverImpl(
             env["QUARKUS_PROFILE"] = profile
         }
         addL10nEnv(env, poBaseDir, language)
+        env["QUARKUS_ROQ_L10N_ADOC_EXTRACT_ON_BUILD"] = "false"
 
         externalProcessDriver.execute(
             command = listOf("mvn", "-B", "package", "quarkus:run", "-DskipTests"),
@@ -50,6 +51,7 @@ class RoqDriverImpl(
             env["QUARKUS_PROFILE"] = profile
         }
         addL10nEnv(env, poBaseDir, language)
+        env["QUARKUS_ROQ_L10N_ADOC_EXTRACT_ON_BUILD"] = "false"
 
         externalProcessDriver.execute(
             command = listOf("mvn", "quarkus:dev"),
@@ -60,12 +62,31 @@ class RoqDriverImpl(
         )
     }
 
+    override fun extractBuild(roqSourceDir: Path, profile: String?, poBaseDir: Path, language: String?) {
+        val env = mutableMapOf("QUARKUS_ROQ_GENERATOR_BATCH" to "true")
+        if (profile != null) {
+            env["QUARKUS_PROFILE"] = profile
+        }
+        env["QUARKUS_ROQ_L10N_ADOC_PO_BASE_DIR"] = poBaseDir.toAbsolutePath().toString()
+        if (language != null) {
+            env["QUARKUS_ROQ_L10N_ADOC_TARGET_LANGUAGE"] = language
+        }
+
+        externalProcessDriver.execute(
+            command = listOf("mvn", "-B", "package", "quarkus:run", "-DskipTests"),
+            directory = roqSourceDir,
+            env = env,
+            timeoutValue = 30,
+            timeoutUnit = TimeUnit.MINUTES
+        )
+    }
+
     private fun addL10nEnv(env: MutableMap<String, String>, poBaseDir: Path?, language: String?) {
         if (poBaseDir != null) {
-            env["L10N_PO_BASE_DIR"] = poBaseDir.toAbsolutePath().toString()
+            env["QUARKUS_ROQ_L10N_ADOC_PO_BASE_DIR"] = poBaseDir.toAbsolutePath().toString()
         }
         if (language != null) {
-            env["L10N_LANGUAGE"] = language
+            env["QUARKUS_ROQ_L10N_ADOC_TARGET_LANGUAGE"] = language
         }
     }
 }
