@@ -10,13 +10,19 @@ import java.nio.file.Path
  */
 class PoNormalizerServiceImpl(
     private val poDriver: PoDriver,
-    private val gettextDriver: GettextDriver
+    private val gettextDriver: GettextDriver,
+    private val defaultTargetLanguage: String?
 ) : PoNormalizerService {
 
     override fun normalize(path: Path) {
         // Load and save to remove obsolete entries and POT-Creation-Date
         val po = poDriver.load(path)
-        poDriver.save(po, path)
+        val normalized = if (po.target == null && defaultTargetLanguage != null) {
+            po.copy(target = defaultTargetLanguage)
+        } else {
+            po
+        }
+        poDriver.save(normalized, path)
 
         // Run msgcat for format normalization
         gettextDriver.normalize(path)
