@@ -22,7 +22,7 @@ class RoqAppServiceImpl(
 
     private val logger = LoggerFactory.getLogger(RoqAppServiceImpl::class.java)
 
-    override fun build(translate: Boolean, profile: String?, skipAsciidoc: Boolean) {
+    override fun build(translate: Boolean, profile: String?) {
         val resolvedPoBaseDir = Paths.get(tsujiConfig.po.baseDir)
         val resolvedDestinationDir = Paths.get(tsujiConfig.roq.destinationDir)
         val resolvedProfile = profile ?: tsujiConfig.roq.quarkusProfile.orElse(null)
@@ -35,7 +35,6 @@ class RoqAppServiceImpl(
                 roqDriver.applyOverrides(Paths.get(tsujiConfig.roq.overrideDir), workDir)
                 poAppService.applyPoToDirectory(
                     workDir, resolvedPoBaseDir,
-                    skipAsciidoc = skipAsciidoc,
                     htmlIncludeList = htmlInclude,
                     yamlExcludeList = yamlExclude
                 )
@@ -48,7 +47,7 @@ class RoqAppServiceImpl(
         }
     }
 
-    override fun serve(translate: Boolean, profile: String?, skipAsciidoc: Boolean) {
+    override fun serve(translate: Boolean, profile: String?) {
         val resolvedPoBaseDir = Paths.get(tsujiConfig.po.baseDir)
         val resolvedProfile = profile ?: tsujiConfig.roq.quarkusProfile.orElse(null)
         val htmlInclude = tsujiConfig.roq.extract.html.include.orElse(emptyList())
@@ -60,7 +59,6 @@ class RoqAppServiceImpl(
                 roqDriver.applyOverrides(Paths.get(tsujiConfig.roq.overrideDir), workDir)
                 poAppService.applyPoToDirectory(
                     workDir, resolvedPoBaseDir,
-                    skipAsciidoc = skipAsciidoc,
                     htmlIncludeList = htmlInclude,
                     yamlExcludeList = yamlExclude
                 )
@@ -70,6 +68,27 @@ class RoqAppServiceImpl(
                 poBaseDir = if (translate) resolvedPoBaseDir else null,
                 language = if (translate) tsujiConfig.language.to else null
             )
+        }
+    }
+
+    override fun extract(profile: String?) {
+        val resolvedPoBaseDir = Paths.get(tsujiConfig.po.baseDir)
+        val resolvedProfile = profile ?: tsujiConfig.roq.quarkusProfile.orElse(null)
+        val yamlExclude = tsujiConfig.roq.extract.yaml.exclude.orElse(emptyList())
+        val htmlInclude = tsujiConfig.roq.extract.html.include.orElse(emptyList())
+
+        withTempWorkDir { workDir ->
+            roqDriver.prepareSource(Paths.get(tsujiConfig.roq.sourceDir), workDir)
+
+            // Extract MD/YAML/HTML PO files via po4a (always skip AsciiDoc — handled by l10n-adoc)
+            poAppService.extractRoq(
+                poBaseDir = resolvedPoBaseDir,
+                sourceDir = Paths.get(tsujiConfig.roq.sourceDir),
+                overrideDir = Paths.get(tsujiConfig.roq.overrideDir),
+            )
+
+            // Extract AsciiDoc PO files via Roq build with extract-on-build=true (default)
+            roqDriver.extractBuild(workDir, resolvedProfile, resolvedPoBaseDir, tsujiConfig.language.to.replace("-", "_"))
         }
     }
 
