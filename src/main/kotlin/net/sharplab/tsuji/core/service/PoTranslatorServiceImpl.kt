@@ -26,12 +26,16 @@ class PoTranslatorServiceImpl(
     }
 
     override fun applyTmx(tmx: Tmx, po: Po): Po {
-        val translationIndex = TranslationIndex.create(tmx, po.target)
+        val target = po.target
+            ?: throw IllegalStateException("PO file has no Language header")
+        val translationIndex = TranslationIndex.create(tmx, target)
         return applyTmxWithIndex(translationIndex, po, fuzzy = false)
     }
 
     override fun applyFuzzyTmx(fuzzyTmx: Tmx, po: Po): Po {
-        val translationIndex = TranslationIndex.create(fuzzyTmx, po.target)
+        val target = po.target
+            ?: throw IllegalStateException("PO file has no Language header")
+        val translationIndex = TranslationIndex.create(fuzzyTmx, target)
         return applyTmxWithIndex(translationIndex, po, fuzzy = true)
     }
 

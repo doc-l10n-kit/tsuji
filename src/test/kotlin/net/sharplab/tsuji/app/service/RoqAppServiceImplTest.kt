@@ -82,7 +82,6 @@ class RoqAppServiceImplTest {
         verify(poAppService).applyPoToDirectory(
             workDir = any(),
             poBaseDir = any(),
-            skipAsciidoc = eq(false),
             htmlIncludeList = any(),
             yamlExcludeList = any()
         )
@@ -104,7 +103,7 @@ class RoqAppServiceImplTest {
 
         verify(roqDriver).prepareSource(any(), any())
         verify(roqDriver, never()).applyOverrides(any(), any())
-        verify(poAppService, never()).applyPoToDirectory(any(), any(), any(), any(), any())
+        verify(poAppService, never()).applyPoToDirectory(any(), any(), any(), any())
         verify(roqDriver).build(any(), any(), isNull(), isNull(), isNull())
     }
 
@@ -152,32 +151,10 @@ class RoqAppServiceImplTest {
         verify(poAppService).applyPoToDirectory(
             workDir = any(),
             poBaseDir = any(),
-            skipAsciidoc = eq(false),
             htmlIncludeList = any(),
             yamlExcludeList = any()
         )
         verify(roqDriver).serve(any(), isNull(), any(), any())
-    }
-
-    @Test
-    fun build_with_skipAsciidoc_should_pass_flag(@TempDir tempDir: Path) {
-        val config = createConfig(
-            sourceDir = tempDir.resolve("upstream").toString(),
-            overrideDir = tempDir.resolve("override").toString(),
-            destinationDir = tempDir.resolve("output").toString(),
-            poBaseDir = tempDir.resolve("po").toString()
-        )
-
-        val target = RoqAppServiceImpl(roqDriver, poAppService, gitTimestampDriver, siteService, config)
-        target.build(translate = true, skipAsciidoc = true)
-
-        verify(poAppService).applyPoToDirectory(
-            workDir = any(),
-            poBaseDir = any(),
-            skipAsciidoc = eq(true),
-            htmlIncludeList = any(),
-            yamlExcludeList = any()
-        )
     }
 
     @Test

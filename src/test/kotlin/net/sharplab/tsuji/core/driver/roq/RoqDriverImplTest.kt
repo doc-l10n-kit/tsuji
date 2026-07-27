@@ -169,8 +169,9 @@ class RoqDriverImplTest {
             command = any(),
             directory = eq(roqSourceDir),
             env = argThat<Map<String, String>> {
-                this["L10N_PO_BASE_DIR"] == poBaseDir.toAbsolutePath().toString() &&
-                this["L10N_LANGUAGE"] == "pt"
+                this["QUARKUS_ROQ_L10N_ADOC_PO_BASE_DIR"] == poBaseDir.toAbsolutePath().toString() &&
+                this["QUARKUS_ROQ_L10N_ADOC_TARGET_LANGUAGE"] == "pt" &&
+                this["QUARKUS_ROQ_L10N_ADOC_EXTRACT_ON_BUILD"] == "false"
             },
             timeoutValue = any(),
             timeoutUnit = any()
@@ -188,7 +189,8 @@ class RoqDriverImplTest {
             command = any(),
             directory = eq(roqSourceDir),
             env = argThat<Map<String, String>> {
-                !containsKey("L10N_PO_BASE_DIR") && !containsKey("L10N_LANGUAGE")
+                !containsKey("QUARKUS_ROQ_L10N_ADOC_PO_BASE_DIR") &&
+                !containsKey("QUARKUS_ROQ_L10N_ADOC_TARGET_LANGUAGE")
             },
             timeoutValue = any(),
             timeoutUnit = any()
@@ -206,8 +208,9 @@ class RoqDriverImplTest {
             command = any(),
             directory = eq(roqSourceDir),
             env = argThat<Map<String, String>> {
-                this["L10N_PO_BASE_DIR"] == poBaseDir.toAbsolutePath().toString() &&
-                this["L10N_LANGUAGE"] == "ja"
+                this["QUARKUS_ROQ_L10N_ADOC_PO_BASE_DIR"] == poBaseDir.toAbsolutePath().toString() &&
+                this["QUARKUS_ROQ_L10N_ADOC_TARGET_LANGUAGE"] == "ja" &&
+                this["QUARKUS_ROQ_L10N_ADOC_EXTRACT_ON_BUILD"] == "false"
             },
             timeoutValue = any(),
             timeoutUnit = any()

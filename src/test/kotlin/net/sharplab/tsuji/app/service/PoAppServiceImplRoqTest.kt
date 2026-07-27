@@ -68,7 +68,7 @@ class PoAppServiceImplRoqTest {
     // --- extractRoq tests ---
 
     @Test
-    fun extractRoq_should_extract_asciidoc_files(@TempDir tempDir: Path) {
+    fun extractRoq_should_skip_asciidoc_files(@TempDir tempDir: Path) {
         val sourceDir = tempDir.resolve("upstream").createDirectories()
         val poBaseDir = tempDir.resolve("po").createDirectories()
 
@@ -92,11 +92,9 @@ class PoAppServiceImplRoqTest {
         val target = PoAppServiceImpl(gettextDriver, poDriver, po4aDriver, jekyllDriver, poService, poNormalizerService, config)
         target.extractRoq(poBaseDir, sourceDir, tempDir.resolve("override"))
 
-        verify(po4aDriver).updatePo(
+        verify(po4aDriver, never()).updatePo(
             argThat<Path> { toString().contains("getting-started.adoc") },
-            argThat<Path> { toString().contains("getting-started.adoc.po") },
-            eq("asciidoc"),
-            any()
+            any(), eq("asciidoc"), any()
         )
     }
 
@@ -199,7 +197,7 @@ class PoAppServiceImplRoqTest {
     // --- applyPoToDirectory tests ---
 
     @Test
-    fun applyPoToDirectory_with_skipAsciidoc_false_should_translate_asciidoc(@TempDir tempDir: Path) {
+    fun applyPoToDirectory_should_skip_asciidoc(@TempDir tempDir: Path) {
         val workDir = tempDir.resolve("work").createDirectories()
         val poBaseDir = tempDir.resolve("po").createDirectories()
 
@@ -211,29 +209,7 @@ class PoAppServiceImplRoqTest {
 
         val config = createMockConfig()
         val target = PoAppServiceImpl(gettextDriver, poDriver, po4aDriver, jekyllDriver, poService, poNormalizerService, config)
-        target.applyPoToDirectory(workDir, poBaseDir, skipAsciidoc = false)
-
-        verify(po4aDriver).translate(
-            argThat<Path> { toString().contains("guide.adoc") },
-            argThat<Path> { toString().contains("guide.adoc.po") },
-            any(), eq("asciidoc"), any()
-        )
-    }
-
-    @Test
-    fun applyPoToDirectory_with_skipAsciidoc_true_should_skip_asciidoc(@TempDir tempDir: Path) {
-        val workDir = tempDir.resolve("work").createDirectories()
-        val poBaseDir = tempDir.resolve("po").createDirectories()
-
-        workDir.resolve("guide.adoc").writeText("= Guide")
-        poBaseDir.resolve("guide.adoc.po").writeText("po content")
-
-        whenever(po4aDriver.determineFormat(any())).thenReturn("asciidoc")
-        whenever(poService.isIgnored(any())).thenReturn(false)
-
-        val config = createMockConfig()
-        val target = PoAppServiceImpl(gettextDriver, poDriver, po4aDriver, jekyllDriver, poService, poNormalizerService, config)
-        target.applyPoToDirectory(workDir, poBaseDir, skipAsciidoc = true)
+        target.applyPoToDirectory(workDir, poBaseDir)
 
         verify(po4aDriver, never()).translate(any(), any(), any(), any(), any())
     }
@@ -253,11 +229,11 @@ class PoAppServiceImplRoqTest {
         val target = PoAppServiceImpl(gettextDriver, poDriver, po4aDriver, jekyllDriver, poService, poNormalizerService, config)
 
         // Without explicit param, uses Jekyll config (empty include = skip all HTML)
-        target.applyPoToDirectory(workDir, poBaseDir, skipAsciidoc = true)
+        target.applyPoToDirectory(workDir, poBaseDir)
         verify(po4aDriver, never()).translate(any(), any(), any(), any(), any())
 
         // With explicit param including the file, should translate
-        target.applyPoToDirectory(workDir, poBaseDir, skipAsciidoc = true,
+        target.applyPoToDirectory(workDir, poBaseDir,
             htmlIncludeList = listOf("page.html"))
         verify(po4aDriver).translate(any(), any(), any(), eq("xhtml"), any())
     }

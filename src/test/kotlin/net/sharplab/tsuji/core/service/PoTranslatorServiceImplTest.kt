@@ -52,7 +52,7 @@ internal class PoTranslatorServiceImplTest {
         val po = PoDriverImpl().load(poPath)
         val tmxPath = TestUtil.resolveClasspath("tmx/fuzzy.tmx")
         val tmx = TmxCodec().load(tmxPath)
-        val translationIndex = TranslationIndex.create(tmx, po.target)
+        val translationIndex = TranslationIndex.create(tmx, po.target!!)
 
         val target = PoTranslatorServiceImpl(mockTranslator)
 
@@ -72,7 +72,7 @@ internal class PoTranslatorServiceImplTest {
         val po = PoDriverImpl().load(poPath)
         val tmxPath = TestUtil.resolveClasspath("tmx/fuzzy.tmx")
         val tmx = TmxCodec().load(tmxPath)
-        val translationIndex = TranslationIndex.create(tmx, po.target)
+        val translationIndex = TranslationIndex.create(tmx, po.target!!)
 
         val target = PoTranslatorServiceImpl(mockTranslator)
 

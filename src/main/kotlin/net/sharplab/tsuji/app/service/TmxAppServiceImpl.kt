@@ -54,10 +54,12 @@ class TmxAppServiceImpl(
                 val poFile = poDriver.load(poPath)
 
                 // Build translation index using the PO file's target language
-                logger.info("Building translation index from $logPrefix TMX for language: ${poFile.target}")
+                val target = poFile.target
+                    ?: throw IllegalStateException("PO file ${poPath} has no Language header")
+                logger.info("Building translation index from $logPrefix TMX for language: $target")
                 val translationIndex = net.sharplab.tsuji.tmx.index.TranslationIndex.create(
                     tmxFile,
-                    poFile.target
+                    target
                 )
 
                 val translated = poTranslatorService.applyTmxWithIndex(translationIndex, poFile, fuzzy = fuzzy)
