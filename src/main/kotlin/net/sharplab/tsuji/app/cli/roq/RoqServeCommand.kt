@@ -17,10 +17,7 @@ class RoqServeCommand(private val roqAppService: RoqAppService) : BaseCommand() 
     @CommandLine.Option(names = ["--profile", "-p"], description = ["Quarkus profile to use"])
     var profile: String? = null
 
-    @CommandLine.Option(names = ["--skip-asciidoc"], description = ["Skip AsciiDoc po4a translation (use when a Roq i18n extension handles AsciiDoc in-AST)"], defaultValue = "false")
-    var skipAsciidoc: Boolean = false
-
     override fun execute() {
-        roqAppService.serve(translate = translate, profile = profile, skipAsciidoc = skipAsciidoc)
+        roqAppService.serve(translate = translate, profile = profile)
     }
 }

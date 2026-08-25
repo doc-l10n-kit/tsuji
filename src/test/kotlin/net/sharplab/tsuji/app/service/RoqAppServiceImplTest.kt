@@ -45,6 +45,9 @@ class RoqAppServiceImplTest {
         whenever(roq.quarkusProfile).thenReturn(Optional.ofNullable(quarkusProfile))
         whenever(roq.statsSections).thenReturn(statsSections ?: emptyMap())
         whenever(roq.extract).thenReturn(roqExtract)
+        val asciidocJrubyL10n: TsujiConfig.Roq.AsciidocJrubyL10n = mock()
+        whenever(asciidocJrubyL10n.version).thenReturn(Optional.empty())
+        whenever(roq.asciidocJrubyL10n).thenReturn(asciidocJrubyL10n)
 
         val po: TsujiConfig.Po = mock()
         whenever(po.baseDir).thenReturn(poBaseDir)
@@ -82,7 +85,6 @@ class RoqAppServiceImplTest {
         verify(poAppService).applyPoToDirectory(
             workDir = any(),
             poBaseDir = any(),
-            skipAsciidoc = eq(false),
             htmlIncludeList = any(),
             yamlExcludeList = any()
         )
@@ -104,7 +106,7 @@ class RoqAppServiceImplTest {
 
         verify(roqDriver).prepareSource(any(), any())
         verify(roqDriver, never()).applyOverrides(any(), any())
-        verify(poAppService, never()).applyPoToDirectory(any(), any(), any(), any(), any())
+        verify(poAppService, never()).applyPoToDirectory(any(), any(), any(), any())
         verify(roqDriver).build(any(), any(), isNull(), isNull(), isNull())
     }
 
@@ -152,32 +154,10 @@ class RoqAppServiceImplTest {
         verify(poAppService).applyPoToDirectory(
             workDir = any(),
             poBaseDir = any(),
-            skipAsciidoc = eq(false),
             htmlIncludeList = any(),
             yamlExcludeList = any()
         )
         verify(roqDriver).serve(any(), isNull(), any(), any())
-    }
-
-    @Test
-    fun build_with_skipAsciidoc_should_pass_flag(@TempDir tempDir: Path) {
-        val config = createConfig(
-            sourceDir = tempDir.resolve("upstream").toString(),
-            overrideDir = tempDir.resolve("override").toString(),
-            destinationDir = tempDir.resolve("output").toString(),
-            poBaseDir = tempDir.resolve("po").toString()
-        )
-
-        val target = RoqAppServiceImpl(roqDriver, poAppService, gitTimestampDriver, siteService, config)
-        target.build(translate = true, skipAsciidoc = true)
-
-        verify(poAppService).applyPoToDirectory(
-            workDir = any(),
-            poBaseDir = any(),
-            skipAsciidoc = eq(true),
-            htmlIncludeList = any(),
-            yamlExcludeList = any()
-        )
     }
 
     @Test

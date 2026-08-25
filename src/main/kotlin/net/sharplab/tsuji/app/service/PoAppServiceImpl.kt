@@ -187,12 +187,16 @@ class PoAppServiceImpl(
             val yamlExcludeList = tsujiConfig.roq.extract.yaml.exclude.orElse(emptyList())
             val htmlIncludeList = tsujiConfig.roq.extract.html.include.orElse(emptyList())
 
-            logger.info("Extracting PO files using po4a (including AsciiDoc)")
+            logger.info("Extracting PO files using po4a")
             workDir.walk().forEach { file ->
                 if (!file.isRegularFile()) return@forEach
                 val relativePath = workDir.relativize(file)
                 val relativePathStr = relativePath.toString()
                 val format = po4aDriver.determineFormat(file) ?: return@forEach
+
+                if (format == "asciidoc") {
+                    return@forEach
+                }
 
                 if (format == "yaml") {
                     if (yamlExcludeList.contains(relativePathStr)) {
@@ -222,7 +226,6 @@ class PoAppServiceImpl(
     override fun applyPoToDirectory(
         workDir: Path,
         poBaseDir: Path,
-        skipAsciidoc: Boolean,
         htmlIncludeList: List<String>?,
         yamlExcludeList: List<String>?
     ) {
@@ -243,8 +246,7 @@ class PoAppServiceImpl(
             if (masterFile.exists()) {
                 val format = po4aDriver.determineFormat(masterFile)
 
-                if (skipAsciidoc && format == "asciidoc") {
-                    logger.debug("Skipping AsciiDoc file $masterFile: will be handled by SSG plugin")
+                if (format == "asciidoc") {
                     return@forEach
                 }
 

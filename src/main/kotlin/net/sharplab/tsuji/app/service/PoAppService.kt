@@ -15,7 +15,6 @@ interface PoAppService {
     fun applyPoToDirectory(
         workDir: Path,
         poBaseDir: Path,
-        skipAsciidoc: Boolean = true,
         htmlIncludeList: List<String>? = null,
         yamlExcludeList: List<String>? = null
     )

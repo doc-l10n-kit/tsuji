@@ -249,8 +249,8 @@ class TsujiBeans(
     }
 
     @Produces
-    fun poNormalizerService(poDriver: PoDriver, gettextDriver: GettextDriver): PoNormalizerService {
-        return PoNormalizerServiceImpl(poDriver, gettextDriver)
+    fun poNormalizerService(poDriver: PoDriver, gettextDriver: GettextDriver, tsujiConfig: TsujiConfig): PoNormalizerService {
+        return PoNormalizerServiceImpl(poDriver, gettextDriver, tsujiConfig.language.to.replace("-", "_"))
     }
 
     @Produces

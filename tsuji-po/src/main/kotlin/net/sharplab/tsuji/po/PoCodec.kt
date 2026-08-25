@@ -27,7 +27,7 @@ class PoCodec {
         return Po(target, messages, header)
     }
 
-    private fun extractHeader(catalog: Catalog): Pair<String, Map<String, String>> {
+    private fun extractHeader(catalog: Catalog): Pair<String?, Map<String, String>> {
         val headerMap = catalog.locateHeader()?.msgstr?.split("\n")
             ?.mapNotNull { line ->
                 val parts = line.split(":", limit = 2)
@@ -39,7 +39,7 @@ class PoCodec {
             }
             ?.toMap() ?: emptyMap()
 
-        val target = headerMap["Language"] ?: "en_US"
+        val target = headerMap["Language"]?.takeIf { it.isNotBlank() }
         return target to headerMap
     }
 
@@ -94,19 +94,23 @@ class PoCodec {
         // Use existing header if available, otherwise create minimal header
         val headerMap = if (po.header.isNotEmpty()) {
             po.header.toMutableMap().apply {
-                // Always set Language to current target
-                put("Language", po.target)
+                if (po.target != null) {
+                    put("Language", po.target)
+                }
                 // Remove POT-Creation-Date to prevent unnecessary diffs
                 remove("POT-Creation-Date")
             }
         } else {
-            mutableMapOf(
-                "Language" to po.target,
+            mutableMapOf<String, String?>(
                 "MIME-Version" to "1.0",
                 "Content-Type" to "text/plain; charset=UTF-8",
                 "Content-Transfer-Encoding" to "8bit",
                 "X-Generator" to "doc-l10n-kit"
-            )
+            ).apply {
+                if (po.target != null) {
+                    put("Language", po.target)
+                }
+            }
         }
 
         // Build header string

@@ -11,6 +11,8 @@ class RoqDriverImpl(
     private val externalProcessDriver: ExternalProcessDriver
 ) : RoqDriver {
 
+    private val logger = org.slf4j.LoggerFactory.getLogger(RoqDriverImpl::class.java)
+
     override fun prepareSource(sourceDir: Path, workDir: Path) {
         copyDirectory(sourceDir, workDir)
     }
@@ -26,6 +28,7 @@ class RoqDriverImpl(
             env["QUARKUS_PROFILE"] = profile
         }
         addL10nEnv(env, poBaseDir, language)
+        env["QUARKUS_ROQ_L10N_ADOC_EXTRACT_ON_BUILD"] = "false"
 
         externalProcessDriver.execute(
             command = listOf("mvn", "-B", "package", "quarkus:run", "-DskipTests"),
@@ -50,6 +53,7 @@ class RoqDriverImpl(
             env["QUARKUS_PROFILE"] = profile
         }
         addL10nEnv(env, poBaseDir, language)
+        env["QUARKUS_ROQ_L10N_ADOC_EXTRACT_ON_BUILD"] = "false"
 
         externalProcessDriver.execute(
             command = listOf("mvn", "quarkus:dev"),
@@ -60,12 +64,42 @@ class RoqDriverImpl(
         )
     }
 
+    override fun extractBuild(roqSourceDir: Path, profile: String?, poBaseDir: Path, language: String?) {
+        val env = mutableMapOf("QUARKUS_ROQ_GENERATOR_BATCH" to "true")
+        if (profile != null) {
+            env["QUARKUS_PROFILE"] = profile
+        }
+        env["QUARKUS_ROQ_L10N_ADOC_PO_BASE_DIR"] = poBaseDir.toAbsolutePath().toString()
+        if (language != null) {
+            env["QUARKUS_ROQ_L10N_ADOC_TARGET_LANGUAGE"] = language
+        }
+
+        externalProcessDriver.execute(
+            command = listOf("mvn", "-B", "package", "quarkus:run", "-DskipTests"),
+            directory = roqSourceDir,
+            env = env,
+            timeoutValue = 30,
+            timeoutUnit = TimeUnit.MINUTES
+        )
+    }
+
+    override fun ensureL10nDependency(workDir: Path, version: String) {
+        logger.info("Ensuring l10n-adoc dependency (version: $version)")
+        externalProcessDriver.execute(
+            command = listOf("mvn", "-B", "quarkus:add-extension", "-Dextensions=io.quarkiverse.roq:quarkus-roq-plugin-asciidoc-jruby-l10n:$version"),
+            directory = workDir,
+            env = emptyMap(),
+            timeoutValue = 5,
+            timeoutUnit = TimeUnit.MINUTES
+        )
+    }
+
     private fun addL10nEnv(env: MutableMap<String, String>, poBaseDir: Path?, language: String?) {
         if (poBaseDir != null) {
-            env["L10N_PO_BASE_DIR"] = poBaseDir.toAbsolutePath().toString()
+            env["QUARKUS_ROQ_L10N_ADOC_PO_BASE_DIR"] = poBaseDir.toAbsolutePath().toString()
         }
         if (language != null) {
-            env["L10N_LANGUAGE"] = language
+            env["QUARKUS_ROQ_L10N_ADOC_TARGET_LANGUAGE"] = language
         }
     }
 }
