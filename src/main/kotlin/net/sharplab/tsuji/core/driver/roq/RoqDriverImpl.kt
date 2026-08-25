@@ -11,6 +11,8 @@ class RoqDriverImpl(
     private val externalProcessDriver: ExternalProcessDriver
 ) : RoqDriver {
 
+    private val logger = org.slf4j.LoggerFactory.getLogger(RoqDriverImpl::class.java)
+
     override fun prepareSource(sourceDir: Path, workDir: Path) {
         copyDirectory(sourceDir, workDir)
     }
@@ -77,6 +79,17 @@ class RoqDriverImpl(
             directory = roqSourceDir,
             env = env,
             timeoutValue = 30,
+            timeoutUnit = TimeUnit.MINUTES
+        )
+    }
+
+    override fun ensureL10nDependency(workDir: Path, version: String) {
+        logger.info("Ensuring l10n-adoc dependency (version: $version)")
+        externalProcessDriver.execute(
+            command = listOf("mvn", "-B", "quarkus:add-extension", "-Dextensions=io.quarkiverse.roq:quarkus-roq-plugin-asciidoc-jruby-l10n:$version"),
+            directory = workDir,
+            env = emptyMap(),
+            timeoutValue = 5,
             timeoutUnit = TimeUnit.MINUTES
         )
     }

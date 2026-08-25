@@ -32,6 +32,9 @@ class RoqAppServiceImpl(
         withTempWorkDir { workDir ->
             roqDriver.prepareSource(Paths.get(tsujiConfig.roq.sourceDir), workDir)
             if (translate) {
+                tsujiConfig.roq.asciidocJrubyL10n.version.ifPresent { version ->
+                    roqDriver.ensureL10nDependency(workDir, version)
+                }
                 roqDriver.applyOverrides(Paths.get(tsujiConfig.roq.overrideDir), workDir)
                 poAppService.applyPoToDirectory(
                     workDir, resolvedPoBaseDir,
@@ -56,6 +59,9 @@ class RoqAppServiceImpl(
         withTempWorkDir { workDir ->
             roqDriver.prepareSource(Paths.get(tsujiConfig.roq.sourceDir), workDir)
             if (translate) {
+                tsujiConfig.roq.asciidocJrubyL10n.version.ifPresent { version ->
+                    roqDriver.ensureL10nDependency(workDir, version)
+                }
                 roqDriver.applyOverrides(Paths.get(tsujiConfig.roq.overrideDir), workDir)
                 poAppService.applyPoToDirectory(
                     workDir, resolvedPoBaseDir,
@@ -79,6 +85,9 @@ class RoqAppServiceImpl(
 
         withTempWorkDir { workDir ->
             roqDriver.prepareSource(Paths.get(tsujiConfig.roq.sourceDir), workDir)
+            tsujiConfig.roq.asciidocJrubyL10n.version.ifPresent { version ->
+                roqDriver.ensureL10nDependency(workDir, version)
+            }
 
             // Extract MD/YAML/HTML PO files via po4a (always skip AsciiDoc — handled by l10n-adoc)
             poAppService.extractRoq(

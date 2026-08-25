@@ -119,6 +119,14 @@ interface TsujiConfig {
         @get:WithName("stats-sections")
         val statsSections: Map<String, String>
 
+        @get:WithName("asciidoc-jruby-l10n")
+        val asciidocJrubyL10n: AsciidocJrubyL10n
+
+        interface AsciidocJrubyL10n {
+            @get:WithName("version")
+            val version: Optional<String>
+        }
+
         @get:WithName("extract")
         val extract: Extract
 

@@ -45,6 +45,9 @@ class RoqAppServiceImplTest {
         whenever(roq.quarkusProfile).thenReturn(Optional.ofNullable(quarkusProfile))
         whenever(roq.statsSections).thenReturn(statsSections ?: emptyMap())
         whenever(roq.extract).thenReturn(roqExtract)
+        val asciidocJrubyL10n: TsujiConfig.Roq.AsciidocJrubyL10n = mock()
+        whenever(asciidocJrubyL10n.version).thenReturn(Optional.empty())
+        whenever(roq.asciidocJrubyL10n).thenReturn(asciidocJrubyL10n)
 
         val po: TsujiConfig.Po = mock()
         whenever(po.baseDir).thenReturn(poBaseDir)
