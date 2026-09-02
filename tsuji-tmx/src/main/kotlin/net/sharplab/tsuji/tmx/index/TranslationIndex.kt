@@ -44,10 +44,30 @@ class TranslationIndex {
         private fun normalizeValue(value: String?): String?{
             return value?.trimEnd()
         }
+
+        /**
+         * Aligns the trailing newline of a translation with the key it was looked up by.
+         *
+         * gettext requires msgid and msgstr to either both end with a newline or both not,
+         * and msgfmt rejects the whole PO file otherwise. Neither the lookup nor the stored
+         * translation unit preserves that invariant on its own: the normalized lookup path
+         * trims the trailing newline off the translation, while the exact-match path returns
+         * the stored translation untouched, including a trailing newline the key does not have.
+         */
+        private fun alignTrailingNewline(value: String?, key: String): String?{
+            if(value.isNullOrEmpty()){
+                return value
+            }
+            if(key.endsWith("\n") == value.endsWith("\n")){
+                return value
+            }
+            return if(key.endsWith("\n")) value + "\n" else value.trimEnd('\n')
+        }
     }
 
     operator fun get(key: String): String?{
-        return index[key] ?: normalizeValue(secondaryIndex[normalizeKey(key)])
+        val value = index[key] ?: normalizeValue(secondaryIndex[normalizeKey(key)])
+        return alignTrailingNewline(value, key)
     }
 
 
