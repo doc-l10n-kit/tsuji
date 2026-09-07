@@ -58,4 +58,22 @@ class TmxServiceImplTest {
         val tus = result.tmxBody.translationUnits ?: emptyList()
         assertThat(tus).hasSize(1)
     }
+
+    @Test
+    fun createTmxFromPos_shouldAlignTranslationTrailingNewline() {
+        val missingNewline = createPoMessage("First\n", "最初")
+        val extraNewline = createPoMessage("Second", "次\n")
+
+        val result = target.createTmxFromPos(
+            listOf(Po("ja_JP", listOf(missingNewline, extraNewline))),
+            TmxGenerationMode.CONFIRMED
+        )
+
+        val translations = result.tmxBody.translationUnits.orEmpty().associate { unit ->
+            unit.variants.first { it.lang == "en" }.seg to
+                unit.variants.first { it.lang == "ja_JP" }.seg
+        }
+        assertThat(translations["First\n"]).isEqualTo("最初\n")
+        assertThat(translations["Second"]).isEqualTo("次")
+    }
 }
