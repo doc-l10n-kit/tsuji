@@ -12,6 +12,22 @@ class PoMessage(
     private val _flags: MutableSet<PoFlag> = mutableSetOf(),
     val comments: List<String> = emptyList()
 ) {
+    companion object {
+        /**
+         * Aligns a translated string's trailing newline with its message ID.
+         *
+         * gettext requires msgid and msgstr to either both end with a newline
+         * or neither.
+         */
+        fun alignTrailingNewline(messageId: String, messageString: String): String {
+            if (messageString.isEmpty() || messageId.endsWith("\n") == messageString.endsWith("\n")) {
+                return messageString
+            }
+
+            return if (messageId.endsWith("\n")) messageString + "\n" else messageString.trimEnd('\n')
+        }
+    }
+
     /**
      * Returns an immutable view of the flags.
      */

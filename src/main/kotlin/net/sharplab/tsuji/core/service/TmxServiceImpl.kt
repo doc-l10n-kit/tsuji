@@ -1,8 +1,9 @@
 package net.sharplab.tsuji.core.service
 
-import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.model.tmx.TmxGenerationMode
 import net.sharplab.tsuji.core.util.LocaleUtils
+import net.sharplab.tsuji.po.model.Po
+import net.sharplab.tsuji.po.model.PoMessage
 import net.sharplab.tsuji.tmx.model.*
 import org.slf4j.LoggerFactory
 
@@ -32,7 +33,7 @@ class TmxServiceImpl(
 
                 if (shouldInclude) {
                     if (!translations.containsKey(msg.messageId)) {
-                        translations[msg.messageId] = msg.messageString
+                        translations[msg.messageId] = PoMessage.alignTrailingNewline(msg.messageId, msg.messageString)
                     }
                 }
             }

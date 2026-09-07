@@ -272,4 +272,22 @@ class PoCodecTest {
         assertThat(loadedPo.header["POT-Creation-Date"]).isNull()
         assertThat(loadedPo.header["Language"]).isEqualTo("ja_JP")
     }
+
+    @Test
+    fun `should align translation trailing newlines on save`(@TempDir tempDir: Path) {
+        val po = Po(
+            "ja_JP",
+            listOf(
+                PoMessage("First\n", "最初", emptyList()),
+                PoMessage("Second", "次\n", emptyList())
+            )
+        )
+        val savePath = tempDir.resolve("newlines.po")
+
+        target.save(po, savePath)
+
+        val messages = target.load(savePath).messages.associateBy { it.messageId }
+        assertThat(messages["First\n"]?.messageString).isEqualTo("最初\n")
+        assertThat(messages["Second"]?.messageString).isEqualTo("次")
+    }
 }

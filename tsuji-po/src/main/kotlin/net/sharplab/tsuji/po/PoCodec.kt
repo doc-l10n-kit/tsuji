@@ -130,7 +130,7 @@ class PoCodec {
     private fun createMessage(item: PoMessage): Message {
         return Message().apply {
             msgid = item.messageId
-            msgstr = item.messageString
+            msgstr = PoMessage.alignTrailingNewline(item.messageId, item.messageString)
 
             // Set all flags (including fuzzy, no-wrap, etc.)
             item.flags.forEach { flag ->
