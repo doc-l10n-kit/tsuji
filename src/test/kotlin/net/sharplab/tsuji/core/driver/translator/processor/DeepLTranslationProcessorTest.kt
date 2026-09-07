@@ -2,6 +2,7 @@ package net.sharplab.tsuji.core.driver.translator.processor
 import net.sharplab.tsuji.core.model.translation.TranslationContext
 
 import com.deepl.api.TextResult
+import com.deepl.api.DeepLException
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.po.model.MessageType
@@ -171,6 +172,45 @@ internal class DeepLTranslationProcessorTest {
             eq("ja"),
             any()
         )
+    }
+
+    @Test
+    fun `process should limit DeepL requests to 50 texts`() {
+        val mockApi = mock<com.deepl.api.Translator>()
+        whenever(mockApi.translateText(any<List<String>>(), eq("en"), eq("ja"), any())).thenAnswer {
+            it.getArgument<List<String>>(0).map { text ->
+                mock<TextResult>().also { result -> whenever(result.text).thenReturn("translated-$text") }
+            }
+        }
+        val processor = DeepLTranslationProcessor(mockApi, parallelismController = createMockParallelismController())
+
+        val result = processor.processBlocking(List(120) { createMessage("message-$it") }, createContext())
+
+        assertThat(result).hasSize(120)
+        verify(mockApi, times(3)).translateText(
+            argThat<List<String>> { size <= 50 }, eq("en"), eq("ja"), any()
+        )
+    }
+
+    @Test
+    fun `process should reduce batch size when DeepL rejects a large payload`() {
+        val mockApi = mock<com.deepl.api.Translator>()
+        whenever(mockApi.translateText(any<List<String>>(), eq("en"), eq("ja"), any())).thenAnswer {
+            val texts = it.getArgument<List<String>>(0)
+            if (texts.sumOf { text -> text.toByteArray().size } > 50_000) {
+                throw DeepLException("Payload too large.")
+            }
+            texts.map { text ->
+                mock<TextResult>().also { result -> whenever(result.text).thenReturn("translated-$text") }
+            }
+        }
+        val processor = DeepLTranslationProcessor(mockApi, parallelismController = createMockParallelismController())
+        val messages = List(2) { createMessage("x".repeat(30_000)) }
+
+        val result = processor.processBlocking(messages, createContext())
+
+        assertThat(result).hasSize(2)
+        verify(mockApi, times(3)).translateText(any<List<String>>(), eq("en"), eq("ja"), any())
     }
 
     @Test

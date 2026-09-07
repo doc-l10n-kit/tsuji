@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 import net.sharplab.tsuji.core.driver.translator.adaptive.DeepLBatchProvider
 import net.sharplab.tsuji.core.driver.translator.adaptive.AdaptiveParallelismController
 import net.sharplab.tsuji.core.driver.translator.deepl.DeepLTranslatorException
+import net.sharplab.tsuji.core.driver.translator.exception.TranslationValidationException
 import net.sharplab.tsuji.core.driver.translator.exception.RateLimitException
 import net.sharplab.tsuji.core.model.translation.TranslationMessage
 import org.slf4j.LoggerFactory
@@ -72,8 +73,9 @@ class DeepLTranslationProcessor(
             val batchProvider = DeepLBatchProvider(
                 items = normalTexts,
                 initialLimit = MAX_TEXT_SIZE_BYTES,
-                minLimit = MAX_TEXT_SIZE_BYTES,
-                maxLimit = MAX_TEXT_SIZE_BYTES
+                minLimit = MIN_TEXT_SIZE_BYTES,
+                maxLimit = MAX_TEXT_SIZE_BYTES,
+                maxItemsPerBatch = MAX_TEXTS_PER_REQUEST
             )
             val executor = net.sharplab.tsuji.core.driver.translator.adaptive.BatchedExecutor(
                 batchProvider = batchProvider,
@@ -88,6 +90,9 @@ class DeepLTranslationProcessor(
                             deepLApi.translateText(batch, context.srcLang, context.dstLang, options).map { it.text }
                         }
                     } catch (e: DeepLException) {
+                        if (isPayloadTooLargeError(e)) {
+                            throw DeepLPayloadTooLargeException(e)
+                        }
                         // Convert DeepL rate limit errors to RateLimitException
                         if (isRateLimitError(e)) {
                             throw RateLimitException("DeepL rate limit exceeded: ${e.message}")
@@ -115,6 +120,9 @@ class DeepLTranslationProcessor(
                e.message?.contains("rate limit", ignoreCase = true) == true ||
                e.message?.contains("too many requests", ignoreCase = true) == true
     }
+
+    private fun isPayloadTooLargeError(e: DeepLException): Boolean =
+        e.message?.contains("payload too large", ignoreCase = true) == true
 
     private suspend fun translateJekyllFrontMatterWithRetry(
         message: String,
@@ -183,6 +191,7 @@ class DeepLTranslationProcessor(
         private const val MAX_TEXTS_PER_REQUEST = 50
         // Use 100,000 bytes (approx. 97 KiB) instead of 128 KiB to ensure margin for JSON overhead
         private const val MAX_TEXT_SIZE_BYTES = 100_000
+        private const val MIN_TEXT_SIZE_BYTES = 5_000
 
         // Tags to ignore (not translate)
         private val IGNORE_ELEMENT_NAMES = listOf(
@@ -197,3 +206,6 @@ class DeepLTranslationProcessor(
         )
     }
 }
+
+private class DeepLPayloadTooLargeException(cause: DeepLException) :
+    TranslationValidationException("DeepL request payload is too large", cause)

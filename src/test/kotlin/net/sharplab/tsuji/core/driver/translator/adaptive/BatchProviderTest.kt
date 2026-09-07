@@ -60,6 +60,36 @@ class BatchProviderTest {
     }
 
     @Test
+    fun `DeepLBatchProvider should split by item count`() {
+        val provider = DeepLBatchProvider(
+            items = List(120) { "item-$it" },
+            initialLimit = 100_000,
+            minLimit = 5_000,
+            maxLimit = 100_000,
+            maxItemsPerBatch = 50
+        )
+
+        assertEquals(50, provider.consumeNext().size)
+        assertEquals(50, provider.consumeNext().size)
+        assertEquals(20, provider.consumeNext().size)
+        assertFalse(provider.hasNext())
+    }
+
+    @Test
+    fun `DeepLBatchProvider should reduce byte limit after validation error`() {
+        val provider = DeepLBatchProvider(
+            items = listOf("12345", "67890"),
+            initialLimit = 10,
+            minLimit = 1,
+            maxLimit = 10
+        )
+
+        assertEquals(2, provider.peekNext().size)
+        assertEquals(5, provider.notifyValidationError())
+        assertEquals(1, provider.peekNext().size)
+    }
+
+    @Test
     fun `should increase limit on success`() {
         val provider = CountBasedBatchProvider(
             items = listOf("a", "b", "c"),
