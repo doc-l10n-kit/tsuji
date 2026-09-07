@@ -14,8 +14,13 @@ class DeepLBatchProvider(
     initialLimit: Int,
     private val minLimit: Int,
     private val maxLimit: Int,
+    private val maxItemsPerBatch: Int = Int.MAX_VALUE,
     private val charset: Charset = Charsets.UTF_8
 ) : BatchProvider<String> {
+
+    init {
+        require(maxItemsPerBatch > 0) { "maxItemsPerBatch must be greater than zero" }
+    }
 
     private val logger = LoggerFactory.getLogger(DeepLBatchProvider::class.java)
 
@@ -36,6 +41,10 @@ class DeepLBatchProvider(
         var index = currentPosition
 
         while (index < items.size) {
+            if (batch.size >= maxItemsPerBatch) {
+                break
+            }
+
             val item = items[index]
             val itemSize = item.toByteArray(charset).size
 
