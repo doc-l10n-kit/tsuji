@@ -194,6 +194,45 @@ class PoAppServiceImplRoqTest {
         )
     }
 
+    @Test
+    fun extractRoq_should_exclude_yaml_files_matching_glob(@TempDir tempDir: Path) {
+        val sourceDir = tempDir.resolve("upstream").createDirectories()
+        val poBaseDir = tempDir.resolve("po").createDirectories()
+
+        sourceDir.resolve(".github/workflows").createDirectories()
+            .resolve("build.yml").writeText("on:\n  pull_request:\n    types: [opened]\n")
+        sourceDir.resolve(".github/dependabot.yml").writeText("version: 2")
+        sourceDir.resolve("_data").createDirectories()
+            .resolve("guides.yaml").writeText("guides: []")
+
+        whenever(po4aDriver.determineFormat(any())).thenAnswer { invocation ->
+            val path = invocation.getArgument<Path>(0)
+            when (path.toString().substringAfterLast('.')) {
+                "yaml", "yml" -> "yaml"
+                else -> null
+            }
+        }
+
+        val config = createMockConfig(
+            roqSourceDir = sourceDir.toString(),
+            roqOverrideDir = tempDir.resolve("override").toString(),
+            poBaseDir = poBaseDir.toString(),
+            roqYamlExclude = listOf(".github/**")
+        )
+
+        val target = PoAppServiceImpl(gettextDriver, poDriver, po4aDriver, jekyllDriver, poService, poNormalizerService, config)
+        target.extractRoq(poBaseDir, sourceDir, tempDir.resolve("override"))
+
+        verify(po4aDriver).updatePo(
+            argThat<Path> { toString().contains("guides.yaml") },
+            any(), eq("yaml"), any()
+        )
+        verify(po4aDriver, never()).updatePo(
+            argThat<Path> { toString().contains(".github") },
+            any(), any(), any()
+        )
+    }
+
     // --- applyPoToDirectory tests ---
 
     @Test
@@ -236,5 +275,36 @@ class PoAppServiceImplRoqTest {
         target.applyPoToDirectory(workDir, poBaseDir,
             htmlIncludeList = listOf("page.html"))
         verify(po4aDriver).translate(any(), any(), any(), eq("xhtml"), any())
+    }
+
+    @Test
+    fun applyPoToDirectory_should_skip_yaml_files_matching_exclude_glob(@TempDir tempDir: Path) {
+        val workDir = tempDir.resolve("work").createDirectories()
+        val poBaseDir = tempDir.resolve("po").createDirectories()
+
+        workDir.resolve(".github/workflows").createDirectories()
+            .resolve("build.yml").writeText("on: push")
+        poBaseDir.resolve(".github/workflows").createDirectories()
+            .resolve("build.yml.po").writeText("po content")
+        workDir.resolve("_data").createDirectories()
+            .resolve("guides.yaml").writeText("guides: []")
+        poBaseDir.resolve("_data").createDirectories()
+            .resolve("guides.yaml.po").writeText("po content")
+
+        whenever(po4aDriver.determineFormat(any())).thenReturn("yaml")
+        whenever(poService.isIgnored(any())).thenReturn(false)
+
+        val config = createMockConfig()
+        val target = PoAppServiceImpl(gettextDriver, poDriver, po4aDriver, jekyllDriver, poService, poNormalizerService, config)
+        target.applyPoToDirectory(workDir, poBaseDir, yamlExcludeList = listOf(".github/**"))
+
+        verify(po4aDriver).translate(
+            argThat<Path> { toString().contains("guides.yaml") },
+            any(), any(), eq("yaml"), any()
+        )
+        verify(po4aDriver, never()).translate(
+            argThat<Path> { toString().contains(".github") },
+            any(), any(), any(), any()
+        )
     }
 }
