@@ -1,12 +1,14 @@
 package net.sharplab.tsuji.app.service
 
 import net.sharplab.tsuji.app.config.TsujiConfig
+import net.sharplab.tsuji.app.exception.TsujiAppException
 import net.sharplab.tsuji.core.driver.gettext.GettextDriver
 import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
 import net.sharplab.tsuji.core.driver.po.PoDriver
 import net.sharplab.tsuji.core.driver.po4a.Po4aDriver
 import net.sharplab.tsuji.core.service.PoNormalizerService
 import net.sharplab.tsuji.core.service.PoService
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.mockito.kotlin.*
@@ -194,6 +196,36 @@ class PoAppServiceImplRoqTest {
         )
     }
 
+    @Test
+    fun extractRoq_should_process_every_file_and_report_all_po4a_failures(@TempDir tempDir: Path) {
+        val sourceDir = tempDir.resolve("upstream").createDirectories()
+        val poBaseDir = tempDir.resolve("po").createDirectories()
+
+        val dataDir = sourceDir.resolve("_data").createDirectories()
+        dataDir.resolve("broken-1.yaml").writeText("a: [b]")
+        dataDir.resolve("guides.yaml").writeText("guides: []")
+        dataDir.resolve("broken-2.yaml").writeText("c: [d]")
+
+        whenever(po4aDriver.determineFormat(any())).thenReturn("yaml")
+        doThrow(RuntimeException("Command failed with exit code 255")).whenever(po4aDriver)
+            .updatePo(argThat { toString().contains("broken") }, any(), any(), any())
+
+        val config = createMockConfig(
+            roqSourceDir = sourceDir.toString(),
+            roqOverrideDir = tempDir.resolve("override").toString(),
+            poBaseDir = poBaseDir.toString()
+        )
+
+        val target = PoAppServiceImpl(gettextDriver, poDriver, po4aDriver, jekyllDriver, poService, poNormalizerService, config)
+
+        assertThatThrownBy { target.extractRoq(poBaseDir, sourceDir, tempDir.resolve("override")) }
+            .isInstanceOf(TsujiAppException::class.java)
+            .hasMessageContaining("_data/broken-1.yaml")
+            .hasMessageContaining("_data/broken-2.yaml")
+            .hasMessageNotContaining("guides.yaml")
+        verify(po4aDriver, times(3)).updatePo(any(), any(), eq("yaml"), any())
+    }
+
     // --- applyPoToDirectory tests ---
 
     @Test
@@ -236,5 +268,31 @@ class PoAppServiceImplRoqTest {
         target.applyPoToDirectory(workDir, poBaseDir,
             htmlIncludeList = listOf("page.html"))
         verify(po4aDriver).translate(any(), any(), any(), eq("xhtml"), any())
+    }
+
+    @Test
+    fun applyPoToDirectory_should_translate_every_file_and_report_all_po4a_failures(@TempDir tempDir: Path) {
+        val workDir = tempDir.resolve("work").createDirectories()
+        val poBaseDir = tempDir.resolve("po").createDirectories()
+
+        listOf("broken-1.yaml", "guides.yaml", "broken-2.yaml").forEach { name ->
+            workDir.resolve(name).writeText("key: value")
+            poBaseDir.resolve("$name.po").writeText("po content")
+        }
+
+        whenever(po4aDriver.determineFormat(any())).thenReturn("yaml")
+        whenever(poService.isIgnored(any())).thenReturn(false)
+        doThrow(RuntimeException("Command failed with exit code 255")).whenever(po4aDriver)
+            .translate(argThat { toString().contains("broken") }, any(), any(), any(), any())
+
+        val config = createMockConfig()
+        val target = PoAppServiceImpl(gettextDriver, poDriver, po4aDriver, jekyllDriver, poService, poNormalizerService, config)
+
+        assertThatThrownBy { target.applyPoToDirectory(workDir, poBaseDir) }
+            .isInstanceOf(TsujiAppException::class.java)
+            .hasMessageContaining("broken-1.yaml")
+            .hasMessageContaining("broken-2.yaml")
+            .hasMessageNotContaining("guides.yaml")
+        verify(po4aDriver, times(3)).translate(any(), any(), any(), eq("yaml"), any())
     }
 }
