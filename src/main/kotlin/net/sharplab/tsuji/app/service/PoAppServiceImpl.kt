@@ -1,6 +1,7 @@
 package net.sharplab.tsuji.app.service
 
 import net.sharplab.tsuji.app.config.TsujiConfig
+import net.sharplab.tsuji.app.exception.TsujiAppException
 import net.sharplab.tsuji.po.model.Po
 import net.sharplab.tsuji.core.driver.gettext.GettextDriver
 import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
@@ -89,7 +90,7 @@ class PoAppServiceImpl(
                     val relative = poDir.relativize(poFile)
                     val originalFileName = relative.toString().removeSuffix(".po")
                     val originalFile = upstreamDir.resolve(originalFileName).normalize()
-                    
+
                     if (!originalFile.exists()) {
                         logger.info("Removing obsolete po file: $poFile")
                         poFile.deleteExisting()
@@ -120,12 +121,14 @@ class PoAppServiceImpl(
             logger.info("Extracting Jekyll PO files in $resolvedPoBaseDir using Jekyll source in $workDir")
             jekyllDriver.prepareSource(resolvedSourceDir, workDir)
             jekyllDriver.applyOverrides(resolvedOverrideDir, workDir)
-            
+
             if (!resolvedPoBaseDir.exists()) {
                 resolvedPoBaseDir.createDirectories()
             }
 
             // 1. Extract Markdown and YAML using po4a (before bundle install creates vendor/bundle)
+            val failures = mutableListOf<String>()
+
             logger.info("Extracting Markdown and YAML PO files using po4a")
             workDir.walk().forEach { file ->
                 if (!file.isRegularFile()) return@forEach
@@ -156,8 +159,10 @@ class PoAppServiceImpl(
                 val poFile = resolvedPoBaseDir.resolve("$relativePath.po")
                 logger.info("Updating PO file for $relativePath (format: $format)")
                 poFile.parent.createDirectories()
-                po4aDriver.updatePo(file, poFile, format, workDir)
-                poNormalizerService.normalize(poFile)
+                runPo4a(failures, relativePathStr) {
+                    po4aDriver.updatePo(file, poFile, format, workDir)
+                    poNormalizerService.normalize(poFile)
+                }
             }
 
             // 2. Extract AsciiDoc using Jekyll plugin (after po4a processing)
@@ -165,6 +170,7 @@ class PoAppServiceImpl(
             jekyllDriver.extractPo(workDir, resolvedPoBaseDir, tsujiConfig.language.to)
 
             normalize(resolvedPoBaseDir)
+            failIfAny(failures, "extract")
         }
     }
 
@@ -186,6 +192,8 @@ class PoAppServiceImpl(
 
             val yamlExcludeList = tsujiConfig.roq.extract.yaml.exclude.orElse(emptyList())
             val htmlIncludeList = tsujiConfig.roq.extract.html.include.orElse(emptyList())
+
+            val failures = mutableListOf<String>()
 
             logger.info("Extracting PO files using po4a")
             workDir.walk().forEach { file ->
@@ -215,11 +223,14 @@ class PoAppServiceImpl(
                 val poFile = resolvedPoBaseDir.resolve("$relativePath.po")
                 logger.info("Updating PO file for $relativePath (format: $format)")
                 poFile.parent.createDirectories()
-                po4aDriver.updatePo(file, poFile, format, workDir)
-                poNormalizerService.normalize(poFile)
+                runPo4a(failures, relativePathStr) {
+                    po4aDriver.updatePo(file, poFile, format, workDir)
+                    poNormalizerService.normalize(poFile)
+                }
             }
 
             normalize(resolvedPoBaseDir)
+            failIfAny(failures, "extract")
         }
     }
 
@@ -231,6 +242,8 @@ class PoAppServiceImpl(
     ) {
         val resolvedHtmlInclude = htmlIncludeList ?: tsujiConfig.jekyll.extract.html.include.orElse(emptyList())
         val resolvedYamlExclude = yamlExcludeList ?: tsujiConfig.jekyll.extract.yaml.exclude.orElse(emptyList())
+
+        val failures = mutableListOf<String>()
 
         logger.info("Applying PO files from $poBaseDir to $workDir")
         poBaseDir.walk().filter { it.extension == "po" }.forEach { poFile ->
@@ -265,11 +278,37 @@ class PoAppServiceImpl(
 
                 if (format != null) {
                     logger.info("Applying translation to $masterFile using $poFile (format: $format)")
-                    po4aDriver.translate(masterFile, poFile, masterFile, format, workDir)
+                    runPo4a(failures, relativeMasterPath) {
+                        po4aDriver.translate(masterFile, poFile, masterFile, format, workDir)
+                    }
                 } else {
                     logger.debug("Skipping $masterFile: unsupported format or explicitly ignored")
                 }
             }
+        }
+
+        failIfAny(failures, "translate")
+    }
+
+    /**
+     * Runs a po4a [action] for one file. A failure is logged and recorded in [failures]
+     * instead of stopping the loop, so a single run reports every file po4a rejects.
+     */
+    private fun runPo4a(failures: MutableList<String>, relativePath: String, action: () -> Unit) {
+        try {
+            action()
+        } catch (e: RuntimeException) {
+            logger.error("po4a failed for $relativePath: ${e.message}")
+            failures.add(relativePath)
+        }
+    }
+
+    private fun failIfAny(failures: List<String>, operation: String) {
+        if (failures.isNotEmpty()) {
+            throw TsujiAppException(
+                "po4a failed to $operation ${failures.size} file(s):\n" +
+                    failures.joinToString("\n") { "  - $it" }
+            )
         }
     }
 
