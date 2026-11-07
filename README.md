@@ -341,8 +341,10 @@ Standard Gemini API settings managed by the Quarkus LangChain4j extension:
 | `tsuji.jekyll.cname` | *(none)* | CNAME value for the built site. Not used by tsuji itself; exposed via `config get` for external CI/CD scripts |
 | `tsuji.jekyll.surge-domain-suffix` | *(none)* | Surge.sh domain suffix for preview deployments. Not used by tsuji itself; exposed via `config get` for external CI/CD scripts |
 | `tsuji.jekyll.jekyll-l10n-branch` | `main` | Git branch (or tag) of the jekyll-l10n plugin to install |
-| `tsuji.jekyll.extract.yaml.exclude` | *(none)* | YAML front matter keys to exclude from PO extraction |
-| `tsuji.jekyll.extract.html.include` | *(none)* | HTML file patterns to include in PO extraction |
+| `tsuji.jekyll.extract.yaml.exclude` | *(none)* | YAML files to exclude from PO extraction and translation |
+| `tsuji.jekyll.extract.html.include` | *(none)* | HTML files to include in PO extraction and translation |
+
+Entries in `extract.yaml.exclude` and `extract.html.include` are paths relative to the source directory or glob patterns in [`PathMatcher`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/file/FileSystem.html#getPathMatcher(java.lang.String)) syntax, such as `.github/**`. The same keys exist under `tsuji.roq.extract`.
 
 ### Git
 

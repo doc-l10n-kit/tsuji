@@ -7,6 +7,7 @@ import net.sharplab.tsuji.core.driver.jekyll.JekyllDriver
 import net.sharplab.tsuji.core.driver.po.PoDriver
 import net.sharplab.tsuji.core.driver.po4a.Po4aDriver
 import net.sharplab.tsuji.core.service.PoService
+import net.sharplab.tsuji.core.util.PathPatternMatcher
 import net.sharplab.tsuji.core.util.applyOverlayFiles
 import net.sharplab.tsuji.core.util.copyDirectory
 import org.slf4j.LoggerFactory
@@ -89,7 +90,7 @@ class PoAppServiceImpl(
                     val relative = poDir.relativize(poFile)
                     val originalFileName = relative.toString().removeSuffix(".po")
                     val originalFile = upstreamDir.resolve(originalFileName).normalize()
-                    
+
                     if (!originalFile.exists()) {
                         logger.info("Removing obsolete po file: $poFile")
                         poFile.deleteExisting()
@@ -120,12 +121,15 @@ class PoAppServiceImpl(
             logger.info("Extracting Jekyll PO files in $resolvedPoBaseDir using Jekyll source in $workDir")
             jekyllDriver.prepareSource(resolvedSourceDir, workDir)
             jekyllDriver.applyOverrides(resolvedOverrideDir, workDir)
-            
+
             if (!resolvedPoBaseDir.exists()) {
                 resolvedPoBaseDir.createDirectories()
             }
 
             // 1. Extract Markdown and YAML using po4a (before bundle install creates vendor/bundle)
+            val yamlExclude = PathPatternMatcher(tsujiConfig.jekyll.extract.yaml.exclude.orElse(emptyList()))
+            val htmlInclude = PathPatternMatcher(tsujiConfig.jekyll.extract.html.include.orElse(emptyList()))
+
             logger.info("Extracting Markdown and YAML PO files using po4a")
             workDir.walk().forEach { file ->
                 if (!file.isRegularFile()) return@forEach
@@ -138,16 +142,14 @@ class PoAppServiceImpl(
 
                 // Apply extract filters
                 if (format == "yaml") {
-                    val excludeList = tsujiConfig.jekyll.extract.yaml.exclude.orElse(emptyList())
-                    if (excludeList.contains(relativePathStr)) {
+                    if (yamlExclude.matches(relativePath)) {
                         logger.debug("Skipping excluded YAML file: $relativePathStr")
                         return@forEach
                     }
                 }
 
                 if (format == "xhtml") {
-                    val includeList = tsujiConfig.jekyll.extract.html.include.orElse(emptyList())
-                    if (!includeList.contains(relativePathStr)) {
+                    if (!htmlInclude.matches(relativePath)) {
                         logger.debug("Skipping non-included HTML file: $relativePathStr")
                         return@forEach
                     }
@@ -184,8 +186,8 @@ class PoAppServiceImpl(
                 resolvedPoBaseDir.createDirectories()
             }
 
-            val yamlExcludeList = tsujiConfig.roq.extract.yaml.exclude.orElse(emptyList())
-            val htmlIncludeList = tsujiConfig.roq.extract.html.include.orElse(emptyList())
+            val yamlExclude = PathPatternMatcher(tsujiConfig.roq.extract.yaml.exclude.orElse(emptyList()))
+            val htmlInclude = PathPatternMatcher(tsujiConfig.roq.extract.html.include.orElse(emptyList()))
 
             logger.info("Extracting PO files using po4a")
             workDir.walk().forEach { file ->
@@ -199,14 +201,14 @@ class PoAppServiceImpl(
                 }
 
                 if (format == "yaml") {
-                    if (yamlExcludeList.contains(relativePathStr)) {
+                    if (yamlExclude.matches(relativePath)) {
                         logger.debug("Skipping excluded YAML file: $relativePathStr")
                         return@forEach
                     }
                 }
 
                 if (format == "xhtml") {
-                    if (!htmlIncludeList.contains(relativePathStr)) {
+                    if (!htmlInclude.matches(relativePath)) {
                         logger.debug("Skipping non-included HTML file: $relativePathStr")
                         return@forEach
                     }
@@ -229,8 +231,8 @@ class PoAppServiceImpl(
         htmlIncludeList: List<String>?,
         yamlExcludeList: List<String>?
     ) {
-        val resolvedHtmlInclude = htmlIncludeList ?: tsujiConfig.jekyll.extract.html.include.orElse(emptyList())
-        val resolvedYamlExclude = yamlExcludeList ?: tsujiConfig.jekyll.extract.yaml.exclude.orElse(emptyList())
+        val resolvedHtmlInclude = PathPatternMatcher(htmlIncludeList ?: tsujiConfig.jekyll.extract.html.include.orElse(emptyList()))
+        val resolvedYamlExclude = PathPatternMatcher(yamlExcludeList ?: tsujiConfig.jekyll.extract.yaml.exclude.orElse(emptyList()))
 
         logger.info("Applying PO files from $poBaseDir to $workDir")
         poBaseDir.walk().filter { it.extension == "po" }.forEach { poFile ->
@@ -251,13 +253,13 @@ class PoAppServiceImpl(
                 }
 
                 if (format == "xhtml") {
-                    if (!resolvedHtmlInclude.contains(relativeMasterPath)) {
+                    if (!resolvedHtmlInclude.matches(Paths.get(relativeMasterPath))) {
                         logger.debug("Skipping non-included HTML file: $relativeMasterPath")
                         return@forEach
                     }
                 }
                 if (format == "yaml") {
-                    if (resolvedYamlExclude.contains(relativeMasterPath)) {
+                    if (resolvedYamlExclude.matches(Paths.get(relativeMasterPath))) {
                         logger.debug("Skipping excluded YAML file: $relativeMasterPath")
                         return@forEach
                     }
